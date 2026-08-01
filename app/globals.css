@@ -1,26 +1,166 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --koda-brand-primary: #183f31;
+  --koda-brand-primary-active: #101613;
+  --koda-bg-primary: #f7f5ec;
+  --koda-bg-secondary: #ecebe4;
+  --koda-accent-warm: #c8b891;
+  --koda-text-primary: #101613;
+  --koda-text-secondary: #5f625d;
+  --koda-text-inverse: #f7f5ec;
+  --koda-border-strong: #5f625d;
+  --koda-radius-md: 4px;
+  --koda-radius-lg: 6px;
+  --font-futura: "Futura", sans-serif;
+  --font-avenir: "Avenir", "Avenir Next", sans-serif;
+  --background: var(--koda-bg-primary);
+  --foreground: var(--koda-text-primary);
+  /* Single section horizontal inset — use px-page only */
+  /* Mobile 24 → tablet 32 → desktop 64 (Figma) → large 96 */
+  --space-page: 1.5rem; /* 24px */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --space-page: 2rem; /* 32px */
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --space-page: 4rem; /* 64px — Figma desktop */
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --space-page: 6rem; /* 96px */
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-primary: var(--koda-brand-primary);
+  --color-brand-primary-active: var(--koda-brand-primary-active);
+  --color-bg-primary: var(--koda-bg-primary);
+  --color-bg-secondary: var(--koda-bg-secondary);
+  --color-accent-warm: var(--koda-accent-warm);
+  --color-text-primary: var(--koda-text-primary);
+  --color-text-secondary: var(--koda-text-secondary);
+  --color-text-inverse: var(--koda-text-inverse);
+  --color-border-strong: var(--koda-border-strong);
+  --font-sans: var(--font-avenir);
+  --font-display: var(--font-futura);
+  --radius-md: var(--koda-radius-md);
+  --radius-lg: var(--koda-radius-lg);
+  --spacing-page: var(--space-page);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-avenir);
+}
+
+@keyframes partners-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.partners-marquee {
+  animation: partners-marquee 32s linear infinite;
+}
+
+@keyframes quote-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes quote-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes quote-check-draw {
+  from {
+    stroke-dashoffset: 36;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes quote-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quote-spinner {
+  animation: quote-spin 0.85s linear infinite;
+}
+
+.quote-panel-in {
+  animation: quote-panel-in 0.35s ease-out both;
+}
+
+.quote-check-path {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: quote-check-draw 0.55s 0.15s ease-out forwards;
+}
+
+.quote-check-wrap {
+  animation: quote-panel-in 0.4s ease-out both;
+}
+
+.quote-alert-in {
+  animation: quote-alert-in 0.25s ease-out both;
+}
+
+/* Hide Google reCAPTCHA v3 badge — branding disclosed in the quote form. */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partners-marquee {
+    animation: none;
+  }
+
+  .quote-spinner,
+  .quote-panel-in,
+  .quote-check-path,
+  .quote-check-wrap,
+  .quote-alert-in {
+    animation: none;
+  }
+
+  .quote-check-path {
+    stroke-dashoffset: 0;
+  }
 }

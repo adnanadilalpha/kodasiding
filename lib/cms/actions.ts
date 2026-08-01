@@ -1,0 +1,781 @@
+"use server";
+
+import { requireAdmin } from "@/lib/auth/admin";
+import { createClient } from "@/lib/supabase/server";
+import {
+  FIND_DEALER_HREF,
+  FOOTER_LINK_SLOTS,
+  NAV_LINK_SLOTS,
+  linksFromLabelFields,
+} from "@/lib/cms/nav-slots";
+import { isSocialIconId } from "@/lib/cms/social-icons";
+import { safeHref } from "@/lib/cms/safe-href";
+import { syncPublicSite } from "@/lib/cms/sync-public";
+import type { QuoteEmailSettings, QuoteFormSettings, SocialLink } from "@/lib/cms/types";
+import { revalidatePath } from "next/cache";
+
+/** After CMS write: rebuild public snapshot + refresh admin + marketing paths. */
+async function afterPublicChange(
+  userId: string,
+  ...adminPaths: string[]
+) {
+  await syncPublicSite(userId);
+  for (const path of adminPaths) revalidatePath(path);
+  revalidatePath("/");
+}
+
+export async function saveHomeHero(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const hero = {
+    headline: String(formData.get("hero_headline") ?? ""),
+    subheadline: String(formData.get("hero_subheadline") ?? ""),
+    cta_label: String(formData.get("hero_cta_label") ?? ""),
+    cta_href: safeHref(String(formData.get("hero_cta_href") ?? ""), "/#profiles"),
+    image_media_id: emptyToNull(formData.get("hero_image_media_id")),
+  };
+  const { error } = await supabase.from("page_home").update({ hero }).eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveHomePartnersTitle(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({
+      partners_title: String(formData.get("partners_title") ?? ""),
+      show_partners: formData.get("show_partners") === "on",
+    })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveHomeWhyKoda(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const features = [0, 1, 2].map((i) => ({
+    number: String(formData.get(`feature_${i}_number`) ?? ""),
+    title: String(formData.get(`feature_${i}_title`) ?? ""),
+    body: String(formData.get(`feature_${i}_body`) ?? ""),
+  }));
+  const why_koda = {
+    headline: String(formData.get("why_headline") ?? ""),
+    body: String(formData.get("why_body") ?? ""),
+    image_media_id: emptyToNull(formData.get("why_image_media_id")),
+    features,
+  };
+  const { error } = await supabase
+    .from("page_home")
+    .update({ why_koda })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveHomeProfilesTeaser(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const profiles_teaser = {
+    headline: String(formData.get("profiles_headline") ?? ""),
+    body: String(formData.get("profiles_body") ?? ""),
+    cta_label: String(formData.get("profiles_cta_label") ?? ""),
+    cta_href: safeHref(
+      String(formData.get("profiles_cta_href") ?? ""),
+      "/#profiles",
+    ),
+  };
+  const { error } = await supabase
+    .from("page_home")
+    .update({ profiles_teaser })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveHomeVideosSection(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const videos_section = {
+    headline: String(formData.get("videos_headline") ?? ""),
+    body: String(formData.get("videos_body") ?? ""),
+    manual_label: String(formData.get("manual_label") ?? ""),
+    manual_document_key: String(
+      formData.get("manual_document_key") ?? "installation_manual",
+    ),
+  };
+  const { error } = await supabase
+    .from("page_home")
+    .update({ videos_section })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveHomeCtas(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const ctas = {
+    show_dealer: formData.get("show_dealer") === "on",
+    quote: {
+      headline: String(formData.get("quote_headline") ?? ""),
+      body: String(formData.get("quote_body") ?? ""),
+      cta_label: String(formData.get("quote_cta_label") ?? ""),
+      image_media_id: emptyToNull(formData.get("quote_image_media_id")),
+    },
+    dealer: {
+      headline: String(formData.get("dealer_headline") ?? ""),
+      body: String(formData.get("dealer_body") ?? ""),
+      cta_label: String(formData.get("dealer_cta_label") ?? ""),
+      cta_href: safeHref(
+        String(formData.get("dealer_cta_href") ?? ""),
+        FIND_DEALER_HREF,
+      ),
+      image_media_id: emptyToNull(formData.get("dealer_image_media_id")),
+    },
+  };
+  const { error } = await supabase.from("page_home").update({ ctas }).eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home", "/admin/dealer");
+}
+
+/** Toggle find-dealer landing visibility from the Dealers admin page. */
+export async function saveFindDealerVisibility(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+
+  const show_find_dealer = formData.get("show_find_dealer") === "on";
+  const show_dealer = formData.get("show_dealer") === "on";
+
+  const [{ data: settings, error: settingsErr }, { data: home, error: homeErr }] =
+    await Promise.all([
+      supabase.from("site_settings").select("nav").eq("id", 1).single(),
+      supabase.from("page_home").select("ctas").eq("id", 1).single(),
+    ]);
+  if (settingsErr) throw new Error(settingsErr.message);
+  if (homeErr) throw new Error(homeErr.message);
+
+  const nav = { ...settings.nav, show_find_dealer };
+  const ctas = { ...home.ctas, show_dealer };
+
+  const [navRes, ctaRes] = await Promise.all([
+    supabase.from("site_settings").update({ nav }).eq("id", 1),
+    supabase.from("page_home").update({ ctas }).eq("id", 1),
+  ]);
+  if (navRes.error) throw new Error(navRes.error.message);
+  if (ctaRes.error) throw new Error(ctaRes.error.message);
+
+  await afterPublicChange(
+    admin.user_id,
+    "/admin/dealer",
+    "/admin/home",
+    "/admin/settings",
+  );
+}
+
+export async function saveNavSettings(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const nav = {
+    logo_alt: String(formData.get("logo_alt") ?? ""),
+    find_dealer_label: String(formData.get("find_dealer_label") ?? ""),
+    find_dealer_href: FIND_DEALER_HREF,
+    show_find_dealer: formData.get("show_find_dealer") === "on",
+    quote_label: String(formData.get("quote_label") ?? ""),
+    links: linksFromLabelFields(formData, "nav_label", NAV_LINK_SLOTS),
+  };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ nav })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/settings");
+}
+
+export async function saveFooterSettings(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const footer = {
+    tagline: String(formData.get("footer_tagline") ?? ""),
+    copyright: String(formData.get("footer_copyright") ?? ""),
+    links: linksFromLabelFields(formData, "footer_label", FOOTER_LINK_SLOTS),
+    social: parseSocialLinks(String(formData.get("footer_social") ?? "[]")),
+  };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ footer })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/settings");
+}
+
+export async function saveSeoSettings(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const seo = {
+    title: String(formData.get("seo_title") ?? ""),
+    title_template: String(formData.get("seo_title_template") ?? ""),
+    description: String(formData.get("seo_description") ?? ""),
+    site_url: String(formData.get("seo_site_url") ?? "").replace(/\/$/, ""),
+    og_image_media_id: emptyToNull(formData.get("seo_og_image_media_id")),
+  };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ seo })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/settings");
+}
+
+export async function saveQuoteFormSettings(input: QuoteFormSettings) {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "Not authorized." };
+  }
+
+  const { normalizeQuoteFormSettings } = await import("@/lib/cms/quote-form");
+  const quote_form = normalizeQuoteFormSettings(input);
+
+  if (!quote_form.fields.some((f) => f.kind === "full_name")) {
+    return { error: "Full name field is required." };
+  }
+  if (!quote_form.fields.some((f) => f.kind === "email")) {
+    return { error: "Email field is required." };
+  }
+  if (quote_form.allowed_file_types.length === 0) {
+    return { error: "Select at least one attachment file type." };
+  }
+
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ quote_form })
+    .eq("id", 1);
+  if (error) return { error: error.message };
+  await afterPublicChange(admin.user_id, "/admin/quotes");
+  return { success: true };
+}
+
+export async function upsertPartner(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const logo_media_id = emptyToNull(formData.get("logo_media_id"));
+  const sort_order = Number(formData.get("sort_order") ?? 0);
+  const is_published = formData.get("is_published") === "on";
+
+  if (id) {
+    const { error } = await supabase
+      .from("partners")
+      .update({ logo_media_id, sort_order, is_published })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("partners").insert({
+      name: `Partner ${sort_order + 1}`,
+      logo_media_id,
+      sort_order,
+      is_published,
+    });
+    if (error) throw new Error(error.message);
+  }
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function deletePartner(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const { error } = await supabase.from("partners").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+/** Saves sheet copy (and CTAs when present) for one Profiles section. */
+export async function saveProfilesSection(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const sheet = String(formData.get("sheet") ?? "horizontal");
+  const payload = {
+    headline: String(formData.get("headline") ?? ""),
+    helper: String(formData.get("helper") ?? ""),
+  };
+  const patch: Record<string, unknown> =
+    sheet === "vertical"
+      ? { vertical: payload }
+      : { horizontal: payload };
+
+  if (formData.has("quote_cta_label") || formData.has("manual_cta_label")) {
+    patch.quote_cta_label = String(formData.get("quote_cta_label") ?? "");
+    patch.manual_cta_label = String(formData.get("manual_cta_label") ?? "");
+  }
+
+  const { error } = await supabase
+    .from("page_profiles")
+    .update(patch)
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/profiles");
+}
+
+export async function upsertHomeProfileJewel(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const row = {
+    name: String(formData.get("name") ?? ""),
+    reveal: String(formData.get("reveal") ?? ""),
+    image_media_id: emptyToNull(formData.get("image_media_id")),
+    sort_order: Number(formData.get("sort_order") ?? 0),
+    is_published: formData.get("is_published") === "on",
+  };
+
+  if (id) {
+    const { error } = await supabase
+      .from("home_profile_jewels")
+      .update(row)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("home_profile_jewels").insert(row);
+    if (error) throw new Error(error.message);
+  }
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function deleteHomeProfileJewel(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("home_profile_jewels")
+    .delete()
+    .eq("id", String(formData.get("id") ?? ""));
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function upsertProfile(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "");
+  const slug =
+    String(formData.get("slug") ?? "") ||
+    name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+  const row = {
+    name,
+    slug,
+    reveal: String(formData.get("reveal") ?? ""),
+    orientation: String(formData.get("orientation") ?? "horizontal"),
+    description: String(formData.get("description") ?? ""),
+    hover_copy: String(formData.get("hover_copy") ?? ""),
+    image_media_id: emptyToNull(formData.get("image_media_id")),
+    diagram_media_id: emptyToNull(formData.get("diagram_media_id")),
+    sort_order: Number(formData.get("sort_order") ?? 0),
+    is_published: formData.get("is_published") === "on",
+  };
+
+  if (id) {
+    const { error } = await supabase.from("profiles").update(row).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("profiles").insert(row);
+    if (error) throw new Error(error.message);
+  }
+  await afterPublicChange(admin.user_id, "/admin/profiles");
+}
+
+export async function deleteProfile(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", String(formData.get("id") ?? ""));
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/profiles");
+}
+
+export async function upsertDealer(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const latRaw = String(formData.get("lat") ?? "");
+  const lngRaw = String(formData.get("lng") ?? "");
+  const row = {
+    name: String(formData.get("name") ?? ""),
+    address: String(formData.get("address") ?? ""),
+    city: String(formData.get("city") ?? ""),
+    region: String(formData.get("region") ?? ""),
+    postal: String(formData.get("postal") ?? ""),
+    phone: String(formData.get("phone") ?? ""),
+    website: String(formData.get("website") ?? ""),
+    lat: latRaw === "" ? null : Number(latRaw),
+    lng: lngRaw === "" ? null : Number(lngRaw),
+    is_published: formData.get("is_published") === "on",
+  };
+
+  if (id) {
+    const { error } = await supabase.from("dealers").update(row).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("dealers").insert(row);
+    if (error) throw new Error(error.message);
+  }
+  await afterPublicChange(admin.user_id, "/admin/dealer");
+}
+
+export async function deleteDealer(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("dealers")
+    .delete()
+    .eq("id", String(formData.get("id") ?? ""));
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/dealer");
+}
+
+export async function upsertVideo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const row = {
+    title: String(formData.get("title") ?? ""),
+    orientation: String(formData.get("orientation") ?? "horizontal"),
+    thumbnail_media_id: emptyToNull(formData.get("thumbnail_media_id")),
+    video_url: String(formData.get("video_url") ?? ""),
+    sort_order: Number(formData.get("sort_order") ?? 0),
+    is_published: formData.get("is_published") === "on",
+  };
+
+  if (id) {
+    const { error } = await supabase.from("videos").update(row).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("videos").insert(row);
+    if (error) throw new Error(error.message);
+  }
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function deleteVideo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("videos")
+    .delete()
+    .eq("id", String(formData.get("id") ?? ""));
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveDocument(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const key = String(formData.get("key") ?? "installation_manual");
+  const bucket = String(formData.get("bucket") ?? "documents");
+  if (bucket !== "documents") {
+    throw new Error("Invalid document bucket.");
+  }
+  const { error } = await supabase.from("documents").upsert(
+    {
+      key,
+      title: String(formData.get("title") ?? ""),
+      storage_path: String(formData.get("storage_path") ?? ""),
+      bucket,
+    },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function registerMediaAsset(input: {
+  path: string;
+  bucket: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+  bytes: number | null;
+  mime_type: string | null;
+}) {
+  const admin = await requireAdmin();
+  const allowedBuckets = new Set(["media", "documents", "videos"]);
+  if (!allowedBuckets.has(input.bucket)) {
+    throw new Error("Invalid media bucket.");
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("media_assets")
+    .insert({
+      ...input,
+      created_by: admin.user_id,
+    })
+    .select("id, bucket, path, alt, width, height, bytes, mime_type, created_at")
+    .single();
+  if (error) throw new Error(error.message);
+  // Media register alone does not change public content until a section saves
+  // a media id — still sync so alt/path maps stay current if referenced.
+  await afterPublicChange(admin.user_id, "/admin/home", "/admin/profiles");
+  return data;
+}
+
+export async function createAdminAccount(formData: FormData) {
+  const admin = await requireAdmin();
+  if (admin.role !== "owner") throw new Error("Only owners can add admins");
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!email || password.length < 8) {
+    throw new Error("Email and a password of at least 8 characters are required");
+  }
+
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const service = createServiceClient();
+
+  const { data, error } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (error) throw new Error(error.message);
+  if (!data.user) throw new Error("Failed to create admin user");
+
+  const role = parseAdminRole(formData.get("role"));
+
+  const { error: rowError } = await service.from("admin_users").upsert({
+    user_id: data.user.id,
+    email,
+    role,
+  });
+  if (rowError) {
+    await service.auth.admin.deleteUser(data.user.id);
+    throw new Error(rowError.message);
+  }
+
+  await service.from("admin_allowlist").upsert({ email, role });
+
+  revalidatePath("/admin/settings");
+}
+
+export async function updateAdminRole(formData: FormData) {
+  const admin = await requireAdmin();
+  if (admin.role !== "owner") throw new Error("Only owners can change roles");
+
+  const userId = String(formData.get("user_id") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = parseAdminRole(formData.get("role"));
+  if (!userId) throw new Error("Missing admin id");
+  if (userId === admin.user_id && role !== "owner") {
+    throw new Error("You cannot demote your own owner account");
+  }
+
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const service = createServiceClient();
+
+  const { error } = await service
+    .from("admin_users")
+    .update({ role })
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+
+  if (email) {
+    await service.from("admin_allowlist").upsert({ email, role });
+  }
+
+  revalidatePath("/admin/settings");
+}
+
+export async function updateAdminPassword(formData: FormData) {
+  const admin = await requireAdmin();
+  if (admin.role !== "owner") {
+    throw new Error("Only owners can change admin passwords");
+  }
+
+  const userId = String(formData.get("user_id") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (!userId || password.length < 8) {
+    throw new Error("A password of at least 8 characters is required");
+  }
+
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const service = createServiceClient();
+  const { error } = await service.auth.admin.updateUserById(userId, {
+    password,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/settings");
+}
+
+export async function deleteAdminAccount(formData: FormData) {
+  const admin = await requireAdmin();
+  if (admin.role !== "owner") throw new Error("Only owners can remove admins");
+
+  const userId = String(formData.get("user_id") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!userId) throw new Error("Missing admin id");
+  if (userId === admin.user_id) {
+    throw new Error("You cannot remove your own account");
+  }
+
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const service = createServiceClient();
+
+  const { error: rowError } = await service
+    .from("admin_users")
+    .delete()
+    .eq("user_id", userId);
+  if (rowError) throw new Error(rowError.message);
+
+  if (email) {
+    await service.from("admin_allowlist").delete().eq("email", email);
+  }
+
+  const { error } = await service.auth.admin.deleteUser(userId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/settings");
+}
+
+function emptyToNull(value: FormDataEntryValue | null) {
+  const s = String(value ?? "").trim();
+  return s === "" ? null : s;
+}
+
+function parseAdminRole(value: FormDataEntryValue | null): "owner" | "editor" {
+  return String(value ?? "") === "owner" ? "owner" : "editor";
+}
+
+function parseSocialLinks(raw: string): SocialLink[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const links: SocialLink[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const row = item as Record<string, unknown>;
+      const icon = String(row.icon ?? "website");
+      links.push({
+        label: String(row.label ?? "").trim() || "Social",
+        href: safeHref(String(row.href ?? "").trim(), "#"),
+        icon: isSocialIconId(icon) ? icon : "website",
+      });
+    }
+    return links;
+  } catch {
+    return [];
+  }
+}
+
+export async function saveQuoteEmailSettings(
+  input: QuoteEmailSettings,
+  options?: { keepExistingPassword?: boolean },
+) {
+  try {
+    const admin = await requireAdmin();
+    if (admin.role !== "owner") {
+      return { error: "Only owners can manage email settings." };
+    }
+  } catch {
+    return { error: "Not authorized." };
+  }
+
+  const {
+    normalizeQuoteEmailSettings,
+  } = await import("@/lib/email/quote-notify");
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const adminClient = createServiceClient();
+  const next = normalizeQuoteEmailSettings(input);
+
+  const { data: existing } = await adminClient
+    .from("quote_email_settings")
+    .select("smtp_pass")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (
+    (options?.keepExistingPassword || !next.smtp_pass.trim()) &&
+    existing?.smtp_pass
+  ) {
+    next.smtp_pass = existing.smtp_pass;
+  }
+
+  if (next.enabled) {
+    if (!next.from_email.trim()) {
+      return { error: "Enter your email address." };
+    }
+    if (!next.to_email.trim()) {
+      return { error: "Enter where quote requests should be delivered." };
+    }
+    if (!next.smtp_host.trim()) {
+      return {
+        error: "Choose an email provider (Gmail, Outlook, Yahoo, or Other).",
+      };
+    }
+    if (!next.smtp_pass.trim()) {
+      return {
+        error:
+          "Enter your email password (for Gmail/Yahoo use an App Password).",
+      };
+    }
+  }
+
+  next.smtp_user = next.smtp_user.trim() || next.from_email.trim();
+  next.provider = "smtp";
+  next.resend_api_key = "";
+
+  const { error } = await adminClient.from("quote_email_settings").upsert({
+    id: 1,
+    ...next,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/email");
+  return { success: true };
+}
+
+export async function testQuoteEmailSettings(
+  input: QuoteEmailSettings,
+  options?: { keepExistingPassword?: boolean },
+) {
+  try {
+    const admin = await requireAdmin();
+    if (admin.role !== "owner") {
+      return { error: "Only owners can manage email settings." };
+    }
+  } catch {
+    return { error: "Not authorized." };
+  }
+
+  const {
+    normalizeQuoteEmailSettings,
+    sendTestQuoteEmail,
+  } = await import("@/lib/email/quote-notify");
+  const { createServiceClient } = await import("@/lib/supabase/admin");
+  const adminClient = createServiceClient();
+  let settings = normalizeQuoteEmailSettings({ ...input, enabled: true });
+
+  const { data: existing } = await adminClient
+    .from("quote_email_settings")
+    .select("smtp_pass")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (
+    (options?.keepExistingPassword || !settings.smtp_pass.trim()) &&
+    existing?.smtp_pass
+  ) {
+    settings = { ...settings, smtp_pass: existing.smtp_pass };
+  }
+
+  settings.smtp_user =
+    settings.smtp_user.trim() || settings.from_email.trim();
+
+  return sendTestQuoteEmail(settings);
+}
