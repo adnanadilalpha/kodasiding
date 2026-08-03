@@ -190,18 +190,25 @@ export type PageProfiles = {
   id: number;
   horizontal: ProfileSheetCopy;
   vertical: ProfileSheetCopy;
+  universal: ProfileSheetCopy;
   quote_cta_label: string;
   manual_cta_label: string;
 };
+
+export type ProfileOrientation = "horizontal" | "vertical" | "universal";
 
 export type Profile = {
   id: string;
   slug: string;
   name: string;
   reveal: string;
-  orientation: "horizontal" | "vertical";
+  orientation: ProfileOrientation;
   description: string;
   hover_copy: string;
+  exposure: string;
+  face_width: string;
+  depth: string;
+  install: string;
   image_media_id: string | null;
   diagram_media_id: string | null;
   sort_order: number;

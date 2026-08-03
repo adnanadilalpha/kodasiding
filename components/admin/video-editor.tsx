@@ -4,6 +4,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteVideo, upsertVideo } from "@/lib/cms/actions";
+import {
+  isDirectVideoUrl,
+  parseYoutubeId,
+  youtubeThumbnailUrl,
+} from "@/lib/cms/video-url";
 import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
@@ -24,7 +29,63 @@ export type VideoRow = {
   thumbBucket?: string;
 };
 
+function videoPreviewSrc(video: VideoRow): string | null {
+  if (video.thumbPath) {
+    return publicMediaUrl(video.thumbPath, video.thumbBucket ?? "media");
+  }
+  const yt = parseYoutubeId(video.video_url);
+  if (yt) return youtubeThumbnailUrl(yt);
+  if (isDirectVideoUrl(video.video_url)) return video.video_url;
+  return null;
+}
+
+function VideoListThumb({ video }: { video: VideoRow }) {
+  const src = videoPreviewSrc(video);
+  const yt = parseYoutubeId(video.video_url);
+  const direct = !video.thumbPath && !yt && isDirectVideoUrl(video.video_url);
+
+  return (
+    <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-bg-secondary">
+      {src && !direct ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          loading="eager"
+          className="object-cover"
+          sizes="64px"
+        />
+      ) : null}
+      {direct && src ? (
+        <video
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 size-full object-cover"
+          aria-hidden
+          onLoadedMetadata={(e) => {
+            try {
+              e.currentTarget.currentTime = 0.1;
+            } catch {
+              // ignore seek failures
+            }
+          }}
+        />
+      ) : null}
+      {!src ? (
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] text-text-primary/35">
+          No preview
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function VideoFormFields({ video }: { video?: VideoRow }) {
+  const yt = video?.video_url ? parseYoutubeId(video.video_url) : null;
+  const thumbFallback = yt ? youtubeThumbnailUrl(yt) : null;
+
   return (
     <div className="flex flex-col gap-5">
       <FieldGroup title="Details" columns={2}>
@@ -72,6 +133,7 @@ function VideoFormFields({ video }: { video?: VideoRow }) {
           initialId={video?.thumbnail_media_id}
           initialPath={video?.thumbPath}
           initialBucket={video?.thumbBucket ?? "media"}
+          fallbackSrc={thumbFallback}
         />
       </FieldGroup>
     </div>
@@ -140,55 +202,40 @@ export function VideoEditorList({
         </div>
       ) : (
         <ul className="flex flex-col gap-2.5">
-          {videos.map((video) => {
-            const src = video.thumbPath
-              ? publicMediaUrl(video.thumbPath, video.thumbBucket ?? "media")
-              : null;
-            return (
-              <li
-                key={video.id}
-                className="flex flex-wrap items-center gap-4 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3.5 py-3"
-              >
-                <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-bg-secondary/60">
-                  {src ? (
-                    <Image
-                      src={src}
-                      alt={video.title}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  ) : null}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-display text-base font-semibold text-brand-primary">
-                    {video.title}
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-text-primary/45">
-                    {video.orientation}
-                    {video.is_published ? "" : " · Draft"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setEditId(video.id)}
-                    className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => onDelete(video.id)}
-                    className="text-sm text-[#ff383c] transition hover:opacity-80"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            );
-          })}
+          {videos.map((video) => (
+            <li
+              key={video.id}
+              className="flex flex-wrap items-center gap-4 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3.5 py-3"
+            >
+              <VideoListThumb video={video} />
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-base font-semibold text-brand-primary">
+                  {video.title}
+                </p>
+                <p className="mt-0.5 truncate text-sm text-text-primary/45">
+                  {video.orientation}
+                  {video.is_published ? "" : " · Draft"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditId(video.id)}
+                  className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => onDelete(video.id)}
+                  className="text-sm text-[#ff383c] transition hover:opacity-80"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 
@@ -225,7 +272,7 @@ export function VideoEditorList({
         {editing ? (
           <form action={onEdit} className="flex flex-col gap-5">
             <input type="hidden" name="id" value={editing.id} />
-            <VideoFormFields video={editing} />
+            <VideoFormFields key={editing.id} video={editing} />
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={pending}>
                 {pending ? "Saving…" : "Save"}

@@ -8,12 +8,40 @@ import {
   saveProfilesSection,
   upsertProfile,
 } from "@/lib/cms/actions";
+import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+
+function Thumb({
+  src,
+  width,
+  height,
+}: {
+  src: string;
+  width: number;
+  height: number;
+}) {
+  const className = "max-h-20 w-auto object-contain";
+  if (isSvgMedia(src)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" width={width} height={height} className={className} />
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={width}
+      height={height}
+      className={className}
+    />
+  );
+}
 
 export type ProfileItem = {
   id: string;
@@ -23,6 +51,10 @@ export type ProfileItem = {
   orientation: string;
   description: string;
   hover_copy: string;
+  exposure: string;
+  face_width: string;
+  depth: string;
+  install: string;
   image_media_id: string | null;
   diagram_media_id?: string | null;
   sort_order: number;
@@ -37,81 +69,147 @@ export type SheetCopy = {
   helper: string;
 };
 
+type SheetOrientation = "horizontal" | "vertical" | "universal";
+type FormTab = "tile" | "details";
+
 function ProfileTileForm({
   profile,
   orientation,
   nextSort,
 }: {
   profile?: ProfileItem;
-  orientation: "horizontal" | "vertical";
+  orientation: SheetOrientation;
   nextSort: number;
 }) {
+  const [tab, setTab] = useState<FormTab>("tile");
+  const namePlaceholder =
+    orientation === "horizontal"
+      ? 'H4 3" Double Lap'
+      : orientation === "vertical"
+        ? 'V4 7" V Groove'
+        : "U1 Edge Trim";
+
   return (
     <div className="flex flex-col gap-5">
-      <FieldGroup title="Tile" columns={2}>
-        <Field label="Label">
-          <TextInput
-            name="name"
-            required
-            defaultValue={profile?.name}
-            placeholder={
-              orientation === "horizontal"
-                ? 'H4 3" Double Lap'
-                : 'V4 7" V Groove'
-            }
-          />
-        </Field>
-        <Field label="Slug">
-          <TextInput
-            name="slug"
-            defaultValue={profile?.slug}
-            placeholder="auto from label"
-          />
-        </Field>
-        <Field label="Sort">
-          <TextInput
-            name="sort_order"
-            type="number"
-            defaultValue={profile?.sort_order ?? nextSort}
-          />
-        </Field>
-      </FieldGroup>
+      <div className="flex gap-1 rounded-md border border-brand-primary/10 bg-bg-secondary p-1">
+        {(
+          [
+            { id: "tile", label: "Tile" },
+            { id: "details", label: "Details" },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            className={`flex-1 rounded px-3 py-1.5 text-sm transition ${
+              tab === item.id
+                ? "bg-white text-text-primary shadow-sm"
+                : "text-text-primary/55 hover:text-text-primary"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-      <FieldGroup title="Hover">
-        <Field label="Hover copy">
-          <TextArea
-            name="hover_copy"
-            rows={2}
-            defaultValue={profile?.hover_copy}
-            placeholder="Shown when visitors hover the tile"
-          />
-        </Field>
-      </FieldGroup>
-
-      <div className="grid gap-5 sm:grid-cols-2 sm:items-stretch">
-        <FieldGroup title="3D cutout" className="min-w-0 self-stretch">
-          <MediaField
-            name="image_media_id"
-            label="Cutout image"
-            compact
-            initialId={profile?.image_media_id}
-            initialPath={profile?.imagePath}
-          />
+      <div className={tab === "tile" ? "flex flex-col gap-5" : "hidden"}>
+        <FieldGroup title="Tile" columns={2}>
+          <Field label="Label">
+            <TextInput
+              name="name"
+              required
+              defaultValue={profile?.name}
+              placeholder={namePlaceholder}
+            />
+          </Field>
+          <Field label="Slug">
+            <TextInput
+              name="slug"
+              defaultValue={profile?.slug}
+              placeholder="auto from label"
+            />
+          </Field>
+          <Field label="Sort">
+            <TextInput
+              name="sort_order"
+              type="number"
+              defaultValue={profile?.sort_order ?? nextSort}
+            />
+          </Field>
         </FieldGroup>
-        <FieldGroup title="Diagram" className="min-w-0 self-stretch">
-          <MediaField
-            name="diagram_media_id"
-            label="Cross-section diagram"
-            compact
-            initialId={profile?.diagram_media_id}
-            initialPath={profile?.diagramPath}
-          />
+
+        <div className="grid gap-5 sm:grid-cols-2 sm:items-stretch">
+          <FieldGroup title="3D cutout" className="min-w-0 self-stretch">
+            <MediaField
+              name="image_media_id"
+              label="Cutout"
+              hint="JPG · PNG · WebP · SVG"
+              compact
+              initialId={profile?.image_media_id}
+              initialPath={profile?.imagePath}
+            />
+          </FieldGroup>
+          <FieldGroup title="Diagram" className="min-w-0 self-stretch">
+            <MediaField
+              name="diagram_media_id"
+              label="Cross-section"
+              hint="JPG · PNG · WebP · SVG"
+              compact
+              initialId={profile?.diagram_media_id}
+              initialPath={profile?.diagramPath}
+            />
+          </FieldGroup>
+        </div>
+      </div>
+
+      <div className={tab === "details" ? "flex flex-col gap-5" : "hidden"}>
+        <FieldGroup title="Specs" columns={2}>
+          <Field label="Exposure">
+            <TextInput
+              name="exposure"
+              defaultValue={profile?.exposure}
+              placeholder='0" / course'
+            />
+          </Field>
+          <Field label="Face width">
+            <TextInput
+              name="face_width"
+              defaultValue={profile?.face_width}
+              placeholder='3 1/2"'
+            />
+          </Field>
+          <Field label="Depth">
+            <TextInput
+              name="depth"
+              defaultValue={profile?.depth}
+              placeholder='7/16"'
+            />
+          </Field>
+          <Field label="Install">
+            <TextInput
+              name="install"
+              defaultValue={profile?.install}
+              placeholder="Starter Profile"
+            />
+          </Field>
+        </FieldGroup>
+
+        <FieldGroup title="Description">
+          <Field label="Description">
+            <TextArea
+              name="description"
+              rows={4}
+              defaultValue={profile?.description}
+              placeholder="Shown in the Learn more modal"
+            />
+          </Field>
         </FieldGroup>
       </div>
 
       <input type="hidden" name="orientation" value={orientation} />
       <input type="hidden" name="reveal" value={profile?.reveal ?? ""} />
-      <input type="hidden" name="description" value={profile?.description ?? ""} />
+      <input type="hidden" name="hover_copy" value={profile?.hover_copy ?? ""} />
 
       <label className="flex items-center gap-2 text-sm text-text-secondary">
         <input
@@ -133,7 +231,7 @@ export function ProfileSheetEditor({
   quoteCtaLabel = "Request a quote",
   manualCtaLabel = "Download manual",
 }: {
-  orientation: "horizontal" | "vertical";
+  orientation: SheetOrientation;
   sheet: SheetCopy;
   profiles: ProfileItem[];
   showCtas?: boolean;
@@ -196,7 +294,9 @@ export function ProfileSheetEditor({
               placeholder={
                 orientation === "horizontal"
                   ? "Horizontal profiles"
-                  : "Vertical profiles"
+                  : orientation === "vertical"
+                    ? "Vertical profiles"
+                    : "Universal profiles"
               }
             />
           </Field>
@@ -208,6 +308,25 @@ export function ProfileSheetEditor({
             />
           </Field>
         </FieldGroup>
+
+        {showCtas ? (
+          <FieldGroup title="Page CTAs" columns={2}>
+            <Field label="Quote button">
+              <TextInput
+                name="quote_cta_label"
+                defaultValue={quoteCtaLabel}
+                placeholder="Request a quote"
+              />
+            </Field>
+            <Field label="Manual button">
+              <TextInput
+                name="manual_cta_label"
+                defaultValue={manualCtaLabel}
+                placeholder="Download manual"
+              />
+            </Field>
+          </FieldGroup>
+        ) : null}
 
         <SectionHeaderAction>
           <Button
@@ -242,29 +361,17 @@ export function ProfileSheetEditor({
                     <button
                       type="button"
                       onClick={() => setEditId(profile.id)}
-                      className="flex h-28 items-center justify-center gap-2 bg-white px-3 py-3 transition hover:bg-bg-secondary/40"
+                      className="flex h-28 items-center justify-center gap-2 bg-bg-secondary px-3 py-3 transition hover:bg-bg-secondary/80"
                     >
                       {cutout ? (
-                        <Image
-                          src={cutout}
-                          alt=""
-                          width={72}
-                          height={88}
-                          className="max-h-20 w-auto object-contain"
-                        />
+                        <Thumb src={cutout} width={72} height={88} />
                       ) : (
                         <span className="text-xs text-text-primary/30">
                           No cutout
                         </span>
                       )}
                       {diagram ? (
-                        <Image
-                          src={diagram}
-                          alt=""
-                          width={56}
-                          height={88}
-                          className="max-h-20 w-auto object-contain"
-                        />
+                        <Thumb src={diagram} width={56} height={88} />
                       ) : (
                         <span className="text-xs text-text-primary/30">
                           No diagram
@@ -303,25 +410,6 @@ export function ProfileSheetEditor({
           )}
         </div>
 
-        {showCtas ? (
-          <FieldGroup title="Bottom actions" columns={2}>
-            <Field label="Quote button">
-              <TextInput
-                name="quote_cta_label"
-                defaultValue={quoteCtaLabel}
-                placeholder="Request a quote"
-              />
-            </Field>
-            <Field label="Manual button">
-              <TextInput
-                name="manual_cta_label"
-                defaultValue={manualCtaLabel}
-                placeholder="Download manual"
-              />
-            </Field>
-          </FieldGroup>
-        ) : null}
-
         <div className="pt-1">
           <Button type="submit" disabled={pending}>
             {pending ? "Saving…" : "Save"}
@@ -333,11 +421,15 @@ export function ProfileSheetEditor({
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={`Add ${orientation} tile`}
-        description="Label, cutout, diagram, and hover copy."
+        description="Tile media and Learn more details."
         size="lg"
       >
         <form action={onAdd} className="flex flex-col gap-5">
-          <ProfileTileForm orientation={orientation} nextSort={nextSort} />
+          <ProfileTileForm
+            key="add"
+            orientation={orientation}
+            nextSort={nextSort}
+          />
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={pending}>
               {pending ? "Adding…" : "Add tile"}
@@ -357,12 +449,14 @@ export function ProfileSheetEditor({
         open={Boolean(editing)}
         onClose={() => setEditId(null)}
         title="Edit tile"
+        description="Switch tabs for tile media or Learn more details."
         size="lg"
       >
         {editing ? (
           <form action={onEdit} className="flex flex-col gap-5">
             <input type="hidden" name="id" value={editing.id} />
             <ProfileTileForm
+              key={editing.id}
               profile={editing}
               orientation={orientation}
               nextSort={editing.sort_order}

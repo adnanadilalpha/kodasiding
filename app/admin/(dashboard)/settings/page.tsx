@@ -124,10 +124,9 @@ export default async function SettingsPage({
                       className="mt-0.5"
                     />
                     <span>
-                      Show on landing page
+                      Enable Find a dealer page + nav CTA
                       <span className="mt-0.5 block text-xs text-text-primary/40">
-                        Keep off until real dealers are live. Takes effect on
-                        Save.
+                        Off = /find-dealer is unavailable and nav CTA is hidden.
                       </span>
                     </span>
                   </label>

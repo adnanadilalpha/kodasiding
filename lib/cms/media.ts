@@ -8,14 +8,27 @@ export async function getMediaMap(
   if (unique.length === 0) return {};
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("media_assets")
-    .select("id, bucket, path, alt, width, height, bytes, mime_type, created_at")
-    .in("id", unique);
-
   const map: Record<string, MediaAsset> = {};
-  for (const row of data ?? []) {
-    map[row.id] = row as MediaAsset;
+
+  // Chunk to stay under PostgREST URL / request limits.
+  const chunkSize = 80;
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const chunk = unique.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("media_assets")
+      .select(
+        "id, bucket, path, alt, width, height, bytes, mime_type, created_at",
+      )
+      .in("id", chunk);
+
+    if (error) {
+      console.error("getMediaMap failed", error.message);
+      continue;
+    }
+    for (const row of data ?? []) {
+      map[row.id] = row as MediaAsset;
+    }
   }
+
   return map;
 }

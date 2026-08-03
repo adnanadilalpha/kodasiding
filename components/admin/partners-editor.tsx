@@ -248,6 +248,7 @@ export function PartnersEditor({
               value={editing.sort_order}
             />
             <MediaField
+              key={editing.id}
               name="logo_media_id"
               label="Logo"
               aspect="square"

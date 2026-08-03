@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { HomeHero } from "@/lib/cms/types";
+import { PROFILES_HREF, normalizeLinkHref } from "@/lib/cms/nav-slots";
 import { safeHref } from "@/lib/cms/safe-href";
 
 export function HomeHeroSection({
@@ -10,6 +11,8 @@ export function HomeHeroSection({
   hero: HomeHero;
   imageUrl: string;
 }) {
+  const ctaHref = normalizeLinkHref(safeHref(hero.cta_href, PROFILES_HREF));
+
   return (
     <section
       id="hero"
@@ -26,6 +29,8 @@ export function HomeHeroSection({
           alt=""
           fill
           priority
+          loading="eager"
+          fetchPriority="high"
           quality={95}
           sizes="100vw"
           className="object-cover object-bottom-right lg:object-contain lg:object-bottom-right"
@@ -43,7 +48,7 @@ export function HomeHeroSection({
             </p>
           </div>
           <Link
-            href={safeHref(hero.cta_href, "/#profiles")}
+            href={ctaHref}
             className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
           >
             {hero.cta_label}

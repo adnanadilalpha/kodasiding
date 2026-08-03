@@ -2,25 +2,35 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { SiteNav } from "@/lib/cms/types";
 import { isProfilesHref } from "@/lib/cms/nav-slots";
 import { scrollToHash } from "@/lib/cms/scroll-to-hash";
+import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
 import { useQuote } from "@/components/site/quote-provider";
 
-export function SiteHeader({ nav }: { nav: SiteNav }) {
+export function SiteHeader({
+  nav,
+  forceSolid = false,
+}: {
+  nav: SiteNav;
+  forceSolid?: boolean;
+}) {
   const { openQuote } = useQuote();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const showDealer = nav.show_find_dealer === true;
-  const solidNav = scrolled || menuOpen;
+  const solidNav =
+    forceSolid ||
+    scrolled ||
+    menuOpen ||
+    pathname === "/profiles" ||
+    pathname === "/find-dealer";
 
   useEffect(() => {
     if (!menuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return lockBodyScroll();
   }, [menuOpen]);
 
   useEffect(() => {
@@ -52,6 +62,9 @@ export function SiteHeader({ nav }: { nav: SiteNav }) {
       className={`fixed inset-x-0 top-0 transition-colors duration-300 ${menuOpen ? "z-60" : "z-40"} ${
         solidNav ? "bg-brand-primary-active" : "bg-transparent"
       }`}
+      style={{
+        paddingRight: "var(--scroll-lock-compensation, 0px)",
+      }}
     >
       <div
         className={`relative flex h-16 items-center justify-between gap-4 px-page lg:h-24 ${menuOpen ? "z-60" : ""}`}

@@ -8,30 +8,33 @@ export const NAV_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why koda" },
   { href: "/#installation", defaultLabel: "Installation" },
   { href: "/#contact", defaultLabel: "Contact" },
-  { href: "/#profiles", defaultLabel: "Profiles" },
+  { href: "/profiles", defaultLabel: "Profiles" },
 ] as const;
 
 export const FOOTER_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why Koda" },
   { href: "/#installation", defaultLabel: "Installations" },
   { href: "/#contact", defaultLabel: "Contact" },
-  { href: "/#profiles", defaultLabel: "Profiles" },
+  { href: "/profiles", defaultLabel: "Profiles" },
 ] as const;
 
 export const FIND_DEALER_HREF = "/find-dealer";
+export const PROFILES_HREF = "/profiles";
 
 /** Legacy hrefs still present in older snapshots / DB rows. */
 const HREF_ALIASES: Record<string, string> = {
-  "/profiles": "/#profiles",
+  "/#profiles": "/profiles",
+  "#profiles": "/profiles",
 };
 
 export function normalizeLinkHref(href: string) {
-  return HREF_ALIASES[href] ?? href;
+  const trimmed = href.trim();
+  return HREF_ALIASES[trimmed] ?? trimmed;
 }
 
 export function isProfilesHref(href: string) {
   const normalized = normalizeLinkHref(href);
-  return normalized === "/#profiles" || normalized === "/profiles";
+  return normalized === "/profiles" || normalized === "/#profiles";
 }
 
 export function labelsForSlots(

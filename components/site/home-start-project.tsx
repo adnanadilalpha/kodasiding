@@ -127,7 +127,7 @@ function QuoteOnlyCinematic({
         <button
           type="button"
           onClick={onCta}
-          className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3.5 text-base text-text-primary transition hover:opacity-90"
+          className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary transition hover:opacity-90"
         >
           {ctaLabel} →
         </button>
@@ -155,8 +155,8 @@ function CtaCard({
 }) {
   const buttonClass =
     tone === "dark"
-      ? "inline-flex items-center justify-center rounded-md bg-brand-primary-active px-6 py-3 text-base text-text-inverse"
-      : "inline-flex items-center justify-center rounded-md bg-brand-primary px-6 py-3 text-base text-text-inverse";
+      ? "inline-flex w-fit items-center justify-center rounded-md bg-brand-primary-active px-8 py-3 text-base whitespace-nowrap text-text-inverse"
+      : "inline-flex w-fit items-center justify-center rounded-md bg-brand-primary px-8 py-3 text-base whitespace-nowrap text-text-inverse";
 
   return (
     <article className="relative min-h-155 overflow-hidden">

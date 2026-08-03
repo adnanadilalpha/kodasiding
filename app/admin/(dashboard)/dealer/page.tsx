@@ -36,7 +36,7 @@ export default async function DealerPage() {
               action={saveFindDealerVisibility}
               className="flex flex-col gap-5"
             >
-              <FieldGroup title="Show on landing page">
+              <FieldGroup title="Show find dealer">
                 <label className="flex items-start gap-2.5 text-sm text-text-secondary">
                   <input
                     type="checkbox"
@@ -45,9 +45,12 @@ export default async function DealerPage() {
                     className="mt-0.5"
                   />
                   <span>
-                    Nav “Find a dealer” button
+                    Enable Find a dealer page + nav button
                     <span className="mt-0.5 block font-mono text-xs text-text-primary/40">
                       {FIND_DEALER_HREF}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-text-primary/40">
+                      Off = page returns 404 and nav CTA is hidden.
                     </span>
                   </span>
                 </label>

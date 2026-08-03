@@ -16,14 +16,10 @@ import {
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import { mediaUrlFromMap, publicMediaUrl } from "@/lib/cms/urls";
+import { LANDING_FALLBACKS } from "@/lib/cms/landing-fallbacks";
 import type { SiteSnapshotPayload } from "@/lib/cms/types";
 
-const JEWEL_FALLBACKS = [
-  "/landing/jewel-h4.webp",
-  "/landing/jewel-h6.webp",
-  "/landing/jewel-h8.webp",
-  "/landing/jewel-v4.webp",
-] as const;
+const JEWEL_FALLBACKS = LANDING_FALLBACKS.jewels;
 
 export async function generateMetadata(): Promise<Metadata> {
   const snapshot = await getSiteContent();
@@ -38,13 +34,21 @@ export async function generateMetadata(): Promise<Metadata> {
   }
   const { seo } = snapshot.settings;
   const og = mediaUrlFromMap(snapshot.media, seo.og_image_media_id);
+  let metadataBase: URL | undefined;
+  if (seo.site_url) {
+    try {
+      metadataBase = new URL(seo.site_url);
+    } catch {
+      metadataBase = undefined;
+    }
+  }
   return {
     title: {
       default: seo.title || "Koda Siding",
       template: seo.title_template || "%s | Koda Siding",
     },
     description: seo.description,
-    metadataBase: seo.site_url ? new URL(seo.site_url) : undefined,
+    metadataBase,
     openGraph: og
       ? {
           title: seo.title || "Koda Siding",
@@ -104,24 +108,24 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
   const showPartners = settings.show_partners !== false;
 
   const heroImage =
-    mediaUrlFromMap(media, home.hero.image_media_id, "/landing/hero.webp")!;
+    mediaUrlFromMap(media, home.hero.image_media_id, LANDING_FALLBACKS.hero)!;
   const whyImage =
     mediaUrlFromMap(
       media,
       home.why_koda.image_media_id,
-      "/landing/why-koda.webp",
+      LANDING_FALLBACKS.whyKoda,
     )!;
   const quoteImage =
     mediaUrlFromMap(
       media,
       home.ctas.quote.image_media_id,
-      "/landing/cta-quote.webp",
+      LANDING_FALLBACKS.ctaQuote,
     )!;
   const dealerImage =
     mediaUrlFromMap(
       media,
       home.ctas.dealer.image_media_id,
-      "/landing/cta-dealer.webp",
+      LANDING_FALLBACKS.ctaDealer,
     )!;
 
   const partnerLogos: Record<string, string | null> = {};

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { HomeProfileJewel, HomeProfilesTeaser } from "@/lib/cms/types";
+import { isSvgMedia } from "@/lib/cms/is-svg-media";
+import { PROFILES_HREF, normalizeLinkHref } from "@/lib/cms/nav-slots";
 import { safeHref } from "@/lib/cms/safe-href";
 
 export function HomeProfilesSection({
@@ -12,6 +14,8 @@ export function HomeProfilesSection({
   jewels: HomeProfileJewel[];
   images: Record<string, string>;
 }) {
+  const ctaHref = normalizeLinkHref(safeHref(teaser.cta_href, PROFILES_HREF));
+
   return (
     <section
       id="profiles"
@@ -47,14 +51,23 @@ export function HomeProfilesSection({
                 className="flex flex-col items-center gap-4 text-center lg:gap-6"
               >
                 <div className="relative h-36 w-full sm:h-44 lg:h-54.5 lg:max-w-76">
-                  <Image
-                    src={src}
-                    alt={jewel.name}
-                    fill
-                    quality={95}
-                    sizes="(max-width: 1024px) 45vw, 304px"
-                    className="object-contain"
-                  />
+                  {isSvgMedia(src) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={src}
+                      alt={jewel.name}
+                      className="absolute inset-0 size-full object-contain"
+                    />
+                  ) : (
+                    <Image
+                      src={src}
+                      alt={jewel.name}
+                      fill
+                      quality={95}
+                      sizes="(max-width: 1024px) 45vw, 304px"
+                      className="object-contain"
+                    />
+                  )}
                 </div>
                 <div className="flex flex-col gap-1 text-text-inverse">
                   <p className="text-base font-bold lg:text-xl">{jewel.name}</p>
@@ -68,7 +81,7 @@ export function HomeProfilesSection({
         </ul>
 
         <Link
-          href={safeHref(teaser.cta_href, "/#profiles")}
+          href={ctaHref}
           className="inline-flex items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
         >
           {teaser.cta_label}

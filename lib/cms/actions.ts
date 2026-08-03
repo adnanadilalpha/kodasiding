@@ -7,6 +7,7 @@ import {
   FOOTER_LINK_SLOTS,
   NAV_LINK_SLOTS,
   linksFromLabelFields,
+  normalizeLinkHref,
 } from "@/lib/cms/nav-slots";
 import { isSocialIconId } from "@/lib/cms/social-icons";
 import { safeHref } from "@/lib/cms/safe-href";
@@ -22,6 +23,8 @@ async function afterPublicChange(
   await syncPublicSite(userId);
   for (const path of adminPaths) revalidatePath(path);
   revalidatePath("/");
+  revalidatePath("/profiles");
+  revalidatePath("/find-dealer");
 }
 
 export async function saveHomeHero(formData: FormData) {
@@ -31,7 +34,9 @@ export async function saveHomeHero(formData: FormData) {
     headline: String(formData.get("hero_headline") ?? ""),
     subheadline: String(formData.get("hero_subheadline") ?? ""),
     cta_label: String(formData.get("hero_cta_label") ?? ""),
-    cta_href: safeHref(String(formData.get("hero_cta_href") ?? ""), "/#profiles"),
+    cta_href: normalizeLinkHref(
+      safeHref(String(formData.get("hero_cta_href") ?? ""), "/profiles"),
+    ),
     image_media_id: emptyToNull(formData.get("hero_image_media_id")),
   };
   const { error } = await supabase.from("page_home").update({ hero }).eq("id", 1);
@@ -82,9 +87,11 @@ export async function saveHomeProfilesTeaser(formData: FormData) {
     headline: String(formData.get("profiles_headline") ?? ""),
     body: String(formData.get("profiles_body") ?? ""),
     cta_label: String(formData.get("profiles_cta_label") ?? ""),
-    cta_href: safeHref(
-      String(formData.get("profiles_cta_href") ?? ""),
-      "/#profiles",
+    cta_href: normalizeLinkHref(
+      safeHref(
+        String(formData.get("profiles_cta_href") ?? ""),
+        "/profiles",
+      ),
     ),
   };
   const { error } = await supabase
@@ -214,11 +221,28 @@ export async function saveFooterSettings(formData: FormData) {
 export async function saveSeoSettings(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
+  const rawSiteUrl = String(formData.get("seo_site_url") ?? "")
+    .trim()
+    .replace(/\/$/, "");
+  let site_url = "";
+  if (rawSiteUrl) {
+    try {
+      const withScheme = /^https?:\/\//i.test(rawSiteUrl)
+        ? rawSiteUrl
+        : `https://${rawSiteUrl}`;
+      const parsed = new URL(withScheme);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        site_url = parsed.origin;
+      }
+    } catch {
+      site_url = "";
+    }
+  }
   const seo = {
     title: String(formData.get("seo_title") ?? ""),
     title_template: String(formData.get("seo_title_template") ?? ""),
     description: String(formData.get("seo_description") ?? ""),
-    site_url: String(formData.get("seo_site_url") ?? "").replace(/\/$/, ""),
+    site_url,
     og_image_media_id: emptyToNull(formData.get("seo_og_image_media_id")),
   };
   const { error } = await supabase
@@ -307,7 +331,9 @@ export async function saveProfilesSection(formData: FormData) {
   const patch: Record<string, unknown> =
     sheet === "vertical"
       ? { vertical: payload }
-      : { horizontal: payload };
+      : sheet === "universal"
+        ? { universal: payload }
+        : { horizontal: payload };
 
   if (formData.has("quote_cta_label") || formData.has("manual_cta_label")) {
     patch.quote_cta_label = String(formData.get("quote_cta_label") ?? "");
@@ -374,6 +400,10 @@ export async function upsertProfile(formData: FormData) {
     orientation: String(formData.get("orientation") ?? "horizontal"),
     description: String(formData.get("description") ?? ""),
     hover_copy: String(formData.get("hover_copy") ?? ""),
+    exposure: String(formData.get("exposure") ?? ""),
+    face_width: String(formData.get("face_width") ?? ""),
+    depth: String(formData.get("depth") ?? ""),
+    install: String(formData.get("install") ?? ""),
     image_media_id: emptyToNull(formData.get("image_media_id")),
     diagram_media_id: emptyToNull(formData.get("diagram_media_id")),
     sort_order: Number(formData.get("sort_order") ?? 0),
@@ -405,8 +435,22 @@ export async function upsertDealer(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
-  const latRaw = String(formData.get("lat") ?? "");
-  const lngRaw = String(formData.get("lng") ?? "");
+  const latRaw = String(formData.get("lat") ?? "").trim();
+  const lngRaw = String(formData.get("lng") ?? "").trim();
+
+  function parseCoord(raw: string, min: number, max: number): number | null {
+    if (!raw) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < min || n > max) return null;
+    return n;
+  }
+
+  const lat = parseCoord(latRaw, -90, 90);
+  const lng = parseCoord(lngRaw, -180, 180);
+  // Require both or neither — a single coord is useless; reject Null Island
+  const coordsValid =
+    lat != null && lng != null && !(lat === 0 && lng === 0);
+
   const row = {
     name: String(formData.get("name") ?? ""),
     address: String(formData.get("address") ?? ""),
@@ -415,8 +459,8 @@ export async function upsertDealer(formData: FormData) {
     postal: String(formData.get("postal") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     website: String(formData.get("website") ?? ""),
-    lat: latRaw === "" ? null : Number(latRaw),
-    lng: lngRaw === "" ? null : Number(lngRaw),
+    lat: coordsValid ? lat : null,
+    lng: coordsValid ? lng : null,
     is_published: formData.get("is_published") === "on",
   };
 

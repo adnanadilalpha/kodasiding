@@ -4,6 +4,7 @@ import {
   saveHomeWhyKoda,
 } from "@/lib/cms/actions";
 import { getMediaMap } from "@/lib/cms/media";
+import { LANDING_FALLBACKS, jewelFallback } from "@/lib/cms/landing-fallbacks";
 import { createClient } from "@/lib/supabase/server";
 import type { HomeWhyKoda, PageHome } from "@/lib/cms/types";
 import { HomeProfilesEditor } from "@/components/admin/home-profiles-editor";
@@ -110,7 +111,7 @@ export default async function HomeEditorPage({
                       <TextInput
                         name="hero_cta_href"
                         defaultValue={page.hero.cta_href}
-                        placeholder="/#profiles"
+                        placeholder="/profiles"
                       />
                     </Field>
                   </FieldGroup>
@@ -131,6 +132,7 @@ export default async function HomeEditorPage({
                         ? media[page.hero.image_media_id]?.bucket
                         : "media"
                     }
+                    fallbackSrc={LANDING_FALLBACKS.hero}
                   />
                 </FieldGroup>
               </div>
@@ -220,6 +222,7 @@ export default async function HomeEditorPage({
                         ? media[why.image_media_id]?.path
                         : null
                     }
+                    fallbackSrc={LANDING_FALLBACKS.whyKoda}
                   />
                 </FieldGroup>
               </div>
@@ -235,11 +238,12 @@ export default async function HomeEditorPage({
           content: (
             <HomeProfilesEditor
               teaser={page.profiles_teaser}
-              jewels={jewelRows.map((jewel) => ({
+              jewels={jewelRows.map((jewel, i) => ({
                 ...jewel,
                 imagePath: jewel.image_media_id
                   ? media[jewel.image_media_id]?.path
                   : null,
+                fallbackSrc: jewelFallback(i),
               }))}
             />
           ),
@@ -305,6 +309,7 @@ export default async function HomeEditorPage({
                           ? media[page.ctas.quote.image_media_id]?.path
                           : null
                       }
+                      fallbackSrc={LANDING_FALLBACKS.ctaQuote}
                     />
                   </div>
                 </FieldGroup>
@@ -362,6 +367,7 @@ export default async function HomeEditorPage({
                           ? media[page.ctas.dealer.image_media_id]?.path
                           : null
                       }
+                      fallbackSrc={LANDING_FALLBACKS.ctaDealer}
                     />
                   </div>
                 </FieldGroup>

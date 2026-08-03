@@ -8,6 +8,7 @@ import {
   saveHomeProfilesTeaser,
   upsertHomeProfileJewel,
 } from "@/lib/cms/actions";
+import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
@@ -30,6 +31,7 @@ export type HomeJewelItem = {
   sort_order: number;
   is_published: boolean;
   imagePath?: string | null;
+  fallbackSrc?: string | null;
 };
 
 /** Home Profiles section — Figma jewels only (not Profiles page catalog) */
@@ -117,7 +119,7 @@ export function HomeProfilesEditor({
               <TextInput
                 name="profiles_cta_href"
                 defaultValue={teaser.cta_href}
-                placeholder="/#profiles"
+                placeholder="/profiles"
               />
             </Field>
           </FieldGroup>
@@ -143,9 +145,12 @@ export function HomeProfilesEditor({
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {jewels.map((jewel) => {
-              const src = jewel.imagePath
-                ? publicMediaUrl(jewel.imagePath) ?? null
-                : null;
+              const src =
+                (jewel.imagePath
+                  ? publicMediaUrl(jewel.imagePath)
+                  : null) ||
+                jewel.fallbackSrc ||
+                null;
               return (
                 <li
                   key={jewel.id}
@@ -154,16 +159,27 @@ export function HomeProfilesEditor({
                   <button
                     type="button"
                     onClick={() => setEditId(jewel.id)}
-                    className="flex h-32 items-center justify-center border-b border-brand-primary/10 bg-white px-3 py-4 transition hover:bg-brand-primary/5"
+                    className="flex h-32 items-center justify-center border-b border-brand-primary/10 bg-bg-secondary px-3 py-4 transition hover:bg-brand-primary/5"
                   >
                     {src ? (
-                      <Image
-                        src={src}
-                        alt={jewel.name}
-                        width={160}
-                        height={96}
-                        className="max-h-20 w-auto object-contain"
-                      />
+                      isSvgMedia(src) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={src}
+                          alt={jewel.name}
+                          width={160}
+                          height={96}
+                          className="max-h-20 w-auto object-contain"
+                        />
+                      ) : (
+                        <Image
+                          src={src}
+                          alt={jewel.name}
+                          width={160}
+                          height={96}
+                          className="max-h-20 w-auto object-contain"
+                        />
+                      )
                     ) : (
                       <span className="rounded-md border border-dashed border-brand-primary/20 bg-bg-primary px-3 py-6 text-xs text-text-primary/40">
                         No cutout
@@ -238,7 +254,11 @@ export function HomeProfilesEditor({
         {editing ? (
           <form action={onEdit} className="flex flex-col gap-5">
             <input type="hidden" name="id" value={editing.id} />
-            <JewelForm jewel={editing} nextSort={editing.sort_order} />
+            <JewelForm
+              key={editing.id}
+              jewel={editing}
+              nextSort={editing.sort_order}
+            />
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={pending}>
                 {pending ? "Saving…" : "Save"}
@@ -295,9 +315,11 @@ function JewelForm({
         <MediaField
           name="image_media_id"
           label="Profile cutout"
+          hint="JPG · PNG · WebP · SVG"
           compact
           initialId={jewel?.image_media_id}
           initialPath={jewel?.imagePath}
+          fallbackSrc={jewel?.fallbackSrc}
         />
       </FieldGroup>
       <label className="flex items-center gap-2 text-sm text-text-secondary">

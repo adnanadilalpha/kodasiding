@@ -1,6 +1,17 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useId, useState } from "react";
 import type { HomeVideosSection, Video } from "@/lib/cms/types";
-import { safeHref } from "@/lib/cms/safe-href";
+import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
+import {
+  isDirectVideoUrl,
+  parseVimeoId,
+  parseYoutubeId,
+  vimeoEmbedUrl,
+  youtubeEmbedUrl,
+  youtubeThumbnailUrl,
+} from "@/lib/cms/video-url";
 
 export function HomeVideosSectionBlock({
   section,
@@ -13,6 +24,11 @@ export function HomeVideosSectionBlock({
   thumbs: Record<string, string | null>;
   manualUrl: string | null;
 }) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const active = activeId
+    ? (videos.find((v) => v.id === activeId) ?? null)
+    : null;
+
   return (
     <section
       id="installation"
@@ -34,7 +50,7 @@ export function HomeVideosSectionBlock({
         {videos.length ? (
           <ul className="grid gap-10 lg:grid-cols-2 lg:gap-8">
             {videos.map((video) => {
-              const thumb = video.thumbnail_media_id
+              const cmsThumb = video.thumbnail_media_id
                 ? thumbs[video.thumbnail_media_id]
                 : null;
               return (
@@ -42,25 +58,16 @@ export function HomeVideosSectionBlock({
                   <h3 className="text-xl leading-[1.1] font-bold text-text-primary sm:text-2xl lg:text-[28px]">
                     {video.title}
                   </h3>
-                  <a
-                    href={
-                      video.video_url
-                        ? safeHref(video.video_url, "") || undefined
-                        : undefined
-                    }
-                    target={video.video_url ? "_blank" : undefined}
-                    rel={video.video_url ? "noreferrer" : undefined}
-                    className="relative flex aspect-video items-center justify-center overflow-hidden rounded-[20px] bg-bg-secondary"
+                  <button
+                    type="button"
+                    onClick={() => setActiveId(video.id)}
+                    className="relative flex aspect-video items-center justify-center overflow-hidden rounded-[20px] bg-bg-secondary text-left transition hover:opacity-95"
+                    aria-label={`Play ${video.title}`}
                   >
-                    {thumb ? (
-                      <Image
-                        src={thumb}
-                        alt=""
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                        className="object-cover"
-                      />
-                    ) : null}
+                    <VideoThumbnail
+                      video={video}
+                      cmsThumb={cmsThumb ?? null}
+                    />
                     <span className="relative z-10 flex size-14 items-center justify-center rounded-full bg-white shadow-md sm:size-16 lg:size-18">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -71,7 +78,7 @@ export function HomeVideosSectionBlock({
                         className="ml-0.5 size-5 sm:size-6"
                       />
                     </span>
-                  </a>
+                  </button>
                 </li>
               );
             })}
@@ -93,6 +100,164 @@ export function HomeVideosSectionBlock({
           </span>
         )}
       </div>
+
+      {active ? (
+        <VideoPlayerModal video={active} onClose={() => setActiveId(null)} />
+      ) : null}
     </section>
+  );
+}
+
+function VideoThumbnail({
+  video,
+  cmsThumb,
+}: {
+  video: Video;
+  cmsThumb: string | null;
+}) {
+  const ytId = parseYoutubeId(video.video_url);
+  const direct = isDirectVideoUrl(video.video_url);
+  const ytThumb = ytId ? youtubeThumbnailUrl(ytId) : null;
+  const imageThumb = cmsThumb || ytThumb;
+
+  if (imageThumb) {
+    return (
+      <Image
+        src={imageThumb}
+        alt=""
+        fill
+        sizes="(max-width: 1024px) 100vw, 50vw"
+        className="object-cover"
+      />
+    );
+  }
+
+  // No CMS thumb — show first frame of uploaded / direct video
+  if (direct && video.video_url) {
+    return (
+      <video
+        src={video.video_url}
+        muted
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 size-full object-cover"
+        aria-hidden
+        onLoadedMetadata={(e) => {
+          const el = e.currentTarget;
+          try {
+            el.currentTime = 0.1;
+          } catch {
+            // Some browsers block seek until more data loads
+          }
+        }}
+      />
+    );
+  }
+
+  return null;
+}
+
+function VideoPlayerModal({
+  video,
+  onClose,
+}: {
+  video: Video;
+  onClose: () => void;
+}) {
+  const titleId = useId();
+  const [entered, setEntered] = useState(false);
+  const ytId = parseYoutubeId(video.video_url);
+  const vimeoId = parseVimeoId(video.video_url);
+  const direct = isDirectVideoUrl(video.video_url);
+
+  useEffect(() => {
+    const unlock = lockBodyScroll();
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => {
+      unlock();
+      cancelAnimationFrame(id);
+    };
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-brand-primary-active/55 p-4 backdrop-blur-[2px] transition-opacity duration-300 sm:p-8 ${
+        entered ? "opacity-100" : "opacity-0"
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={`relative w-full max-w-4xl origin-center overflow-hidden rounded-lg bg-brand-primary-active shadow-lg transition duration-300 ease-out ${
+          entered
+            ? "translate-y-0 scale-100 opacity-100"
+            : "translate-y-3 scale-[0.98] opacity-0"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+          <h2
+            id={titleId}
+            className="min-w-0 truncate font-display text-sm font-semibold text-text-inverse uppercase sm:text-base"
+          >
+            {video.title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-8 shrink-0 items-center justify-center text-text-inverse"
+            aria-label="Close"
+          >
+            <span className="relative block size-4" aria-hidden>
+              <span className="absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2 rotate-45 bg-current" />
+              <span className="absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2 -rotate-45 bg-current" />
+            </span>
+          </button>
+        </div>
+
+        <div className="relative aspect-video w-full bg-black">
+          {ytId ? (
+            <iframe
+              title={video.title}
+              src={youtubeEmbedUrl(ytId, true)}
+              className="absolute inset-0 size-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          ) : vimeoId ? (
+            <iframe
+              title={video.title}
+              src={vimeoEmbedUrl(vimeoId, true)}
+              className="absolute inset-0 size-full border-0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+            />
+          ) : direct && video.video_url ? (
+            <video
+              src={video.video_url}
+              controls
+              autoPlay
+              playsInline
+              className="absolute inset-0 size-full object-contain"
+            />
+          ) : (
+            <p className="absolute inset-0 flex items-center justify-center text-sm text-white/70">
+              Video unavailable
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

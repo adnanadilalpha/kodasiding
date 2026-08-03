@@ -1,5 +1,6 @@
 import type { MediaAsset, SiteSnapshotPayload } from "@/lib/cms/types";
 import { LIVE_SNAPSHOT_STATUS, SITE_CACHE_TAG } from "@/lib/cms/constants";
+import { compareProfiles } from "@/lib/cms/profile-sort";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateTag } from "next/cache";
 
@@ -39,7 +40,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     supabase
       .from("profiles")
       .select(
-        "id, slug, name, reveal, orientation, description, hover_copy, image_media_id, diagram_media_id, sort_order, is_published, show_on_home",
+        "id, slug, name, reveal, orientation, description, hover_copy, exposure, face_width, depth, install, image_media_id, diagram_media_id, sort_order, is_published, show_on_home",
       )
       .eq("is_published", true)
       .order("sort_order"),
@@ -94,7 +95,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     page_profiles: pageProfilesRes.data,
     partners: partnersRes.data ?? [],
     home_profile_jewels: jewelsRes.data ?? [],
-    profiles: profilesRes.data ?? [],
+    profiles: [...(profilesRes.data ?? [])].sort(compareProfiles),
     dealers: dealersRes.data ?? [],
     videos: videosRes.data ?? [],
     documents: documentsRes.data ?? [],
@@ -110,20 +111,36 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
 export async function syncPublicSite(userId?: string | null) {
   const supabase = await createClient();
   const payload = await buildSnapshotPayload();
-
-  await supabase
-    .from("site_snapshots")
-    .delete()
-    .eq("status", LIVE_SNAPSHOT_STATUS);
-
-  const { error } = await supabase.from("site_snapshots").insert({
+  const row = {
     status: LIVE_SNAPSHOT_STATUS,
     payload,
     published_at: payload.published_at,
     published_by: userId ?? null,
-  });
+  };
 
-  if (error) throw new Error(error.message);
+  // Update in place so a failed insert never leaves the live site blank.
+  const { data: existing, error: selectError } = await supabase
+    .from("site_snapshots")
+    .select("id")
+    .eq("status", LIVE_SNAPSHOT_STATUS)
+    .maybeSingle();
+
+  if (selectError) throw new Error(selectError.message);
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from("site_snapshots")
+      .update({
+        payload: row.payload,
+        published_at: row.published_at,
+        published_by: row.published_by,
+      })
+      .eq("id", existing.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("site_snapshots").insert(row);
+    if (error) throw new Error(error.message);
+  }
 
   revalidateTag(SITE_CACHE_TAG, "max");
   return payload;

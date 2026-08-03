@@ -1,4 +1,5 @@
 import { getMediaMap } from "@/lib/cms/media";
+import { compareProfiles } from "@/lib/cms/profile-sort";
 import { createClient } from "@/lib/supabase/server";
 import type { PageProfiles, ProfileSheetCopy } from "@/lib/cms/types";
 import { ProfileSheetEditor } from "@/components/admin/profiles-editor";
@@ -9,6 +10,9 @@ const defaultSheet = (headline: string): ProfileSheetCopy => ({
   helper: "Hover on profile to learn more",
 });
 
+const PROFILE_SELECT =
+  "id, slug, name, reveal, orientation, description, hover_copy, exposure, face_width, depth, install, image_media_id, diagram_media_id, sort_order, is_published, show_on_home";
+
 export default async function ProfilesPage({
   searchParams,
 }: {
@@ -18,12 +22,7 @@ export default async function ProfilesPage({
   const supabase = await createClient();
   const [{ data: page }, { data: profiles }] = await Promise.all([
     supabase.from("page_profiles").select("*").eq("id", 1).single(),
-    supabase
-      .from("profiles")
-      .select(
-        "id, slug, name, reveal, orientation, description, hover_copy, image_media_id, diagram_media_id, sort_order, is_published, show_on_home",
-      )
-      .order("sort_order"),
+    supabase.from("profiles").select(PROFILE_SELECT).order("sort_order"),
   ]);
 
   const pageProfiles = page as PageProfiles | null;
@@ -31,6 +30,8 @@ export default async function ProfilesPage({
     defaultSheet("Horizontal profiles")) as ProfileSheetCopy;
   const vertical = (pageProfiles?.vertical ??
     defaultSheet("Vertical profiles")) as ProfileSheetCopy;
+  const universal = (pageProfiles?.universal ??
+    defaultSheet("Universal profiles")) as ProfileSheetCopy;
 
   const media = await getMediaMap([
     ...(profiles ?? []).map((p) => p.image_media_id),
@@ -39,6 +40,10 @@ export default async function ProfilesPage({
 
   const mapped = (profiles ?? []).map((profile) => ({
     ...profile,
+    exposure: profile.exposure ?? "",
+    face_width: profile.face_width ?? "",
+    depth: profile.depth ?? "",
+    install: profile.install ?? "",
     imagePath: profile.image_media_id
       ? media[profile.image_media_id]?.path
       : null,
@@ -47,10 +52,15 @@ export default async function ProfilesPage({
       : null,
   }));
 
-  const horizontalProfiles = mapped.filter(
-    (p) => p.orientation === "horizontal",
-  );
-  const verticalProfiles = mapped.filter((p) => p.orientation === "vertical");
+  const horizontalProfiles = mapped
+    .filter((p) => p.orientation === "horizontal")
+    .sort(compareProfiles);
+  const verticalProfiles = mapped
+    .filter((p) => p.orientation === "vertical")
+    .sort(compareProfiles);
+  const universalProfiles = mapped
+    .filter((p) => p.orientation === "universal")
+    .sort(compareProfiles);
 
   return (
     <SectionShell
@@ -78,6 +88,18 @@ export default async function ProfilesPage({
               orientation="vertical"
               sheet={vertical}
               profiles={verticalProfiles}
+            />
+          ),
+        },
+        {
+          id: "universal",
+          label: "Universal",
+          count: universalProfiles.length,
+          content: (
+            <ProfileSheetEditor
+              orientation="universal"
+              sheet={universal}
+              profiles={universalProfiles}
               showCtas
               quoteCtaLabel={pageProfiles?.quote_cta_label ?? "Request a quote"}
               manualCtaLabel={

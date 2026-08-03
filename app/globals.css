@@ -140,11 +140,22 @@ body {
   animation: quote-alert-in 0.25s ease-out both;
 }
 
-/* Hide Google reCAPTCHA v3 badge — branding disclosed in the quote form. */
+/* reCAPTCHA — badge hidden; disclosure remains on quote form */
 .grecaptcha-badge {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* Leaflet — keep map chrome under site overlays */
+.leaflet-container {
+  font: inherit;
+  background: #c8dff0;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85) !important;
+  font-size: 11px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -23,6 +23,7 @@ import {
   formatBytes,
 } from "@/lib/quote/constants";
 import { validateQuoteEmail } from "@/lib/quote/validate-email";
+import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
 
 type QuoteContextValue = {
   open: boolean;
@@ -146,11 +147,10 @@ function QuoteModal() {
   const busy = view === "submitting";
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlock = lockBodyScroll();
     const id = requestAnimationFrame(() => setEntered(true));
     return () => {
-      document.body.style.overflow = prev;
+      unlock();
       cancelAnimationFrame(id);
     };
   }, []);

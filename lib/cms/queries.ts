@@ -40,7 +40,7 @@ async function fetchLiveSnapshot(): Promise<SiteSnapshotPayload | null> {
  */
 export const getSiteContent = unstable_cache(
   fetchLiveSnapshot,
-  ["site-live-snapshot-v5"],
+  ["site-live-snapshot-v7"],
   { tags: [SITE_CACHE_TAG], revalidate: false },
 );
 
