@@ -102,9 +102,6 @@ export default async function ProfilesPage({
               profiles={universalProfiles}
               showCtas
               quoteCtaLabel={pageProfiles?.quote_cta_label ?? "Request a quote"}
-              manualCtaLabel={
-                pageProfiles?.manual_cta_label ?? "Download manual"
-              }
             />
           ),
         },

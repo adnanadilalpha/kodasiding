@@ -4,7 +4,10 @@ import imageCompression from "browser-image-compression";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { registerMediaAsset } from "@/lib/cms/actions";
+import {
+  cleanupUnreferencedMedia,
+  registerMediaAsset,
+} from "@/lib/cms/actions";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { publicMediaUrl } from "@/lib/cms/urls";
 
@@ -80,6 +83,9 @@ export function MediaField({
     if (!file) return;
     setLoading(true);
     setStatus(isSvgFile(file) ? "Preparing SVG…" : "Compressing…");
+
+    const previousId = mediaId;
+    const savedId = initialId ?? "";
 
     try {
       const supabase = createClient();
@@ -159,6 +165,12 @@ export function MediaField({
       setPreviewUrl(publicMediaUrl(path, "media"));
       setPreviewIsSvg(ext === "svg");
       setStatus("Ready");
+
+      // Drop intermediate uploads that never got saved (A→B→C leaves B orphaned).
+      // Keep the currently-saved asset until the form saves successfully.
+      if (previousId && previousId !== savedId) {
+        void cleanupUnreferencedMedia([previousId]);
+      }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -167,11 +179,16 @@ export function MediaField({
   }
 
   function clear() {
+    const previousId = mediaId;
+    const savedId = initialId ?? "";
     setMediaId("");
     setPreviewUrl(fallbackSrc || null);
     setPreviewIsSvg(isSvgMedia(fallbackSrc));
     setStatus(null);
     if (inputRef.current) inputRef.current.value = "";
+    if (previousId && previousId !== savedId) {
+      void cleanupUnreferencedMedia([previousId]);
+    }
   }
 
   const frameClass = fillSibling

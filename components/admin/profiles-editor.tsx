@@ -139,39 +139,20 @@ function ProfileTileForm({
           </Field>
         </FieldGroup>
 
-        <div className="grid gap-5 sm:grid-cols-2 sm:items-stretch">
-          <FieldGroup title="3D cutout" className="min-w-0 self-stretch">
-            <MediaField
-              name="image_media_id"
-              label="Cutout"
-              hint="JPG · PNG · WebP · SVG"
-              compact
-              initialId={profile?.image_media_id}
-              initialPath={profile?.imagePath}
-            />
-          </FieldGroup>
-          <FieldGroup title="Diagram" className="min-w-0 self-stretch">
-            <MediaField
-              name="diagram_media_id"
-              label="Cross-section"
-              hint="JPG · PNG · WebP · SVG"
-              compact
-              initialId={profile?.diagram_media_id}
-              initialPath={profile?.diagramPath}
-            />
-          </FieldGroup>
-        </div>
+        <FieldGroup title="3D cutout">
+          <MediaField
+            name="image_media_id"
+            label="Cutout"
+            hint="JPG · PNG · WebP · SVG · Shown on the profile tile"
+            compact
+            initialId={profile?.image_media_id}
+            initialPath={profile?.imagePath}
+          />
+        </FieldGroup>
       </div>
 
       <div className={tab === "details" ? "flex flex-col gap-5" : "hidden"}>
-        <FieldGroup title="Specs" columns={2}>
-          <Field label="Exposure">
-            <TextInput
-              name="exposure"
-              defaultValue={profile?.exposure}
-              placeholder='0" / course'
-            />
-          </Field>
+        <FieldGroup title="Specs" columns={3}>
           <Field label="Face width">
             <TextInput
               name="face_width"
@@ -195,6 +176,8 @@ function ProfileTileForm({
           </Field>
         </FieldGroup>
 
+        <input type="hidden" name="exposure" value={profile?.exposure ?? ""} />
+
         <FieldGroup title="Description">
           <Field label="Description">
             <TextArea
@@ -204,6 +187,17 @@ function ProfileTileForm({
               placeholder="Shown in the Learn more modal"
             />
           </Field>
+        </FieldGroup>
+
+        <FieldGroup title="Cross-section">
+          <MediaField
+            name="diagram_media_id"
+            label="Diagram"
+            hint="JPG · PNG · WebP · SVG · Shown in the Learn more modal"
+            compact
+            initialId={profile?.diagram_media_id}
+            initialPath={profile?.diagramPath}
+          />
         </FieldGroup>
       </div>
 
@@ -229,14 +223,12 @@ export function ProfileSheetEditor({
   profiles,
   showCtas = false,
   quoteCtaLabel = "Request a quote",
-  manualCtaLabel = "Download manual",
 }: {
   orientation: SheetOrientation;
   sheet: SheetCopy;
   profiles: ProfileItem[];
   showCtas?: boolean;
   quoteCtaLabel?: string;
-  manualCtaLabel?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -310,19 +302,12 @@ export function ProfileSheetEditor({
         </FieldGroup>
 
         {showCtas ? (
-          <FieldGroup title="Page CTAs" columns={2}>
+          <FieldGroup title="Page CTAs">
             <Field label="Quote button">
               <TextInput
                 name="quote_cta_label"
                 defaultValue={quoteCtaLabel}
                 placeholder="Request a quote"
-              />
-            </Field>
-            <Field label="Manual button">
-              <TextInput
-                name="manual_cta_label"
-                defaultValue={manualCtaLabel}
-                placeholder="Download manual"
               />
             </Field>
           </FieldGroup>
@@ -350,9 +335,6 @@ export function ProfileSheetEditor({
                 const cutout = profile.imagePath
                   ? publicMediaUrl(profile.imagePath) ?? null
                   : null;
-                const diagram = profile.diagramPath
-                  ? publicMediaUrl(profile.diagramPath) ?? null
-                  : null;
                 return (
                   <li
                     key={profile.id}
@@ -361,20 +343,13 @@ export function ProfileSheetEditor({
                     <button
                       type="button"
                       onClick={() => setEditId(profile.id)}
-                      className="flex h-28 items-center justify-center gap-2 bg-bg-secondary px-3 py-3 transition hover:bg-bg-secondary/80"
+                      className="flex h-28 items-center justify-center bg-bg-secondary px-3 py-3 transition hover:bg-bg-secondary/80"
                     >
                       {cutout ? (
                         <Thumb src={cutout} width={72} height={88} />
                       ) : (
                         <span className="text-xs text-text-primary/30">
                           No cutout
-                        </span>
-                      )}
-                      {diagram ? (
-                        <Thumb src={diagram} width={56} height={88} />
-                      ) : (
-                        <span className="text-xs text-text-primary/30">
-                          No diagram
                         </span>
                       )}
                     </button>
@@ -421,7 +396,7 @@ export function ProfileSheetEditor({
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title={`Add ${orientation} tile`}
-        description="Tile media and Learn more details."
+        description="Tile shows the cutout; Details holds specs, description, and cross-section."
         size="lg"
       >
         <form action={onAdd} className="flex flex-col gap-5">
@@ -449,7 +424,7 @@ export function ProfileSheetEditor({
         open={Boolean(editing)}
         onClose={() => setEditId(null)}
         title="Edit tile"
-        description="Switch tabs for tile media or Learn more details."
+        description="Tile shows the cutout; Details holds specs, description, and cross-section."
         size="lg"
       >
         {editing ? (

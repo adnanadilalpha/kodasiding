@@ -11,7 +11,7 @@ import {
 import { compareProfiles } from "@/lib/cms/profile-sort";
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
-import { mediaUrlFromMap, publicMediaUrl } from "@/lib/cms/urls";
+import { mediaUrlFromMap } from "@/lib/cms/urls";
 import type { PageProfiles, Profile } from "@/lib/cms/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,7 +40,7 @@ const defaultPage: PageProfiles = {
     helper: "Hover on profile to learn more",
   },
   quote_cta_label: "Request a quote",
-  manual_cta_label: "Download manual",
+  manual_cta_label: "",
 };
 
 export default async function ProfilesPage() {
@@ -59,7 +59,7 @@ export default async function ProfilesPage() {
     );
   }
 
-  const { settings, page_profiles, profiles, documents, media } = snapshot;
+  const { settings, page_profiles, profiles, media } = snapshot;
   const page: PageProfiles = {
     ...defaultPage,
     ...page_profiles,
@@ -96,12 +96,6 @@ export default async function ProfilesPage() {
     catalog.filter((p) => p.orientation === "universal"),
   );
 
-  const manualDoc =
-    documents.find((d) => d.key === "installation_manual") ?? null;
-  const manualUrl = manualDoc
-    ? publicMediaUrl(manualDoc.storage_path, manualDoc.bucket)
-    : null;
-
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
       <div className="flex min-h-full flex-col bg-bg-primary">
@@ -112,7 +106,6 @@ export default async function ProfilesPage() {
             horizontal={horizontal}
             vertical={vertical}
             universal={universal}
-            manualUrl={manualUrl}
           />
         </main>
         <SiteFooter footer={footer} logoAlt={nav.logo_alt} />

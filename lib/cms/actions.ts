@@ -3,6 +3,10 @@
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  deleteOrphanedMediaAssets,
+  releasedMediaIds,
+} from "@/lib/cms/delete-orphaned-media";
+import {
   FIND_DEALER_HREF,
   FOOTER_LINK_SLOTS,
   NAV_LINK_SLOTS,
@@ -30,6 +34,12 @@ async function afterPublicChange(
 export async function saveHomeHero(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("hero")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevHero = previous?.hero as { image_media_id?: string | null } | null;
   const hero = {
     headline: String(formData.get("hero_headline") ?? ""),
     subheadline: String(formData.get("hero_subheadline") ?? ""),
@@ -41,6 +51,9 @@ export async function saveHomeHero(formData: FormData) {
   };
   const { error } = await supabase.from("page_home").update({ hero }).eq("id", 1);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevHero?.image_media_id], [hero.image_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -61,6 +74,14 @@ export async function saveHomePartnersTitle(formData: FormData) {
 export async function saveHomeWhyKoda(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("why_koda")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevWhy = previous?.why_koda as {
+    image_media_id?: string | null;
+  } | null;
   const features = [0, 1, 2].map((i) => ({
     number: String(formData.get(`feature_${i}_number`) ?? ""),
     title: String(formData.get(`feature_${i}_title`) ?? ""),
@@ -77,6 +98,9 @@ export async function saveHomeWhyKoda(formData: FormData) {
     .update({ why_koda })
     .eq("id", 1);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevWhy?.image_media_id], [why_koda.image_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -124,6 +148,15 @@ export async function saveHomeVideosSection(formData: FormData) {
 export async function saveHomeCtas(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("ctas")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevCtas = previous?.ctas as {
+    quote?: { image_media_id?: string | null };
+    dealer?: { image_media_id?: string | null };
+  } | null;
   const ctas = {
     show_dealer: formData.get("show_dealer") === "on",
     quote: {
@@ -145,6 +178,12 @@ export async function saveHomeCtas(formData: FormData) {
   };
   const { error } = await supabase.from("page_home").update({ ctas }).eq("id", 1);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [prevCtas?.quote?.image_media_id, prevCtas?.dealer?.image_media_id],
+      [ctas.quote.image_media_id, ctas.dealer.image_media_id],
+    ),
+  );
   await afterPublicChange(admin.user_id, "/admin/home", "/admin/dealer");
 }
 
@@ -238,6 +277,12 @@ export async function saveSeoSettings(formData: FormData) {
       site_url = "";
     }
   }
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevSeo = previous?.seo as { og_image_media_id?: string | null } | null;
   const seo = {
     title: String(formData.get("seo_title") ?? ""),
     title_template: String(formData.get("seo_title_template") ?? ""),
@@ -250,6 +295,9 @@ export async function saveSeoSettings(formData: FormData) {
     .update({ seo })
     .eq("id", 1);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/settings");
 }
 
@@ -292,7 +340,14 @@ export async function upsertPartner(formData: FormData) {
   const sort_order = Number(formData.get("sort_order") ?? 0);
   const is_published = formData.get("is_published") === "on";
 
+  let previousLogo: string | null = null;
   if (id) {
+    const { data: previous } = await supabase
+      .from("partners")
+      .select("logo_media_id")
+      .eq("id", id)
+      .maybeSingle();
+    previousLogo = previous?.logo_media_id ?? null;
     const { error } = await supabase
       .from("partners")
       .update({ logo_media_id, sort_order, is_published })
@@ -307,6 +362,9 @@ export async function upsertPartner(formData: FormData) {
     });
     if (error) throw new Error(error.message);
   }
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previousLogo], [logo_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -314,8 +372,16 @@ export async function deletePartner(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
+  const { data: previous } = await supabase
+    .from("partners")
+    .select("logo_media_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("partners").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previous?.logo_media_id], []),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -335,9 +401,8 @@ export async function saveProfilesSection(formData: FormData) {
         ? { universal: payload }
         : { horizontal: payload };
 
-  if (formData.has("quote_cta_label") || formData.has("manual_cta_label")) {
+  if (formData.has("quote_cta_label")) {
     patch.quote_cta_label = String(formData.get("quote_cta_label") ?? "");
-    patch.manual_cta_label = String(formData.get("manual_cta_label") ?? "");
   }
 
   const { error } = await supabase
@@ -360,7 +425,14 @@ export async function upsertHomeProfileJewel(formData: FormData) {
     is_published: formData.get("is_published") === "on",
   };
 
+  let previousImage: string | null = null;
   if (id) {
+    const { data: previous } = await supabase
+      .from("home_profile_jewels")
+      .select("image_media_id")
+      .eq("id", id)
+      .maybeSingle();
+    previousImage = previous?.image_media_id ?? null;
     const { error } = await supabase
       .from("home_profile_jewels")
       .update(row)
@@ -370,17 +442,29 @@ export async function upsertHomeProfileJewel(formData: FormData) {
     const { error } = await supabase.from("home_profile_jewels").insert(row);
     if (error) throw new Error(error.message);
   }
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previousImage], [row.image_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
 export async function deleteHomeProfileJewel(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const { data: previous } = await supabase
+    .from("home_profile_jewels")
+    .select("image_media_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("home_profile_jewels")
     .delete()
-    .eq("id", String(formData.get("id") ?? ""));
+    .eq("id", id);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previous?.image_media_id], []),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -410,24 +494,48 @@ export async function upsertProfile(formData: FormData) {
     is_published: formData.get("is_published") === "on",
   };
 
+  let previousImage: string | null = null;
+  let previousDiagram: string | null = null;
   if (id) {
+    const { data: previous } = await supabase
+      .from("profiles")
+      .select("image_media_id, diagram_media_id")
+      .eq("id", id)
+      .maybeSingle();
+    previousImage = previous?.image_media_id ?? null;
+    previousDiagram = previous?.diagram_media_id ?? null;
     const { error } = await supabase.from("profiles").update(row).eq("id", id);
     if (error) throw new Error(error.message);
   } else {
     const { error } = await supabase.from("profiles").insert(row);
     if (error) throw new Error(error.message);
   }
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previousImage, previousDiagram],
+      [row.image_media_id, row.diagram_media_id],
+    ),
+  );
   await afterPublicChange(admin.user_id, "/admin/profiles");
 }
 
 export async function deleteProfile(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
-  const { error } = await supabase
+  const id = String(formData.get("id") ?? "");
+  const { data: previous } = await supabase
     .from("profiles")
-    .delete()
-    .eq("id", String(formData.get("id") ?? ""));
+    .select("image_media_id, diagram_media_id")
+    .eq("id", id)
+    .maybeSingle();
+  const { error } = await supabase.from("profiles").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previous?.image_media_id, previous?.diagram_media_id],
+      [],
+    ),
+  );
   await afterPublicChange(admin.user_id, "/admin/profiles");
 }
 
@@ -498,24 +606,40 @@ export async function upsertVideo(formData: FormData) {
     is_published: formData.get("is_published") === "on",
   };
 
+  let previousThumb: string | null = null;
   if (id) {
+    const { data: previous } = await supabase
+      .from("videos")
+      .select("thumbnail_media_id")
+      .eq("id", id)
+      .maybeSingle();
+    previousThumb = previous?.thumbnail_media_id ?? null;
     const { error } = await supabase.from("videos").update(row).eq("id", id);
     if (error) throw new Error(error.message);
   } else {
     const { error } = await supabase.from("videos").insert(row);
     if (error) throw new Error(error.message);
   }
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previousThumb], [row.thumbnail_media_id]),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
 export async function deleteVideo(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
-  const { error } = await supabase
+  const id = String(formData.get("id") ?? "");
+  const { data: previous } = await supabase
     .from("videos")
-    .delete()
-    .eq("id", String(formData.get("id") ?? ""));
+    .select("thumbnail_media_id")
+    .eq("id", id)
+    .maybeSingle();
+  const { error } = await supabase.from("videos").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([previous?.thumbnail_media_id], []),
+  );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
@@ -568,6 +692,12 @@ export async function registerMediaAsset(input: {
   // a media id — still sync so alt/path maps stay current if referenced.
   await afterPublicChange(admin.user_id, "/admin/home", "/admin/profiles");
   return data;
+}
+
+/** Best-effort cleanup for media no longer referenced after replace/clear. */
+export async function cleanupUnreferencedMedia(ids: string[]) {
+  await requireAdmin();
+  await deleteOrphanedMediaAssets(ids);
 }
 
 export async function createAdminAccount(formData: FormData) {
