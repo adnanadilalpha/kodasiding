@@ -23,7 +23,7 @@ export function PopularPagesChart({ pages }: PopularPagesChartProps) {
         <span className="font-medium tracking-[0.08em] uppercase">
           Top pages by users
         </span>
-        <span>{formatCount(totalVisitors)} users</span>
+        <span>{formatCount(totalVisitors)} users across top pages</span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-x-6">

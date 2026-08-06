@@ -41,28 +41,6 @@ export type AnalyticsEventRow = {
   uniqueVisitors: number;
 };
 
-export type TrafficSourceRow = {
-  key: string;
-  label: string;
-  channel: string;
-  visitors: number;
-  sessions: number;
-};
-
-export type CountryRow = {
-  code: string;
-  label: string;
-  visitors: number;
-  views: number;
-};
-
-export type DeviceRow = {
-  device: string;
-  label: string;
-  visitors: number;
-  sessions: number;
-};
-
 export type AnalyticsDashboardData = {
   activeUsers: AnalyticsStatCard;
   totalVisitors: AnalyticsStatCard;
@@ -70,14 +48,10 @@ export type AnalyticsDashboardData = {
   pageViews: AnalyticsStatCard;
   avgTimeOnSite: AnalyticsStatCard;
   bounceRate: AnalyticsStatCard;
-  engagementRate: AnalyticsStatCard;
   visitorsOverTime: AnalyticsTimePoint[];
   popularPages: PopularPageRow[];
   visitorLocations: VisitorLocationRow[];
   topEvents: AnalyticsEventRow[];
-  trafficSources: TrafficSourceRow[];
-  countries: CountryRow[];
-  devices: DeviceRow[];
   range: AnalyticsRange;
   metric: AnalyticsMetric;
   hasData: boolean;

@@ -1,22 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import {
-  IconActivity,
-  IconChartBar,
-  IconClock,
-  IconPercentage,
-  IconTrendingUp,
-  IconUsers,
-} from "@tabler/icons-react";
+import { IconActivity, IconTrendingUp } from "@tabler/icons-react";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { PopularPagesChart } from "@/components/admin/dashboard/PopularPagesChart";
 import { TopEventsChart } from "@/components/admin/dashboard/TopEventsChart";
-import {
-  CountriesChart,
-  DevicesChart,
-  TrafficSourcesChart,
-} from "@/components/admin/dashboard/TrafficBreakdownCharts";
 import { VisitorLocationsChart } from "@/components/admin/dashboard/VisitorLocationsChart";
 import { VisitorsChart } from "@/components/admin/dashboard/VisitorsChart";
 import type {
@@ -27,16 +15,16 @@ import type {
 import { createClient } from "@/lib/supabase/client";
 
 const RANGE_OPTIONS: Array<{ value: AnalyticsRange; label: string }> = [
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" },
-  { value: "90d", label: "Last 90 days" },
-  { value: "6m", label: "Last 6 months" },
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+  { value: "6m", label: "6 months" },
 ];
 
 const METRIC_OPTIONS: Array<{ value: AnalyticsMetric; label: string }> = [
   { value: "users", label: "Users" },
   { value: "sessions", label: "Sessions" },
-  { value: "views", label: "Views" },
+  { value: "views", label: "Page loads" },
 ];
 
 const PANEL_CARD_CLASS =
@@ -55,9 +43,9 @@ function DashboardPanel({
     <article className={PANEL_CARD_CLASS}>
       <header className="shrink-0">
         <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
-        {description ? (
-          <p className="mt-1 text-xs text-text-secondary">{description}</p>
-        ) : null}
+        <p className="mt-1 min-h-8 text-xs text-text-secondary">
+          {description ?? ""}
+        </p>
       </header>
       <div className="mt-5 flex min-h-70 flex-1 flex-col">{children}</div>
     </article>
@@ -156,18 +144,15 @@ export function AnalyticsSection({
   }, [range, metric, loadAnalytics]);
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.12em] text-text-secondary uppercase">
-            Reports overview
-          </p>
-          <h2 className="mt-1 text-base font-semibold text-text-primary">
-            Real-time audience
+          <h2 className="text-sm font-semibold text-text-primary">
+            Site analytics
           </h2>
-          <p className="mt-1 max-w-xl text-sm text-text-secondary">
-            First-party metrics from live site traffic only — users, sessions,
-            and views are deduplicated. No sample or estimated data.
+          <p className="mt-1 text-sm text-text-secondary">
+            Audience metrics are deduplicated by user and session. Page loads are
+            tracked separately and no longer inflate on refresh.
           </p>
         </div>
 
@@ -197,20 +182,8 @@ export function AnalyticsSection({
         </div>
       </div>
 
-      {!analytics.hasData ? (
-        <div className="rounded-[14px] border border-dashed border-black/10 bg-bg-secondary/60 px-6 py-10 text-center">
-          <p className="text-sm font-medium text-text-primary">
-            No traffic in this date range
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-            Open the public site and browse a few pages. Visits appear here as
-            they are recorded — nothing is simulated.
-          </p>
-        </div>
-      ) : null}
-
       <div
-        className={`grid items-stretch gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7 ${
+        className={`grid items-stretch gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 ${
           isLoading ? "opacity-60" : ""
         }`}
       >
@@ -227,92 +200,58 @@ export function AnalyticsSection({
           value={analytics.totalVisitors.value}
           trend={analytics.totalVisitors.trend}
           trendPositive={analytics.totalVisitors.trendPositive}
-          showTrendIcon={Boolean(analytics.totalVisitors.trend)}
-          icon={<IconUsers className="size-3.5" stroke={1.75} />}
+          icon={<IconTrendingUp className="size-3.5" stroke={1.75} />}
         />
         <AdminStatCard
           label={analytics.uniqueSessions.label}
           value={analytics.uniqueSessions.value}
           trend={analytics.uniqueSessions.trend}
           trendPositive={analytics.uniqueSessions.trendPositive}
-          showTrendIcon={Boolean(analytics.uniqueSessions.trend)}
         />
         <AdminStatCard
           label={analytics.pageViews.label}
           value={analytics.pageViews.value}
           trend={analytics.pageViews.trend}
           trendPositive={analytics.pageViews.trendPositive}
-          showTrendIcon={Boolean(analytics.pageViews.trend)}
-          icon={<IconChartBar className="size-3.5" stroke={1.75} />}
         />
         <AdminStatCard
           label={analytics.avgTimeOnSite.label}
           value={analytics.avgTimeOnSite.value}
-          icon={<IconClock className="size-3.5" stroke={1.75} />}
-        />
-        <AdminStatCard
-          label={analytics.engagementRate.label}
-          value={analytics.engagementRate.value}
-          icon={<IconTrendingUp className="size-3.5" stroke={1.75} />}
         />
         <AdminStatCard
           label={analytics.bounceRate.label}
           value={analytics.bounceRate.value}
-          icon={<IconPercentage className="size-3.5" stroke={1.75} />}
         />
       </div>
 
       <div className="grid items-stretch gap-4 lg:grid-cols-2">
         <DashboardPanel
           title="Audience over time"
-          description="Selected metric for the date range. Refresh does not inflate users or sessions."
+          description="Deduped audience metrics. Refreshing the site does not add users or sessions."
         >
           <VisitorsChart data={analytics.visitorsOverTime} metric={metric} />
         </DashboardPanel>
 
         <DashboardPanel
-          title="Pages and screens"
-          description="Ranked by users. Views shown separately."
+          title="Top pages"
+          description="Ranked by unique users. Loads are shown separately."
         >
           <PopularPagesChart pages={analytics.popularPages} />
         </DashboardPanel>
 
         <DashboardPanel
-          title="Traffic sources"
-          description="Direct, organic search, referral, and social — from real referrers."
-        >
-          <TrafficSourcesChart sources={analytics.trafficSources} />
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Countries"
-          description="Users by country of visit."
-        >
-          <CountriesChart countries={analytics.countries} />
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Devices"
-          description="Desktop, mobile, and tablet from the visitor user-agent."
-        >
-          <DevicesChart devices={analytics.devices} />
-        </DashboardPanel>
-
-        <DashboardPanel
-          title="Events"
-          description="Tracked site actions (CTAs, quote, dealer, nav)."
+          title="CTA & action events"
+          description="Tracked actions from navigation, quotes, and dealer flows."
         >
           <TopEventsChart events={analytics.topEvents} />
         </DashboardPanel>
 
-        <div className="lg:col-span-2">
-          <DashboardPanel
-            title="User locations"
-            description="Click a city to zoom. Ranked by unique users."
-          >
-            <VisitorLocationsChart locations={analytics.visitorLocations} />
-          </DashboardPanel>
-        </div>
+        <DashboardPanel
+          title="Visitor locations"
+          description="Click a city to zoom the map. Ranked by unique visitors."
+        >
+          <VisitorLocationsChart locations={analytics.visitorLocations} />
+        </DashboardPanel>
       </div>
     </section>
   );

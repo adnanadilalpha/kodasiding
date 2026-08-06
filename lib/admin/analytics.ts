@@ -20,14 +20,10 @@ import type {
   AnalyticsRange,
   AnalyticsStatCard,
   AnalyticsTimePoint,
-  CountryRow,
-  DeviceRow,
   PopularPageRow,
-  TrafficSourceRow,
   VisitorLocationRow,
 } from "@/lib/admin/types";
 import { formatCount, formatDuration, formatPercentChange } from "@/lib/admin/format";
-import { classifyTrafficSource } from "@/lib/analytics/traffic-source";
 
 export type PageViewRow = {
   session_id: string;
@@ -526,106 +522,6 @@ export function computeBounceRate(views: PageViewRow[]): number {
   return Math.round((bounces / sessions.size) * 100);
 }
 
-/** GA4-style engagement rate: non-bounce sessions / sessions. */
-export function computeEngagementRate(views: PageViewRow[]): number {
-  return Math.max(0, 100 - computeBounceRate(views));
-}
-
-export function buildTrafficSources(
-  views: PageViewRow[],
-  limit = 8,
-): TrafficSourceRow[] {
-  const grouped = new Map<
-    string,
-    { label: string; channel: string; visitors: Set<string>; sessions: Set<string> }
-  >();
-
-  for (const view of views) {
-    const source = classifyTrafficSource(view.referrer);
-    const entry =
-      grouped.get(source.key) ??
-      {
-        label: source.label,
-        channel: source.channel,
-        visitors: new Set<string>(),
-        sessions: new Set<string>(),
-      };
-    entry.visitors.add(getVisitorDedupKey(view));
-    entry.sessions.add(view.session_id);
-    grouped.set(source.key, entry);
-  }
-
-  return [...grouped.entries()]
-    .map(([key, entry]) => ({
-      key,
-      label: entry.label,
-      channel: entry.channel,
-      visitors: entry.visitors.size,
-      sessions: entry.sessions.size,
-    }))
-    .sort((a, b) => b.sessions - a.sessions || b.visitors - a.visitors)
-    .slice(0, limit);
-}
-
-export function buildCountries(views: PageViewRow[], limit = 8): CountryRow[] {
-  const grouped = new Map<
-    string,
-    { visitors: Set<string>; views: number }
-  >();
-
-  for (const view of views) {
-    const code = view.country_code?.trim().toUpperCase();
-    if (!code || code === "ZZ") continue;
-    const entry =
-      grouped.get(code) ?? { visitors: new Set<string>(), views: 0 };
-    entry.visitors.add(getVisitorDedupKey(view));
-    entry.views += view.view_count ?? 1;
-    grouped.set(code, entry);
-  }
-
-  return [...grouped.entries()]
-    .map(([code, entry]) => ({
-      code,
-      label: formatCountryLabel(code),
-      visitors: entry.visitors.size,
-      views: entry.views,
-    }))
-    .sort((a, b) => b.visitors - a.visitors || b.views - a.views)
-    .slice(0, limit);
-}
-
-export function buildDevices(views: PageViewRow[]): DeviceRow[] {
-  const grouped = new Map<
-    string,
-    { visitors: Set<string>; sessions: Set<string> }
-  >();
-
-  for (const view of views) {
-    const device = (view.device_type || "desktop").toLowerCase();
-    const entry =
-      grouped.get(device) ??
-      { visitors: new Set<string>(), sessions: new Set<string>() };
-    entry.visitors.add(getVisitorDedupKey(view));
-    entry.sessions.add(view.session_id);
-    grouped.set(device, entry);
-  }
-
-  const labels: Record<string, string> = {
-    desktop: "Desktop",
-    mobile: "Mobile",
-    tablet: "Tablet",
-  };
-
-  return [...grouped.entries()]
-    .map(([device, entry]) => ({
-      device,
-      label: labels[device] ?? device,
-      visitors: entry.visitors.size,
-      sessions: entry.sessions.size,
-    }))
-    .sort((a, b) => b.sessions - a.sessions);
-}
-
 function trendCopy(
   change: string | null,
 ): { trend?: string; trendPositive?: boolean } {
@@ -648,14 +544,10 @@ export async function buildAnalyticsSummary(
   pageViews: AnalyticsStatCard;
   avgTimeOnSite: AnalyticsStatCard;
   bounceRate: AnalyticsStatCard;
-  engagementRate: AnalyticsStatCard;
   visitorsOverTime: AnalyticsTimePoint[];
   popularPages: PopularPageRow[];
   visitorLocations: VisitorLocationRow[];
   topEvents: AnalyticsEventRow[];
-  trafficSources: TrafficSourceRow[];
-  countries: CountryRow[];
-  devices: DeviceRow[];
   hasData: boolean;
 }> {
   const audienceViews = filterAudiencePageViews(allViews);
@@ -694,17 +586,16 @@ export async function buildAnalyticsSummary(
   );
   const avgDuration = computeAvgSessionDuration(currentViews);
   const bounce = computeBounceRate(currentViews);
-  const engagement = computeEngagementRate(currentViews);
   const visitorLocations = await buildVisitorLocations(currentViews);
 
   return {
     activeUsers: {
-      label: "Active users",
+      label: "Active Users",
       value: formatCount(activeUsers),
       trend: "Last 30 minutes",
     },
     totalVisitors: {
-      label: "Users",
+      label: "Unique Visitors",
       value: formatCount(totalVisitors),
       ...visitorTrend,
     },
@@ -714,29 +605,22 @@ export async function buildAnalyticsSummary(
       ...sessionTrend,
     },
     pageViews: {
-      label: "Views",
+      label: "Page Loads",
       value: formatCount(totalPageViews),
       ...pageViewTrend,
     },
     avgTimeOnSite: {
-      label: "Avg. engagement time",
+      label: "Avg. Time on Site",
       value: formatDuration(avgDuration),
     },
     bounceRate: {
-      label: "Bounce rate",
+      label: "Bounce Rate",
       value: `${bounce}%`,
-    },
-    engagementRate: {
-      label: "Engagement rate",
-      value: `${engagement}%`,
     },
     visitorsOverTime: buildVisitorsOverTime(currentViews, range, "users"),
     popularPages: buildPopularPages(currentViews),
     visitorLocations,
     topEvents: buildTopEvents(currentEvents),
-    trafficSources: buildTrafficSources(currentViews),
-    countries: buildCountries(currentViews),
-    devices: buildDevices(currentViews),
     hasData: currentViews.length > 0,
   };
 }
