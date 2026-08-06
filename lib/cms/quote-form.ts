@@ -61,12 +61,6 @@ export const QUOTE_FILE_TYPE_OPTIONS = [
     extensions: [".txt"],
     mime: ["text/plain"],
   },
-  {
-    id: "zip" as const,
-    label: "ZIP",
-    extensions: [".zip"],
-    mime: ["application/zip", "application/x-zip-compressed"],
-  },
 ] as const;
 
 export type QuoteFileTypeOption = (typeof QUOTE_FILE_TYPE_OPTIONS)[number];

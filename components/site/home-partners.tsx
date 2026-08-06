@@ -37,6 +37,7 @@ export function HomePartnersSection({
                       alt={partner.name}
                       width={140}
                       height={28}
+                      loading="eager"
                       className="h-5.5 w-auto object-contain"
                     />
                   ) : (

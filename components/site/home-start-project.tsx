@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { HomeCtas } from "@/lib/cms/types";
 import { safeHref } from "@/lib/cms/safe-href";
 import { useQuote } from "@/components/site/quote-provider";
+import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
 
 export function HomeStartProject({
   ctas,
@@ -18,6 +19,13 @@ export function HomeStartProject({
   const { openQuote } = useQuote();
   const showDealer = ctas.show_dealer === true;
 
+  function trackCta(label: string, placement: string) {
+    void trackAnalyticsEvent("cta_click", {
+      label,
+      metadata: { placement },
+    });
+  }
+
   if (!showDealer) {
     return (
       <QuoteOnlyCinematic
@@ -25,7 +33,10 @@ export function HomeStartProject({
         body={ctas.quote.body}
         ctaLabel={ctas.quote.cta_label}
         image={quoteImage}
-        onCta={openQuote}
+        onCta={() => {
+          trackCta(ctas.quote.cta_label, "contact-quote");
+          openQuote();
+        }}
       />
     );
   }
@@ -51,7 +62,10 @@ export function HomeStartProject({
             headline={ctas.quote.headline}
             body={ctas.quote.body}
             ctaLabel={ctas.quote.cta_label}
-            onCta={openQuote}
+            onCta={() => {
+              trackCta(ctas.quote.cta_label, "contact-quote");
+              openQuote();
+            }}
           />
           <div
             className="hidden flex-col items-center justify-center px-6 lg:flex"
@@ -71,6 +85,7 @@ export function HomeStartProject({
             body={ctas.dealer.body}
             ctaLabel={ctas.dealer.cta_label}
             href={safeHref(ctas.dealer.cta_href, "/find-dealer")}
+            onCta={() => trackCta(ctas.dealer.cta_label, "contact-dealer")}
             tone="dark"
           />
         </div>
@@ -104,7 +119,7 @@ function QuoteOnlyCinematic({
       <div className="relative order-1 min-h-72 overflow-hidden sm:min-h-80 lg:order-0 lg:min-h-full">
         <Image
           src={image}
-          alt=""
+          alt={headline}
           fill
           quality={95}
           sizes="(max-width: 1024px) 100vw, 45vw"
@@ -163,7 +178,7 @@ function CtaCard({
       <div className="absolute inset-0">
         <Image
           src={image}
-          alt=""
+          alt={headline}
           fill
           quality={95}
           sizes="(max-width: 1024px) 100vw, 40vw"
@@ -180,7 +195,11 @@ function CtaCard({
             <p className="text-lg leading-[1.4] text-[#5a5848]">{body}</p>
           </div>
           {href ? (
-            <Link href={href} className={buttonClass}>
+            <Link
+              href={href}
+              onClick={onCta}
+              className={buttonClass}
+            >
               {ctaLabel} →
             </Link>
           ) : (

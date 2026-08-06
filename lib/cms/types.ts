@@ -32,8 +32,7 @@ export type QuoteAttachmentFileTypeId =
   | "heic"
   | "doc"
   | "xls"
-  | "txt"
-  | "zip";
+  | "txt";
 
 export type QuoteFormFieldKind =
   | "full_name"
@@ -89,12 +88,19 @@ export type SiteSeo = {
   og_image_media_id: string | null;
 };
 
+export type GeoAccess = {
+  enabled: boolean;
+  allowed_countries: string[];
+};
+
 export type SiteSettings = {
   id: number;
   nav: SiteNav;
   footer: SiteFooter;
   quote_form: QuoteFormSettings;
   seo: SiteSeo;
+  /** Public site country allowlist (US+CA default). */
+  geo_access?: GeoAccess;
   partners_title: string;
   /** When false, partners strip is hidden on the public home page. */
   show_partners: boolean;

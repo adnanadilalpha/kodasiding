@@ -58,11 +58,19 @@ export function QuoteProvider({
 }) {
   const [open, setOpen] = useState(false);
   const normalized = normalizeQuoteFormSettings(form);
+
+  function openQuote() {
+    setOpen(true);
+    void import("@/lib/analytics/track-client").then(({ trackAnalyticsEvent }) => {
+      void trackAnalyticsEvent("quote_open", { label: "Request a quote" });
+    });
+  }
+
   return (
     <QuoteContext.Provider
       value={{
         open,
-        openQuote: () => setOpen(true),
+        openQuote,
         closeQuote: () => setOpen(false),
         form: normalized,
       }}
@@ -275,6 +283,13 @@ function QuoteModal() {
 
       await wait(280);
       setView("success");
+      void import("@/lib/analytics/track-client").then(
+        ({ trackAnalyticsEvent }) => {
+          void trackAnalyticsEvent("quote_submit", {
+            label: "Quote submitted",
+          });
+        },
+      );
     } catch (err) {
       setView("form");
       setError(err instanceof Error ? err.message : "Something went wrong.");

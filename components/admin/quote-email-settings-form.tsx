@@ -29,7 +29,7 @@ const PRESET_OPTIONS: { id: MailPreset; label: string; hint: string }[] = [
 ];
 
 const inputClass =
-  "h-11 w-full rounded-md border border-brand-primary/12 bg-white px-4 text-sm text-text-primary outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/15";
+  "w-full rounded-md border border-brand-primary/12 bg-bg-primary px-3 py-2.5 text-base leading-snug text-text-primary outline-none transition placeholder:text-text-primary/35 focus:border-brand-primary/35";
 
 export function QuoteEmailSettingsForm({
   initial,
@@ -99,8 +99,9 @@ export function QuoteEmailSettingsForm({
     }
     return (
       <>
-        Enter the SMTP details from your email host (cPanel, hosting provider,
-        etc.).
+        For custom / hosting email: fill your email and password above, then enter
+        the SMTP host, port, and SSL setting from your provider (cPanel, hosting
+        panel, etc.). Host and port alone are not enough.
       </>
     );
   }, [preset]);
@@ -188,7 +189,7 @@ export function QuoteEmailSettingsForm({
   }
 
   return (
-    <div className="rounded-xl border border-brand-primary/8 bg-bg-primary/80 p-5 sm:p-6">
+    <div className="min-w-0 w-full overflow-hidden rounded-xl border border-brand-primary/8 bg-bg-primary/80 p-4 sm:p-6">
       <h2 className="text-base font-semibold text-text-primary">
         Connect your email
       </h2>
@@ -203,22 +204,22 @@ export function QuoteEmailSettingsForm({
         </div>
       ) : null}
       {message ? (
-        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm wrap-break-word text-emerald-800">
           {message}
         </div>
       ) : null}
       {error ? (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm wrap-break-word text-red-700">
           {error}
         </div>
       ) : null}
 
-      <form className="flex flex-col gap-5" onSubmit={onSave}>
-        <div>
+      <form className="flex w-full min-w-0 flex-col gap-5" onSubmit={onSave}>
+        <div className="min-w-0">
           <p className="mb-2 text-sm text-text-primary/70">
             1. Which email do you use?
           </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {PRESET_OPTIONS.map((option) => (
               <button
                 key={option.id}
@@ -227,7 +228,7 @@ export function QuoteEmailSettingsForm({
                 className={`rounded-lg border px-3 py-3 text-left transition ${
                   preset === option.id
                     ? "border-brand-primary bg-brand-primary/5 ring-2 ring-brand-primary/20"
-                    : "border-brand-primary/10 bg-white hover:bg-bg-secondary"
+                    : "border-brand-primary/10 bg-bg-primary hover:bg-bg-secondary"
                 }`}
               >
                 <span className="block text-sm font-semibold text-text-primary">
@@ -239,21 +240,23 @@ export function QuoteEmailSettingsForm({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-sm text-text-primary/55">{help}</p>
+          <p className="mt-2 text-sm wrap-break-word text-text-primary/55">
+            {help}
+          </p>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-text-primary">
+        <label className="flex items-start gap-2.5 text-sm text-text-primary">
           <input
             type="checkbox"
             checked={values.enabled}
             onChange={(e) => update("enabled", e.target.checked)}
-            className="size-4 rounded border-brand-primary/20"
+            className="mt-0.5 size-4 shrink-0 rounded border-brand-primary/20"
           />
-          Send me an email when someone requests a quote
+          <span>Send me an email when someone requests a quote</span>
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5">
+        <div className="grid w-full gap-4 sm:grid-cols-2">
+          <label className="flex min-w-0 flex-col gap-1.5">
             <span className="text-sm text-text-primary/70">
               2. Your email address
             </span>
@@ -267,7 +270,7 @@ export function QuoteEmailSettingsForm({
             />
           </label>
 
-          <label className="flex flex-col gap-1.5">
+          <label className="flex min-w-0 flex-col gap-1.5">
             <span className="text-sm text-text-primary/70">
               3. Password
               {hasSavedPassword ? (
@@ -277,7 +280,7 @@ export function QuoteEmailSettingsForm({
                 </span>
               ) : null}
             </span>
-            <div className="relative">
+            <div className="relative min-w-0">
               <input
                 type={showPass ? "text" : "password"}
                 value={values.smtp_pass}
@@ -287,7 +290,9 @@ export function QuoteEmailSettingsForm({
                     ? "••••••••••••"
                     : preset === "gmail" || preset === "yahoo"
                       ? "App Password"
-                      : "Email password"
+                      : preset === "other"
+                        ? "Mailbox / SMTP password"
+                        : "Email password"
                 }
                 autoComplete="new-password"
                 className={`${inputClass} pr-11`}
@@ -308,7 +313,7 @@ export function QuoteEmailSettingsForm({
           </label>
         </div>
 
-        <label className="flex flex-col gap-1.5">
+        <label className="flex min-w-0 flex-col gap-1.5">
           <span className="text-sm text-text-primary/70">
             4. Where should quote requests go?
           </span>
@@ -326,8 +331,15 @@ export function QuoteEmailSettingsForm({
         </label>
 
         {preset === "other" ? (
-          <div className="grid gap-4 rounded-lg border border-brand-primary/8 bg-bg-secondary p-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
+          <div className="grid w-full gap-4 rounded-lg border border-brand-primary/8 bg-bg-secondary p-4 sm:grid-cols-2">
+            <p className="text-sm text-text-primary/70 sm:col-span-2">
+              5. Mail server (from your email host)
+            </p>
+            <p className="-mt-2 text-xs text-text-primary/45 sm:col-span-2">
+              These settings only appear for Other. Gmail / Outlook / Yahoo fill
+              them automatically. You still need steps 2–4 above.
+            </p>
+            <label className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
               <span className="text-sm text-text-primary/70">
                 Mail server host
               </span>
@@ -339,7 +351,7 @@ export function QuoteEmailSettingsForm({
                 className={inputClass}
               />
             </label>
-            <label className="flex flex-col gap-1.5">
+            <label className="flex min-w-0 flex-col gap-1.5">
               <span className="text-sm text-text-primary/70">Port</span>
               <input
                 type="number"
@@ -350,40 +362,48 @@ export function QuoteEmailSettingsForm({
                 className={inputClass}
               />
             </label>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm text-text-primary">
+            <label className="flex items-start gap-2.5 text-sm text-text-primary sm:items-center sm:self-end sm:pb-2.5">
               <input
                 type="checkbox"
                 checked={values.smtp_secure}
                 onChange={(e) => update("smtp_secure", e.target.checked)}
-                className="size-4 rounded border-brand-primary/20"
+                className="mt-0.5 size-4 shrink-0 rounded border-brand-primary/20 sm:mt-0"
               />
-              Use SSL (usually port 465)
+              <span>Use SSL (usually port 465)</span>
             </label>
           </div>
         ) : null}
 
-        <label className="flex items-center gap-2 text-sm text-text-primary">
+        <label className="flex items-start gap-2.5 text-sm text-text-primary">
           <input
             type="checkbox"
             checked={values.reply_to_submitter}
             onChange={(e) => update("reply_to_submitter", e.target.checked)}
-            className="size-4 rounded border-brand-primary/20"
+            className="mt-0.5 size-4 shrink-0 rounded border-brand-primary/20"
           />
-          When I hit reply on the team email, answer the website visitor
+          <span>
+            When I hit reply on the team email, answer the website visitor
+          </span>
         </label>
 
-        <label className="flex items-center gap-2 text-sm text-text-primary">
+        <label className="flex items-start gap-2.5 text-sm text-text-primary">
           <input
             type="checkbox"
             checked={values.send_lead_confirmation}
             onChange={(e) => update("send_lead_confirmation", e.target.checked)}
-            className="size-4 rounded border-brand-primary/20"
+            className="mt-0.5 size-4 shrink-0 rounded border-brand-primary/20"
           />
-          Also email the person who submitted the form (confirmation)
+          <span>
+            Also email the person who submitted the form (confirmation)
+          </span>
         </label>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={busy !== null}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button
+            type="submit"
+            disabled={busy !== null}
+            className="w-full sm:w-auto"
+          >
             {busy === "save" ? "Saving…" : "Save"}
           </Button>
           <Button
@@ -391,7 +411,7 @@ export function QuoteEmailSettingsForm({
             variant="ghost"
             disabled={busy !== null}
             onClick={() => void onTest()}
-            className="gap-2"
+            className="w-full gap-2 sm:w-auto"
           >
             <IconSend size={16} stroke={1.5} />
             {busy === "test" ? "Sending…" : "Send test email"}

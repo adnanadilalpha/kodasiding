@@ -1,5 +1,6 @@
 import {
   saveFooterSettings,
+  saveGeoAccessSettings,
   saveNavSettings,
   saveSeoSettings,
 } from "@/lib/cms/actions";
@@ -11,9 +12,11 @@ import {
   NAV_LINK_SLOTS,
   labelsForSlots,
 } from "@/lib/cms/nav-slots";
+import { normalizeGeoAccess } from "@/lib/cms/geo-access";
 import { createClient } from "@/lib/supabase/server";
 import type { SiteSeo, SiteSettings } from "@/lib/cms/types";
 import { FooterSocialEditor } from "@/components/admin/footer-social-editor";
+import { GeoAccessEditor } from "@/components/admin/geo-access-editor";
 import { MediaField } from "@/components/admin/media-field";
 import {
   SectionShell,
@@ -41,7 +44,7 @@ function LinkLabelGrid({
   labels: string[];
 }) {
   return (
-    <ul className="grid gap-3.5 sm:grid-cols-2">
+    <ul className="grid w-full gap-3.5 sm:grid-cols-2">
       {slots.map((slot, i) => (
         <li key={slot.href} className="flex min-w-0 flex-col gap-1.5">
           <Field label="Name">
@@ -84,6 +87,7 @@ export default async function SettingsPage({
 
   const s = settings as SiteSettings;
   const seo: SiteSeo = { ...defaultSeo, ...s.seo };
+  const geoAccess = normalizeGeoAccess(s.geo_access);
   const navLabels = labelsForSlots(NAV_LINK_SLOTS, s.nav.links);
   const footerLabels = labelsForSlots(FOOTER_LINK_SLOTS, s.footer.links);
   const media = await getMediaMap([seo.og_image_media_id]);
@@ -93,10 +97,10 @@ export default async function SettingsPage({
       id: "navigation",
       label: "Navigation",
       content: (
-        <form action={saveNavSettings} className="flex flex-col gap-5">
-          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-            <div className="flex flex-col gap-5">
-              <FieldGroup title="Brand">
+        <form action={saveNavSettings} className="flex w-full flex-col gap-5">
+          <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-start">
+            <div className="flex min-w-0 flex-col gap-5">
+              <FieldGroup title="Brand" className="min-w-0 w-full">
                 <Field label="Logo alt text">
                   <TextInput
                     name="logo_alt"
@@ -106,8 +110,12 @@ export default async function SettingsPage({
                 </Field>
               </FieldGroup>
 
-              <FieldGroup title="Header buttons" columns={2}>
-                <div>
+              <FieldGroup
+                title="Header buttons"
+                columns={2}
+                className="min-w-0 w-full"
+              >
+                <div className="min-w-0">
                   <Field label="Find dealer">
                     <TextInput
                       name="find_dealer_label"
@@ -131,7 +139,7 @@ export default async function SettingsPage({
                     </span>
                   </label>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Field label="Quote button">
                     <TextInput
                       name="quote_label"
@@ -144,7 +152,10 @@ export default async function SettingsPage({
               </FieldGroup>
             </div>
 
-            <FieldGroup title="Menu names" className="lg:min-h-full">
+            <FieldGroup
+              title="Menu names"
+              className="min-w-0 w-full lg:min-h-full"
+            >
               <LinkLabelGrid
                 prefix="nav_label"
                 slots={NAV_LINK_SLOTS}
@@ -163,9 +174,9 @@ export default async function SettingsPage({
       id: "footer",
       label: "Footer",
       content: (
-        <form action={saveFooterSettings} className="flex flex-col gap-5">
-          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-            <FieldGroup title="Copy">
+        <form action={saveFooterSettings} className="flex w-full flex-col gap-5">
+          <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-start">
+            <FieldGroup title="Copy" className="min-w-0 w-full">
               <Field label="Tagline">
                 <TextInput
                   name="footer_tagline"
@@ -182,7 +193,7 @@ export default async function SettingsPage({
               </Field>
             </FieldGroup>
 
-            <FieldGroup title="Link names">
+            <FieldGroup title="Link names" className="min-w-0 w-full">
               <LinkLabelGrid
                 prefix="footer_label"
                 slots={FOOTER_LINK_SLOTS}
@@ -191,7 +202,7 @@ export default async function SettingsPage({
             </FieldGroup>
           </div>
 
-          <FieldGroup title="Social">
+          <FieldGroup title="Social" className="min-w-0 w-full">
             <FooterSocialEditor initial={s.footer.social ?? []} />
           </FieldGroup>
 
@@ -205,9 +216,9 @@ export default async function SettingsPage({
       id: "seo",
       label: "SEO",
       content: (
-        <form action={saveSeoSettings} className="flex flex-col gap-5">
-          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-            <FieldGroup title="Search">
+        <form action={saveSeoSettings} className="flex w-full flex-col gap-5">
+          <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-start">
+            <FieldGroup title="Search" className="min-w-0 w-full">
               <Field label="Default title">
                 <TextInput
                   name="seo_title"
@@ -222,7 +233,7 @@ export default async function SettingsPage({
                   placeholder="%s | Koda Siding"
                 />
               </Field>
-              <p className="text-sm text-text-primary/45">
+              <p className="text-sm wrap-break-word text-text-primary/45">
                 Use <code className="text-brand-primary">%s</code> for the page
                 title. Maps to Next.js{" "}
                 <code className="text-brand-primary">
@@ -240,7 +251,7 @@ export default async function SettingsPage({
               </Field>
             </FieldGroup>
 
-            <FieldGroup title="Sharing">
+            <FieldGroup title="Sharing" className="min-w-0 w-full">
               <Field label="Site URL">
                 <TextInput
                   name="seo_site_url"
@@ -248,9 +259,10 @@ export default async function SettingsPage({
                   placeholder="https://kodasiding.com"
                 />
               </Field>
-              <p className="text-sm text-text-primary/45">
-                Canonical origin for Open Graph URLs (
+              <p className="text-sm wrap-break-word text-text-primary/45">
+                Canonical origin for Open Graph, sitemap.xml, and robots.txt (
                 <code className="text-brand-primary">metadataBase</code>).
+                Required for absolute share URLs in production.
               </p>
               <MediaField
                 name="seo_og_image_media_id"
@@ -272,6 +284,16 @@ export default async function SettingsPage({
             <Button type="submit">Save</Button>
           </div>
         </form>
+      ),
+    },
+    {
+      id: "access",
+      label: "Access",
+      content: (
+        <GeoAccessEditor
+          initial={geoAccess}
+          action={saveGeoAccessSettings}
+        />
       ),
     },
   ];

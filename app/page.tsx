@@ -5,6 +5,10 @@ import { HomeProfilesSection } from "@/components/site/home-profiles";
 import { HomeStartProject } from "@/components/site/home-start-project";
 import { HomeVideosSectionBlock } from "@/components/site/home-videos";
 import { HomeWhyKodaSection } from "@/components/site/home-why-koda";
+import {
+  OrganizationJsonLd,
+  WebSiteJsonLd,
+} from "@/components/site/json-ld";
 import { QuoteProvider } from "@/components/site/quote-provider";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -15,6 +19,10 @@ import {
 } from "@/lib/cms/nav-slots";
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
+import {
+  buildPageMetadata,
+  loadSeoContext,
+} from "@/lib/cms/seo-metadata";
 import { mediaUrlFromMap, publicMediaUrl } from "@/lib/cms/urls";
 import { LANDING_FALLBACKS } from "@/lib/cms/landing-fallbacks";
 import type { SiteSnapshotPayload } from "@/lib/cms/types";
@@ -22,44 +30,8 @@ import type { SiteSnapshotPayload } from "@/lib/cms/types";
 const JEWEL_FALLBACKS = LANDING_FALLBACKS.jewels;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const snapshot = await getSiteContent();
-  if (!snapshot) {
-    return {
-      title: {
-        default: "Koda Siding",
-        template: "%s | Koda Siding",
-      },
-      description: "Engineered fiberglass siding",
-    };
-  }
-  const { seo } = snapshot.settings;
-  const og = mediaUrlFromMap(snapshot.media, seo.og_image_media_id);
-  let metadataBase: URL | undefined;
-  if (seo.site_url) {
-    try {
-      metadataBase = new URL(seo.site_url);
-    } catch {
-      metadataBase = undefined;
-    }
-  }
-  return {
-    title: {
-      default: seo.title || "Koda Siding",
-      template: seo.title_template || "%s | Koda Siding",
-    },
-    description: seo.description,
-    metadataBase,
-    openGraph: og
-      ? {
-          title: seo.title || "Koda Siding",
-          description: seo.description,
-          images: [{ url: og }],
-        }
-      : {
-          title: seo.title || "Koda Siding",
-          description: seo.description,
-        },
-  };
+  const { seo, ogImage } = await loadSeoContext();
+  return buildPageMetadata(seo, ogImage, { isHome: true, path: "/" });
 }
 
 export default async function HomePage() {
@@ -67,10 +39,13 @@ export default async function HomePage() {
 
   if (!snapshot) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center bg-bg-primary px-6 py-24 text-center">
-        <p className="font-display text-4xl font-bold tracking-wide text-brand-primary uppercase">
+      <main
+        id="main"
+        className="flex flex-1 flex-col items-center justify-center bg-bg-primary px-6 py-24 text-center"
+      >
+        <h1 className="font-display text-4xl font-bold tracking-wide text-brand-primary uppercase">
           Koda Siding
-        </p>
+        </h1>
         <p className="mt-4 max-w-md text-base text-text-primary/80">
           Content is not synced yet. Save any section in admin to go live.
         </p>
@@ -164,9 +139,11 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
 
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
+      <OrganizationJsonLd seo={settings.seo} logoUrl="/brand/logo-email-white.png" />
+      <WebSiteJsonLd seo={settings.seo} />
       <div className="flex min-h-full flex-col bg-bg-primary">
         <SiteHeader nav={nav} />
-        <main className="flex-1">
+        <main id="main" className="flex-1">
           <HomeHeroSection hero={home.hero} imageUrl={heroImage} />
           {showPartners ? (
             <HomePartnersSection

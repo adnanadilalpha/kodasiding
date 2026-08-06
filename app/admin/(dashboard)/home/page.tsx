@@ -14,7 +14,15 @@ import { SectionShell } from "@/components/admin/section-shell";
 import { VideosManualEditor } from "@/components/admin/videos-manual-editor";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
+import { FIND_DEALER_HREF, PROFILES_HREF } from "@/lib/cms/nav-slots";
 
+function LockedHint({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-2 truncate font-mono text-xs text-text-primary/40">
+      {children}
+    </p>
+  );
+}
 export default async function HomeEditorPage({
   searchParams,
 }: {
@@ -79,8 +87,8 @@ export default async function HomeEditorPage({
           id: "hero",
           label: "Hero",
           content: (
-            <form action={saveHomeHero} className="flex flex-col gap-5">
-              <div className="grid gap-5 lg:grid-cols-2 lg:items-stretch">
+            <form action={saveHomeHero} className="flex w-full flex-col gap-5">
+              <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-stretch">
                 <div className="flex min-w-0 flex-col gap-5">
                   <FieldGroup title="Copy">
                     <Field label="Headline">
@@ -107,13 +115,10 @@ export default async function HomeEditorPage({
                         placeholder="Explore Profiles"
                       />
                     </Field>
-                    <Field label="Link">
-                      <TextInput
-                        name="hero_cta_href"
-                        defaultValue={page.hero.cta_href}
-                        placeholder="/profiles"
-                      />
-                    </Field>
+                    <div className="min-w-0">
+                      <p className="text-sm text-text-primary/70">Link</p>
+                      <LockedHint>{PROFILES_HREF}</LockedHint>
+                    </div>
                   </FieldGroup>
                 </div>
                 <FieldGroup title="Media" className="min-w-0 self-stretch">
@@ -162,9 +167,9 @@ export default async function HomeEditorPage({
           id: "why-koda",
           label: "Why Koda",
           content: (
-            <form action={saveHomeWhyKoda} className="flex flex-col gap-5">
-              <div className="grid gap-5 lg:grid-cols-2 lg:items-stretch">
-                <div className="flex flex-col gap-5">
+            <form action={saveHomeWhyKoda} className="flex w-full flex-col gap-5">
+              <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-stretch">
+                <div className="flex min-w-0 flex-col gap-5">
                   <FieldGroup title="Copy">
                     <Field label="Headline">
                       <TextInput
@@ -184,7 +189,7 @@ export default async function HomeEditorPage({
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="grid gap-2 rounded-lg bg-bg-secondary/50 p-2 sm:grid-cols-[3.5rem_1fr_1.5fr]"
+                        className="grid w-full gap-2 rounded-lg bg-bg-secondary/50 p-2 sm:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.5fr)]"
                       >
                         <Field label="No.">
                           <TextInput
@@ -274,11 +279,11 @@ export default async function HomeEditorPage({
           id: "ctas",
           label: "Start project",
           content: (
-            <form action={saveHomeCtas} className="flex flex-col gap-5">
-              <div className="grid gap-5 lg:grid-cols-2">
+            <form action={saveHomeCtas} className="flex w-full flex-col gap-5">
+              <div className="grid w-full gap-5 lg:grid-cols-2">
                 <FieldGroup title="Quote card">
-                  <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
-                    <div className="flex flex-col gap-3.5">
+                  <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
+                    <div className="flex min-w-0 flex-col gap-3.5">
                       <Field label="Headline">
                         <TextInput
                           name="quote_headline"
@@ -329,8 +334,8 @@ export default async function HomeEditorPage({
                       </span>
                     </span>
                   </label>
-                  <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch">
-                    <div className="flex flex-col gap-3.5">
+                  <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
+                    <div className="flex min-w-0 flex-col gap-3.5">
                       <Field label="Headline">
                         <TextInput
                           name="dealer_headline"
@@ -350,12 +355,10 @@ export default async function HomeEditorPage({
                           defaultValue={page.ctas.dealer.cta_label}
                         />
                       </Field>
-                      <Field label="CTA link">
-                        <TextInput
-                          name="dealer_cta_href"
-                          defaultValue={page.ctas.dealer.cta_href ?? ""}
-                        />
-                      </Field>
+                      <div className="min-w-0">
+                        <p className="text-sm text-text-primary/70">CTA link</p>
+                        <LockedHint>{FIND_DEALER_HREF}</LockedHint>
+                      </div>
                     </div>
                     <MediaField
                       name="dealer_image_media_id"

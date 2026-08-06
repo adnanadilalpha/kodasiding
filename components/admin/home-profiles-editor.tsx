@@ -15,12 +15,12 @@ import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { PROFILES_HREF } from "@/lib/cms/nav-slots";
 
 type Teaser = {
   headline: string;
   body: string;
   cta_label: string;
-  cta_href: string;
 };
 
 export type HomeJewelItem = {
@@ -87,10 +87,10 @@ export function HomeProfilesEditor({
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <form action={onSaveCopy} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-          <FieldGroup title="Copy" className="min-w-0 flex-1">
+    <div className="flex w-full flex-col gap-5">
+      <form action={onSaveCopy} className="flex w-full flex-col gap-5">
+        <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-start">
+          <FieldGroup title="Copy" className="min-w-0 w-full flex-1">
             <Field label="Headline">
               <TextInput
                 name="profiles_headline"
@@ -107,7 +107,7 @@ export function HomeProfilesEditor({
               />
             </Field>
           </FieldGroup>
-          <FieldGroup title="Call to action" className="min-w-0 flex-1">
+          <FieldGroup title="Call to action" className="min-w-0 w-full flex-1">
             <Field label="Label">
               <TextInput
                 name="profiles_cta_label"
@@ -115,13 +115,12 @@ export function HomeProfilesEditor({
                 placeholder="Explore Profiles"
               />
             </Field>
-            <Field label="Link">
-              <TextInput
-                name="profiles_cta_href"
-                defaultValue={teaser.cta_href}
-                placeholder="/profiles"
-              />
-            </Field>
+            <div className="min-w-0">
+              <p className="text-sm text-text-primary/70">Link</p>
+              <p className="mt-2 truncate font-mono text-xs text-text-primary/40">
+                {PROFILES_HREF}
+              </p>
+            </div>
           </FieldGroup>
         </div>
         <div className="pt-1">
@@ -137,13 +136,13 @@ export function HomeProfilesEditor({
         </Button>
       </SectionHeaderAction>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col gap-3">
         {jewels.length === 0 ? (
           <div className="rounded-[9px] border border-brand-primary/12 bg-bg-primary px-4 py-8 text-center text-sm text-text-primary/45">
             No jewels yet.
           </div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {jewels.map((jewel) => {
               const src =
                 (jewel.imagePath
@@ -177,6 +176,7 @@ export function HomeProfilesEditor({
                           alt={jewel.name}
                           width={160}
                           height={96}
+                          loading="eager"
                           className="max-h-20 w-auto object-contain"
                         />
                       )

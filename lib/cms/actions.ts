@@ -10,11 +10,11 @@ import {
   FIND_DEALER_HREF,
   FOOTER_LINK_SLOTS,
   NAV_LINK_SLOTS,
+  PROFILES_HREF,
   linksFromLabelFields,
-  normalizeLinkHref,
 } from "@/lib/cms/nav-slots";
 import { isSocialIconId } from "@/lib/cms/social-icons";
-import { safeHref } from "@/lib/cms/safe-href";
+import { externalHref } from "@/lib/cms/safe-href";
 import { syncPublicSite } from "@/lib/cms/sync-public";
 import type { QuoteEmailSettings, QuoteFormSettings, SocialLink } from "@/lib/cms/types";
 import { revalidatePath } from "next/cache";
@@ -44,9 +44,8 @@ export async function saveHomeHero(formData: FormData) {
     headline: String(formData.get("hero_headline") ?? ""),
     subheadline: String(formData.get("hero_subheadline") ?? ""),
     cta_label: String(formData.get("hero_cta_label") ?? ""),
-    cta_href: normalizeLinkHref(
-      safeHref(String(formData.get("hero_cta_href") ?? ""), "/profiles"),
-    ),
+    // Internal routes are fixed in code — not editable in CMS.
+    cta_href: PROFILES_HREF,
     image_media_id: emptyToNull(formData.get("hero_image_media_id")),
   };
   const { error } = await supabase.from("page_home").update({ hero }).eq("id", 1);
@@ -111,12 +110,8 @@ export async function saveHomeProfilesTeaser(formData: FormData) {
     headline: String(formData.get("profiles_headline") ?? ""),
     body: String(formData.get("profiles_body") ?? ""),
     cta_label: String(formData.get("profiles_cta_label") ?? ""),
-    cta_href: normalizeLinkHref(
-      safeHref(
-        String(formData.get("profiles_cta_href") ?? ""),
-        "/profiles",
-      ),
-    ),
+    // Internal routes are fixed in code — not editable in CMS.
+    cta_href: PROFILES_HREF,
   };
   const { error } = await supabase
     .from("page_home")
@@ -169,10 +164,8 @@ export async function saveHomeCtas(formData: FormData) {
       headline: String(formData.get("dealer_headline") ?? ""),
       body: String(formData.get("dealer_body") ?? ""),
       cta_label: String(formData.get("dealer_cta_label") ?? ""),
-      cta_href: safeHref(
-        String(formData.get("dealer_cta_href") ?? ""),
-        FIND_DEALER_HREF,
-      ),
+      // Internal routes are fixed in code — not editable in CMS.
+      cta_href: FIND_DEALER_HREF,
       image_media_id: emptyToNull(formData.get("dealer_image_media_id")),
     },
   };
@@ -298,6 +291,41 @@ export async function saveSeoSettings(formData: FormData) {
   await deleteOrphanedMediaAssets(
     releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
   );
+  await afterPublicChange(admin.user_id, "/admin/settings");
+}
+
+export async function saveGeoAccessSettings(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { normalizeGeoAccess } = await import("@/lib/cms/geo-access");
+  const { invalidateGeoAccessCache } = await import(
+    "@/lib/cms/geo-access-server"
+  );
+
+  let countries: string[] = [];
+  try {
+    const parsed = JSON.parse(
+      String(formData.get("geo_allowed_countries") ?? "[]"),
+    );
+    if (Array.isArray(parsed)) {
+      countries = parsed.map((c) => String(c));
+    }
+  } catch {
+    countries = [];
+  }
+
+  const geo_access = normalizeGeoAccess({
+    enabled: String(formData.get("geo_enabled") ?? "1") === "1",
+    allowed_countries: countries,
+  });
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ geo_access })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+
+  invalidateGeoAccessCache();
   await afterPublicChange(admin.user_id, "/admin/settings");
 }
 
@@ -559,6 +587,14 @@ export async function upsertDealer(formData: FormData) {
   const coordsValid =
     lat != null && lng != null && !(lat === 0 && lng === 0);
 
+  const websiteRaw = String(formData.get("website") ?? "").trim();
+  const website = externalHref(websiteRaw, "");
+  if (websiteRaw && !website) {
+    throw new Error(
+      "Website must be a full external URL (https://…). Internal paths are not allowed.",
+    );
+  }
+
   const row = {
     name: String(formData.get("name") ?? ""),
     address: String(formData.get("address") ?? ""),
@@ -566,7 +602,7 @@ export async function upsertDealer(formData: FormData) {
     region: String(formData.get("region") ?? ""),
     postal: String(formData.get("postal") ?? ""),
     phone: String(formData.get("phone") ?? ""),
-    website: String(formData.get("website") ?? ""),
+    website,
     lat: coordsValid ? lat : null,
     lng: coordsValid ? lng : null,
     is_published: formData.get("is_published") === "on",
@@ -678,18 +714,51 @@ export async function registerMediaAsset(input: {
   if (!allowedBuckets.has(input.bucket)) {
     throw new Error("Invalid media bucket.");
   }
+  const path = input.path.trim();
+  if (
+    !path ||
+    path.includes("..") ||
+    path.includes("/") ||
+    path.includes("\\") ||
+    !/^[0-9A-Za-z._-]+$/.test(path)
+  ) {
+    throw new Error("Invalid media path.");
+  }
+
+  if (
+    input.mime_type === "image/svg+xml" ||
+    path.toLowerCase().endsWith(".svg")
+  ) {
+    const supabaseProbe = await createClient();
+    const { data: blob, error: downloadError } = await supabaseProbe.storage
+      .from(input.bucket)
+      .download(path);
+    if (downloadError || !blob) {
+      throw new Error("Could not verify SVG upload.");
+    }
+    const raw = await blob.text();
+    if (
+      /<script[\s>]/i.test(raw) ||
+      /\bon\w+\s*=/i.test(raw) ||
+      /javascript:/i.test(raw) ||
+      /<foreignObject[\s>]/i.test(raw)
+    ) {
+      await supabaseProbe.storage.from(input.bucket).remove([path]);
+      throw new Error("SVG contains scripts or unsafe content — upload blocked.");
+    }
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("media_assets")
     .insert({
       ...input,
+      path,
       created_by: admin.user_id,
     })
     .select("id, bucket, path, alt, width, height, bytes, mime_type, created_at")
     .single();
   if (error) throw new Error(error.message);
-  // Media register alone does not change public content until a section saves
-  // a media id — still sync so alt/path maps stay current if referenced.
   await afterPublicChange(admin.user_id, "/admin/home", "/admin/profiles");
   return data;
 }
@@ -736,6 +805,7 @@ export async function createAdminAccount(formData: FormData) {
   await service.from("admin_allowlist").upsert({ email, role });
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/admins");
 }
 
 export async function updateAdminRole(formData: FormData) {
@@ -753,6 +823,23 @@ export async function updateAdminRole(formData: FormData) {
   const { createServiceClient } = await import("@/lib/supabase/admin");
   const service = createServiceClient();
 
+  const { data: target } = await service
+    .from("admin_users")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (target?.role === "owner" && role !== "owner") {
+    const { count, error: countError } = await service
+      .from("admin_users")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "owner");
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) <= 1) {
+      throw new Error("Cannot demote the last owner account");
+    }
+  }
+
   const { error } = await service
     .from("admin_users")
     .update({ role })
@@ -764,6 +851,7 @@ export async function updateAdminRole(formData: FormData) {
   }
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/admins");
 }
 
 export async function updateAdminPassword(formData: FormData) {
@@ -801,6 +889,23 @@ export async function deleteAdminAccount(formData: FormData) {
   const { createServiceClient } = await import("@/lib/supabase/admin");
   const service = createServiceClient();
 
+  const { data: target } = await service
+    .from("admin_users")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (target?.role === "owner") {
+    const { count, error: countError } = await service
+      .from("admin_users")
+      .select("user_id", { count: "exact", head: true })
+      .eq("role", "owner");
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) <= 1) {
+      throw new Error("Cannot remove the last owner account");
+    }
+  }
+
   const { error: rowError } = await service
     .from("admin_users")
     .delete()
@@ -814,6 +919,7 @@ export async function deleteAdminAccount(formData: FormData) {
   const { error } = await service.auth.admin.deleteUser(userId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/admins");
 }
 
 function emptyToNull(value: FormDataEntryValue | null) {
@@ -834,9 +940,11 @@ function parseSocialLinks(raw: string): SocialLink[] {
       if (!item || typeof item !== "object") continue;
       const row = item as Record<string, unknown>;
       const icon = String(row.icon ?? "website");
+      const href = externalHref(String(row.href ?? "").trim(), "");
+      if (!href) continue;
       links.push({
         label: String(row.label ?? "").trim() || "Social",
-        href: safeHref(String(row.href ?? "").trim(), "#"),
+        href,
         icon: isSocialIconId(icon) ? icon : "website",
       });
     }
@@ -862,11 +970,21 @@ export async function saveQuoteEmailSettings(
   const {
     normalizeQuoteEmailSettings,
   } = await import("@/lib/email/quote-notify");
-  const { createServiceClient } = await import("@/lib/supabase/admin");
-  const adminClient = createServiceClient();
+  const supabase = await createClient();
   const next = normalizeQuoteEmailSettings(input);
 
-  const { data: existing } = await adminClient
+  const hostCheck = (await import("@/lib/email/smtp-host")).assertSafeSmtpHost(
+    next.smtp_host,
+  );
+  if (next.smtp_host.trim() && !hostCheck.ok) {
+    return { error: hostCheck.error };
+  }
+
+  const { encryptSmtpPass, isEncryptedSmtpPass } = await import(
+    "@/lib/email/smtp-crypto"
+  );
+
+  const { data: existing } = await supabase
     .from("quote_email_settings")
     .select("smtp_pass")
     .eq("id", 1)
@@ -877,6 +995,27 @@ export async function saveQuoteEmailSettings(
     existing?.smtp_pass
   ) {
     next.smtp_pass = existing.smtp_pass;
+  } else if (next.smtp_pass.trim()) {
+    try {
+      next.smtp_pass = encryptSmtpPass(next.smtp_pass);
+    } catch (err) {
+      return {
+        error: err instanceof Error ? err.message : "Could not save password.",
+      };
+    }
+  }
+
+  // Re-encrypt legacy plaintext if still stored
+  if (
+    next.smtp_pass &&
+    !isEncryptedSmtpPass(next.smtp_pass) &&
+    process.env.SMTP_SECRET_KEY
+  ) {
+    try {
+      next.smtp_pass = encryptSmtpPass(next.smtp_pass);
+    } catch {
+      // leave as-is if key missing in dev
+    }
   }
 
   if (next.enabled) {
@@ -903,7 +1042,7 @@ export async function saveQuoteEmailSettings(
   next.provider = "smtp";
   next.resend_api_key = "";
 
-  const { error } = await adminClient.from("quote_email_settings").upsert({
+  const { error } = await supabase.from("quote_email_settings").upsert({
     id: 1,
     ...next,
     updated_at: new Date().toISOString(),
@@ -931,11 +1070,10 @@ export async function testQuoteEmailSettings(
     normalizeQuoteEmailSettings,
     sendTestQuoteEmail,
   } = await import("@/lib/email/quote-notify");
-  const { createServiceClient } = await import("@/lib/supabase/admin");
-  const adminClient = createServiceClient();
+  const supabase = await createClient();
   let settings = normalizeQuoteEmailSettings({ ...input, enabled: true });
 
-  const { data: existing } = await adminClient
+  const { data: existing } = await supabase
     .from("quote_email_settings")
     .select("smtp_pass")
     .eq("id", 1)

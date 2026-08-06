@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProfilesCatalog } from "@/components/site/profiles-catalog";
+import { BreadcrumbJsonLd } from "@/components/site/json-ld";
 import { QuoteProvider } from "@/components/site/quote-provider";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -11,18 +12,23 @@ import {
 import { compareProfiles } from "@/lib/cms/profile-sort";
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
+import {
+  buildPageMetadata,
+  loadSeoContext,
+} from "@/lib/cms/seo-metadata";
 import { mediaUrlFromMap } from "@/lib/cms/urls";
 import type { PageProfiles, Profile } from "@/lib/cms/types";
 
+const PROFILES_DESCRIPTION =
+  "Explore Koda horizontal, vertical, and universal fiberglass siding profiles.";
+
 export async function generateMetadata(): Promise<Metadata> {
-  const snapshot = await getSiteContent();
-  const seo = snapshot?.settings.seo;
-  return {
+  const { seo, ogImage } = await loadSeoContext();
+  return buildPageMetadata(seo, ogImage, {
     title: "Profiles",
-    description:
-      seo?.description ||
-      "Explore Koda horizontal, vertical, and universal fiberglass siding profiles.",
-  };
+    description: PROFILES_DESCRIPTION,
+    path: "/profiles",
+  });
 }
 
 const defaultPage: PageProfiles = {
@@ -48,10 +54,13 @@ export default async function ProfilesPage() {
 
   if (!snapshot) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center bg-bg-primary px-6 py-24 text-center">
-        <p className="font-display text-4xl font-bold tracking-wide text-brand-primary uppercase">
+      <main
+        id="main"
+        className="flex flex-1 flex-col items-center justify-center bg-bg-primary px-6 py-24 text-center"
+      >
+        <h1 className="font-display text-4xl font-bold tracking-wide text-brand-primary uppercase">
           Koda Siding
-        </p>
+        </h1>
         <p className="mt-4 max-w-md text-base text-text-primary/80">
           Content is not synced yet. Save any section in admin to go live.
         </p>
@@ -98,9 +107,16 @@ export default async function ProfilesPage() {
 
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
+      <BreadcrumbJsonLd
+        seo={settings.seo}
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Profiles", path: "/profiles" },
+        ]}
+      />
       <div className="flex min-h-full flex-col bg-bg-primary">
         <SiteHeader nav={nav} forceSolid />
-        <main className="flex-1">
+        <main id="main" className="flex-1">
           <ProfilesCatalog
             page={page}
             horizontal={horizontal}

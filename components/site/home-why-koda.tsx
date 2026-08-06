@@ -46,7 +46,7 @@ export function HomeWhyKodaSection({
         <div className="relative aspect-4/5 min-h-85 overflow-hidden rounded-lg lg:aspect-auto lg:min-h-168 lg:rounded-lg">
           <Image
             src={imageUrl}
-            alt=""
+            alt={why.headline || "Why Koda"}
             fill
             quality={95}
             sizes="(max-width: 1024px) 100vw, 50vw"

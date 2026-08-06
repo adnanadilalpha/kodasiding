@@ -18,6 +18,20 @@ const SAMPLE = {
   attachment_filename: "site-plan.pdf",
 };
 
+/** Preview-only: keep table emails from overflowing the iframe on narrow screens. */
+function constrainPreviewHtml(html: string) {
+  const style = `<style>
+html,body{max-width:100%!important;overflow-x:hidden!important;margin:0!important;}
+table{max-width:100%!important;}
+td,th,p,a,span{word-break:break-word!important;overflow-wrap:anywhere!important;}
+img{max-width:100%!important;height:auto!important;}
+</style>`;
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `${style}</head>`);
+  }
+  return `${style}${html}`;
+}
+
 export function EmailTemplatePreview() {
   const [kind, setKind] = useState<"quote" | "test">("quote");
   const [logoSrc, setLogoSrc] = useState("/brand/logo-email-white.png");
@@ -27,14 +41,17 @@ export function EmailTemplatePreview() {
   }, []);
 
   const html = useMemo(() => {
-    if (kind === "test") return buildTestEmail({ logoSrc }).html;
-    return buildQuoteNotificationEmail(SAMPLE, { logoSrc }).html;
+    const raw =
+      kind === "test"
+        ? buildTestEmail({ logoSrc }).html
+        : buildQuoteNotificationEmail(SAMPLE, { logoSrc }).html;
+    return constrainPreviewHtml(raw);
   }, [kind, logoSrc]);
 
   return (
-    <div className="rounded-xl border border-brand-primary/8 bg-bg-primary/80 p-5 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="min-w-0 overflow-hidden rounded-xl border border-brand-primary/8 bg-bg-primary/80 p-4 sm:p-6">
+      <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold text-text-primary">
             Email template preview
           </h2>
@@ -42,7 +59,7 @@ export function EmailTemplatePreview() {
             Approximate look of messages sent from Email setup.
           </p>
         </div>
-        <div className="flex gap-1 rounded-md border border-brand-primary/10 bg-bg-secondary p-1">
+        <div className="flex w-full gap-1 rounded-md border border-brand-primary/10 bg-bg-secondary p-1 sm:w-auto">
           {(
             [
               { id: "quote", label: "Quote email" },
@@ -53,7 +70,7 @@ export function EmailTemplatePreview() {
               key={tab.id}
               type="button"
               onClick={() => setKind(tab.id)}
-              className={`rounded px-3 py-1.5 text-sm transition ${
+              className={`flex-1 rounded px-3 py-1.5 text-sm transition sm:flex-none ${
                 kind === tab.id
                   ? "bg-white text-text-primary shadow-sm"
                   : "text-text-primary/55 hover:text-text-primary"
@@ -64,11 +81,14 @@ export function EmailTemplatePreview() {
           ))}
         </div>
       </div>
-      <iframe
-        title="Email template preview"
-        srcDoc={html}
-        className="h-140 w-full rounded-lg border border-brand-primary/8 bg-white"
-      />
+      <div className="min-w-0 w-full overflow-hidden rounded-lg border border-brand-primary/8 bg-bg-primary">
+        <iframe
+          title="Email template preview"
+          srcDoc={html}
+          sandbox=""
+          className="block h-100 w-full max-w-full border-0 sm:h-140"
+        />
+      </div>
     </div>
   );
 }

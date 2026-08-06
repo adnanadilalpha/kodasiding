@@ -34,7 +34,7 @@ export default async function DealerPage() {
           content: (
             <form
               action={saveFindDealerVisibility}
-              className="flex flex-col gap-5"
+              className="flex w-full flex-col gap-5"
             >
               <FieldGroup title="Show find dealer">
                 <label className="flex items-start gap-2.5 text-sm text-text-secondary">

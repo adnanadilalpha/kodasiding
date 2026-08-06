@@ -11,13 +11,13 @@ export default async function EmailSetupPage() {
   const { data: emailSettings } = await supabase
     .from("quote_email_settings")
     .select(
-      "enabled, provider, to_email, from_email, from_name, reply_to_submitter, send_lead_confirmation, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass",
+      "enabled, provider, to_email, from_email, from_name, reply_to_submitter, send_lead_confirmation, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass_set",
     )
     .eq("id", 1)
     .maybeSingle();
 
   const row = emailSettings as
-    | (Partial<QuoteEmailSettings> & { smtp_pass?: string })
+    | (Partial<QuoteEmailSettings> & { smtp_pass_set?: boolean })
     | null;
 
   const settings: QuoteEmailSettings = {
@@ -29,8 +29,8 @@ export default async function EmailSetupPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div>
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-5 sm:gap-6">
+      <div className="min-w-0">
         <h1 className="text-xl font-semibold text-text-primary">Email setup</h1>
         <p className="mt-1 text-sm text-text-primary/55">
           Connect your own email so quote requests arrive in your inbox.
@@ -39,7 +39,7 @@ export default async function EmailSetupPage() {
 
       <QuoteEmailSettingsForm
         initial={settings}
-        hasSavedPassword={Boolean(row?.smtp_pass)}
+        hasSavedPassword={Boolean(row?.smtp_pass_set)}
       />
 
       <EmailTemplatePreview />

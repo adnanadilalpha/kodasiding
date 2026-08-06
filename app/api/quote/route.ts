@@ -15,6 +15,7 @@ import {
   QUOTE_RATE_LIMIT_IP,
   verifyRecaptcha,
 } from "@/lib/quote/recaptcha";
+import { sniffedMatchesAllowed, sniffFileBytes } from "@/lib/quote/sniff-file";
 import { validateQuoteEmail } from "@/lib/quote/validate-email";
 
 export const runtime = "nodejs";
@@ -116,18 +117,18 @@ async function quoteRateAllowed(
 ) {
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-  if (ip && ip !== "unknown") {
-    const { count, error } = await supabase
-      .from("quote_leads")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", since)
-      .eq("meta->>client_ip", ip);
-    if (error) {
-      console.error("quote IP rate check failed", error);
-      return false;
-    }
-    if ((count ?? 0) >= QUOTE_RATE_LIMIT_IP) return false;
+  if (!ip || ip === "unknown") return false;
+
+  const { count, error } = await supabase
+    .from("quote_leads")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", since)
+    .eq("meta->>client_ip", ip);
+  if (error) {
+    console.error("quote IP rate check failed", error);
+    return false;
   }
+  if ((count ?? 0) >= QUOTE_RATE_LIMIT_IP) return false;
 
   const { count: emailCount, error: emailError } = await supabase
     .from("quote_leads")
@@ -198,7 +199,7 @@ export async function POST(request: Request) {
 
     const captcha = await verifyRecaptcha(recaptchaToken, ip);
     let captchaFallback = false;
-    let captchaScore: number | null = captcha.ok ? (captcha.score ?? null) : null;
+    const captchaScore: number | null = captcha.ok ? (captcha.score ?? null) : null;
 
     if (!captcha.ok) {
       // Fallback only for true provider outages — never empty token or missing config.
@@ -319,6 +320,23 @@ export async function POST(request: Request) {
         );
       }
 
+      const bytes = new Uint8Array(await attachment.arrayBuffer());
+      const sniffed = sniffFileBytes(bytes);
+      if (
+        !sniffedMatchesAllowed(
+          sniffed,
+          quoteForm.allowed_file_types,
+        )
+      ) {
+        return Response.json(
+          {
+            ok: false,
+            error: `Attachment must be one of: ${typesLabel}.`,
+          },
+          { status: 400 },
+        );
+      }
+
       const id = crypto.randomUUID();
       const ext = extensionFor(attachment);
       const base = safeFileName(
@@ -326,7 +344,6 @@ export async function POST(request: Request) {
       );
       attachmentPath = `${id}/${base}.${ext}`;
 
-      const bytes = new Uint8Array(await attachment.arrayBuffer());
       const { error: uploadError } = await supabase.storage
         .from(QUOTE_ATTACHMENT_BUCKET)
         .upload(attachmentPath, bytes, {

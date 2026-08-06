@@ -1,5 +1,6 @@
 import type { MediaAsset, SiteSnapshotPayload } from "@/lib/cms/types";
 import { LIVE_SNAPSHOT_STATUS, SITE_CACHE_TAG } from "@/lib/cms/constants";
+import { normalizeGeoAccess } from "@/lib/cms/geo-access";
 import { compareProfiles } from "@/lib/cms/profile-sort";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateTag } from "next/cache";
@@ -80,6 +81,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     settings: {
       ...settings,
       show_partners: settings.show_partners !== false,
+      geo_access: normalizeGeoAccess(settings.geo_access),
       nav: {
         ...settings.nav,
         show_find_dealer: settings.nav?.show_find_dealer === true,

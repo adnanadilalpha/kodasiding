@@ -77,10 +77,10 @@ export function VideosManualEditor({
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <form action={onSaveCopy} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
-          <FieldGroup title="Section copy" className="min-w-0 flex-1">
+    <div className="flex w-full flex-col gap-5">
+      <form action={onSaveCopy} className="flex w-full flex-col gap-5">
+        <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-stretch">
+          <FieldGroup title="Section copy" className="min-w-0 w-full flex-1">
             <Field label="Headline">
               <TextInput
                 name="videos_headline"
@@ -98,7 +98,7 @@ export function VideosManualEditor({
             </Field>
           </FieldGroup>
 
-          <FieldGroup title="Manual PDF" className="min-w-0 flex-1">
+          <FieldGroup title="Manual PDF" className="min-w-0 w-full flex-1">
             <Field label="Button label">
               <TextInput
                 name="manual_label"

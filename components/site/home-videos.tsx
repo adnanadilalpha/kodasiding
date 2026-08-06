@@ -90,6 +90,15 @@ export function HomeVideosSectionBlock({
             href={manualUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={() =>
+              void import("@/lib/analytics/track-client").then(
+                ({ trackAnalyticsEvent }) => {
+                  void trackAnalyticsEvent("manual_download", {
+                    label: section.manual_label || "Installation manual",
+                  });
+                },
+              )
+            }
             className="inline-flex w-fit items-center justify-center rounded-md bg-brand-primary px-8 py-3 text-base text-text-inverse"
           >
             {section.manual_label}
@@ -124,7 +133,7 @@ function VideoThumbnail({
     return (
       <Image
         src={imageThumb}
-        alt=""
+        alt={video.title}
         fill
         sizes="(max-width: 1024px) 100vw, 50vw"
         className="object-cover"

@@ -38,6 +38,7 @@ function Thumb({
       alt=""
       width={width}
       height={height}
+      loading="eager"
       className={className}
     />
   );
@@ -90,7 +91,7 @@ function ProfileTileForm({
         : "U1 Edge Trim";
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex w-full min-w-0 flex-col gap-5">
       <div className="flex gap-1 rounded-md border border-brand-primary/10 bg-bg-secondary p-1">
         {(
           [
@@ -113,7 +114,7 @@ function ProfileTileForm({
         ))}
       </div>
 
-      <div className={tab === "tile" ? "flex flex-col gap-5" : "hidden"}>
+      <div className={tab === "tile" ? "flex w-full flex-col gap-5" : "hidden"}>
         <FieldGroup title="Tile" columns={2}>
           <Field label="Label">
             <TextInput
@@ -139,7 +140,7 @@ function ProfileTileForm({
           </Field>
         </FieldGroup>
 
-        <FieldGroup title="3D cutout">
+        <FieldGroup title="3D cutout" className="min-w-0 w-full">
           <MediaField
             name="image_media_id"
             label="Cutout"
@@ -151,8 +152,10 @@ function ProfileTileForm({
         </FieldGroup>
       </div>
 
-      <div className={tab === "details" ? "flex flex-col gap-5" : "hidden"}>
-        <FieldGroup title="Specs" columns={3}>
+      <div
+        className={tab === "details" ? "flex w-full flex-col gap-5" : "hidden"}
+      >
+        <FieldGroup title="Specs" columns={2}>
           <Field label="Face width">
             <TextInput
               name="face_width"
@@ -189,7 +192,7 @@ function ProfileTileForm({
           </Field>
         </FieldGroup>
 
-        <FieldGroup title="Cross-section">
+        <FieldGroup title="Cross-section" className="min-w-0 w-full">
           <MediaField
             name="diagram_media_id"
             label="Diagram"
@@ -276,8 +279,8 @@ export function ProfileSheetEditor({
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <form action={onSaveSection} className="flex flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
+      <form action={onSaveSection} className="flex w-full flex-col gap-5">
         <FieldGroup title="Section header" columns={2}>
           <Field label="Headline">
             <TextInput
@@ -324,13 +327,13 @@ export function ProfileSheetEditor({
           </Button>
         </SectionHeaderAction>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex w-full flex-col gap-3">
           {profiles.length === 0 ? (
             <div className="rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-4 py-8 text-center text-sm text-text-primary/45">
               No tiles yet.
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {profiles.map((profile) => {
                 const cutout = profile.imagePath
                   ? publicMediaUrl(profile.imagePath) ?? null
@@ -338,7 +341,7 @@ export function ProfileSheetEditor({
                 return (
                   <li
                     key={profile.id}
-                    className="flex flex-col overflow-hidden rounded-[9px] border border-brand-primary/8 bg-bg-primary/80"
+                    className="flex min-w-0 flex-col overflow-hidden rounded-[9px] border border-brand-primary/8 bg-bg-primary/80"
                   >
                     <button
                       type="button"
@@ -353,14 +356,14 @@ export function ProfileSheetEditor({
                         </span>
                       )}
                     </button>
-                    <div className="flex flex-1 flex-col gap-2 border-t border-brand-primary/8 px-3 py-3">
-                      <p className="font-display text-sm font-semibold text-brand-primary">
+                    <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-brand-primary/8 px-3 py-3">
+                      <p className="font-display truncate text-sm font-semibold text-brand-primary">
                         {profile.name}
                       </p>
                       <p className="text-xs text-text-primary/45">
                         {profile.is_published ? "Published" : "Draft"}
                       </p>
-                      <div className="mt-auto flex items-center gap-3">
+                      <div className="mt-auto flex flex-wrap items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setEditId(profile.id)}

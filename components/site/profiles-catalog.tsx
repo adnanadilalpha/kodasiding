@@ -14,12 +14,14 @@ type ProfileTileData = Profile & {
 
 function ProfileMedia({
   src,
+  alt,
   sizes,
   quality,
   priority = false,
   className = "object-contain",
 }: {
   src: string;
+  alt: string;
   sizes: string;
   quality?: number;
   priority?: boolean;
@@ -30,7 +32,7 @@ function ProfileMedia({
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
-        alt=""
+        alt={alt}
         className={`absolute inset-0 size-full ${className}`}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
@@ -41,12 +43,12 @@ function ProfileMedia({
   return (
     <Image
       src={src}
-      alt=""
+      alt={alt}
       fill
       sizes={sizes}
       quality={quality}
-      priority={priority}
       loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
       className={className}
     />
   );
@@ -172,6 +174,7 @@ function ProfileDetailModal({
                 >
                   <ProfileMedia
                     src={profile.diagramUrl}
+                    alt={`${profile.name} cross-section diagram`}
                     sizes="(max-width: 1024px) 90vw, 40vw"
                     className="object-contain object-left lg:object-center"
                   />
@@ -208,6 +211,7 @@ function ProfileTile({
           {profile.imageUrl ? (
             <ProfileMedia
               src={profile.imageUrl}
+              alt={profile.name}
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 360px"
               quality={95}
               priority={priority}
@@ -238,6 +242,9 @@ function ProfileTile({
       </div>
 
       <h3 className="text-sm font-bold text-text-primary">{profile.name}</h3>
+      {profile.description?.trim() ? (
+        <p className="sr-only">{profile.description.trim()}</p>
+      ) : null}
     </article>
   );
 }
@@ -303,6 +310,16 @@ export function ProfilesCatalog({
 
   return (
     <div className="flex flex-col gap-16 px-page pt-28 pb-16 sm:pt-36 sm:pb-20 lg:gap-24 lg:pt-41 lg:pb-24">
+      <header className="flex w-full flex-col gap-3">
+        <h1 className="font-display text-3xl font-bold tracking-wide text-brand-primary uppercase sm:text-4xl lg:text-5xl">
+          Profiles
+        </h1>
+        <p className="max-w-2xl text-base text-text-primary/70 sm:text-lg">
+          Explore Koda horizontal, vertical, and universal fiberglass siding
+          profiles.
+        </p>
+      </header>
+
       <ProfileSheet
         headline={page.horizontal.headline || "Horizontal profiles"}
         helper={page.horizontal.helper || "Open a profile to learn more"}

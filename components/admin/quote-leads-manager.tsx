@@ -39,7 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 
-type MenuId = "date" | "state" | "file" | "notify" | "rows";
+type MenuId = "filters";
 
 function formatWhen(iso: string) {
   try {
@@ -130,6 +130,8 @@ function FilterControl({
   summary,
   children,
   menuAlign = "left",
+  grow = true,
+  panelWidth = 176,
 }: {
   id: MenuId;
   openMenu: MenuId | null;
@@ -139,6 +141,8 @@ function FilterControl({
   summary: string;
   children: ReactNode;
   menuAlign?: "left" | "right";
+  grow?: boolean;
+  panelWidth?: number;
 }) {
   const open = openMenu === id;
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -181,17 +185,18 @@ function FilterControl({
       if (!btn) return;
       const rect = btn.getBoundingClientRect();
       const gap = 6;
-      const minWidth = Math.max(rect.width, 176);
+      const minWidth = Math.max(rect.width, panelWidth);
       const viewportPad = 8;
       const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPad;
       const spaceAbove = rect.top - gap - viewportPad;
-      const openUp = spaceBelow < 200 && spaceAbove > spaceBelow;
+      const openUp = spaceBelow < 280 && spaceAbove > spaceBelow;
 
       const style: CSSProperties = {
         position: "fixed",
         zIndex: 80,
         minWidth,
-        maxWidth: Math.min(320, window.innerWidth - viewportPad * 2),
+        width: Math.min(Math.max(minWidth, panelWidth), window.innerWidth - viewportPad * 2),
+        maxWidth: Math.min(360, window.innerWidth - viewportPad * 2),
         maxHeight: Math.max(160, openUp ? spaceAbove : spaceBelow),
         overflowY: "auto",
       };
@@ -222,7 +227,7 @@ function FilterControl({
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
-  }, [open, menuAlign]);
+  }, [open, menuAlign, panelWidth]);
 
   const menu =
     open && menuStyle && mounted ? (
@@ -236,13 +241,15 @@ function FilterControl({
     ) : null;
 
   return (
-    <div ref={triggerRef} className="relative min-w-0 flex-1">
+    <div ref={triggerRef} className={`relative min-w-0 ${grow ? "flex-1" : "shrink-0"}`}>
       <button
         ref={buttonRef}
         type="button"
         aria-expanded={open}
         onClick={() => setOpenMenu(open ? null : id)}
-        className={`flex h-9 w-full items-center justify-between gap-1 rounded-md border px-2.5 text-sm transition ${
+        className={`flex h-9 items-center justify-between gap-1.5 rounded-md border px-2.5 text-sm transition ${
+          grow ? "w-full" : "min-w-28"
+        } ${
           active
             ? "border-brand-primary bg-brand-primary text-text-inverse"
             : open
@@ -302,6 +309,9 @@ function LeadsFilterBar({
   const [fromDraft, setFromDraft] = useState(filters.from);
   const [toDraft, setToDraft] = useState(filters.to);
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null);
+  const [openSection, setOpenSection] = useState<
+    "date" | "state" | "file" | "notify" | "rows" | null
+  >(null);
 
   useEffect(() => {
     setQuery(filters.q);
@@ -310,108 +320,111 @@ function LeadsFilterBar({
     setToDraft(filters.to);
   }, [filters.q, filters.state, filters.from, filters.to]);
 
-  const hasActive = Boolean(
-    filters.q ||
-      filters.from ||
+  useEffect(() => {
+    if (openMenu !== "filters") setOpenSection(null);
+  }, [openMenu]);
+
+  const filterCount = [
+    filters.from || filters.to,
+    filters.state,
+    filters.file,
+    filters.notify,
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = Boolean(
+    filters.from ||
       filters.to ||
       filters.state ||
       filters.file ||
       filters.notify,
   );
 
-  const dateActive = Boolean(filters.from || filters.to);
-  const dateSummary =
+  const hasActive = Boolean(filters.q || hasActiveFilters);
+  const filterSummary =
+    filterCount > 0 ? `Filters (${filterCount})` : "Filters";
+
+  const menuPanelInput =
+    "h-9 w-full rounded-md border border-brand-primary/12 bg-bg-primary px-2.5 text-sm text-text-primary outline-none focus:border-brand-primary/35";
+
+  const dateHint =
     filters.from && filters.to
       ? `${formatShortDate(filters.from)} – ${formatShortDate(filters.to)}`
       : filters.from
         ? `From ${formatShortDate(filters.from)}`
         : filters.to
           ? `Until ${formatShortDate(filters.to)}`
-          : "Date";
+          : null;
+  const fileHint =
+    FILE_OPTIONS.find((o) => o.value === filters.file && o.value)?.label ??
+    null;
+  const notifyHint =
+    NOTIFY_OPTIONS.find((o) => o.value === filters.notify && o.value)?.label ??
+    null;
 
-  const notifyLabel =
-    NOTIFY_OPTIONS.find((o) => o.value === filters.notify)?.label ?? "Notify";
-  const fileLabel =
-    FILE_OPTIONS.find((o) => o.value === filters.file)?.label ?? "File";
-
-  const menuPanelInput =
-    "h-9 w-full rounded-md border border-brand-primary/12 bg-bg-primary px-2.5 text-sm text-text-primary outline-none focus:border-brand-primary/35";
+  function toggleSection(id: "date" | "state" | "file" | "notify" | "rows") {
+    setOpenSection((current) => (current === id ? null : id));
+  }
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
-      {/* Search always leads — left, fills remaining space */}
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <form
-          className="relative min-w-0 flex-1"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onApply({ q: query.trim(), page: 1 });
-            setOpenMenu(null);
-          }}
-        >
-          <label htmlFor={searchId} className="sr-only">
-            Search leads
-          </label>
-          <IconSearch
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-text-primary/35"
-            stroke={1.75}
-          />
-          <input
-            id={searchId}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, email, phone, city…"
-            autoComplete="off"
-            disabled={pending}
-            className="h-9 w-full rounded-md border border-brand-primary/12 bg-bg-primary py-0 pr-9 pl-9 text-sm text-text-primary outline-none transition placeholder:text-text-primary/35 focus:border-brand-primary/35"
-          />
-          {query ? (
-            <button
-              type="button"
-              aria-label="Clear search"
-              disabled={pending}
-              onClick={() => {
-                setQuery("");
-                onApply({ q: "", page: 1 });
-              }}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-text-primary/40 transition hover:text-text-primary"
-            >
-              <IconX className="size-3.5" stroke={1.75} />
-            </button>
-          ) : null}
-        </form>
-
-        {hasActive ? (
-          <Button
+    <div className="flex w-full items-center gap-2">
+      <form
+        className="relative min-w-0 flex-1"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onApply({ q: query.trim(), page: 1 });
+          setOpenMenu(null);
+        }}
+      >
+        <label htmlFor={searchId} className="sr-only">
+          Search leads
+        </label>
+        <IconSearch
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-text-primary/35"
+          stroke={1.75}
+        />
+        <input
+          id={searchId}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name, email, phone, city…"
+          autoComplete="off"
+          disabled={pending}
+          className="h-9 w-full rounded-md border border-brand-primary/12 bg-bg-primary py-0 pr-9 pl-9 text-sm text-text-primary outline-none transition placeholder:text-text-primary/35 focus:border-brand-primary/35"
+        />
+        {query ? (
+          <button
             type="button"
-            size="sm"
-            variant="ghost"
+            aria-label="Clear search"
             disabled={pending}
             onClick={() => {
               setQuery("");
-              setStateDraft("");
-              setFromDraft("");
-              setToDraft("");
-              setOpenMenu(null);
-              onClear();
+              onApply({ q: "", page: 1 });
             }}
+            className="absolute top-1/2 right-2.5 -translate-y-1/2 text-text-primary/40 transition hover:text-text-primary"
           >
-            Clear
-          </Button>
+            <IconX className="size-3.5" stroke={1.75} />
+          </button>
         ) : null}
-      </div>
+      </form>
 
-      {/* Filters share the right half equally */}
-      <div className="flex w-full min-w-0 gap-1.5 sm:w-1/2">
-        <FilterControl
-          id="date"
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          label="Date"
-          active={dateActive}
-          summary={dateSummary}
-        >
-          <div className="flex flex-col gap-2 p-1">
+      <FilterControl
+        id="filters"
+        openMenu={openMenu}
+        setOpenMenu={setOpenMenu}
+        label="Filters"
+        active={hasActiveFilters}
+        summary={filterSummary}
+        menuAlign="right"
+        grow={false}
+        panelWidth={280}
+      >
+        <div className="flex flex-col gap-0.5 p-0.5">
+          <FilterSection
+            label="Date"
+            hint={dateHint}
+            open={openSection === "date"}
+            onToggle={() => toggleSection("date")}
+          >
             <label className="flex flex-col gap-1.5 text-sm text-text-secondary">
               From
               <input
@@ -430,46 +443,24 @@ function LeadsFilterBar({
                 className={menuPanelInput}
               />
             </label>
-            <div className="flex gap-2 pt-0.5">
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  onApply({ from: fromDraft, to: toDraft, page: 1 });
-                  setOpenMenu(null);
-                }}
-              >
-                Apply
-              </Button>
-              {dateActive ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setFromDraft("");
-                    setToDraft("");
-                    onApply({ from: "", to: "", page: 1 });
-                    setOpenMenu(null);
-                  }}
-                >
-                  Clear
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </FilterControl>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                onApply({ from: fromDraft, to: toDraft, page: 1 });
+                setOpenSection(null);
+              }}
+            >
+              Apply
+            </Button>
+          </FilterSection>
 
-        <FilterControl
-          id="state"
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          label="State"
-          active={Boolean(filters.state)}
-          summary={filters.state}
-        >
-          <div className="flex flex-col gap-2 p-1">
+          <FilterSection
+            label="State"
+            hint={filters.state || null}
+            open={openSection === "state"}
+            onToggle={() => toggleSection("state")}
+          >
             <input
               value={stateDraft}
               onChange={(e) => setStateDraft(e.target.value)}
@@ -480,114 +471,164 @@ function LeadsFilterBar({
                 if (e.key === "Enter") {
                   e.preventDefault();
                   onApply({ state: stateDraft.trim(), page: 1 });
-                  setOpenMenu(null);
+                  setOpenSection(null);
                 }
               }}
             />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                onClick={() => {
-                  onApply({ state: stateDraft.trim(), page: 1 });
-                  setOpenMenu(null);
-                }}
-              >
-                Apply
-              </Button>
-              {filters.state ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setStateDraft("");
-                    onApply({ state: "", page: 1 });
-                    setOpenMenu(null);
-                  }}
-                >
-                  Clear
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </FilterControl>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                onApply({ state: stateDraft.trim(), page: 1 });
+                setOpenSection(null);
+              }}
+            >
+              Apply
+            </Button>
+          </FilterSection>
 
-        <FilterControl
-          id="file"
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          label="File"
-          active={Boolean(filters.file)}
-          summary={fileLabel}
-        >
-          <div className="flex flex-col gap-0.5">
+          <FilterSection
+            label="File"
+            hint={fileHint}
+            open={openSection === "file"}
+            onToggle={() => toggleSection("file")}
+          >
             {FILE_OPTIONS.map((opt) => (
               <MenuOption
                 key={opt.value || "any"}
                 selected={filters.file === opt.value}
                 onClick={() => {
                   onApply({ file: opt.value, page: 1 });
-                  setOpenMenu(null);
+                  setOpenSection(null);
                 }}
               >
                 {opt.label}
               </MenuOption>
             ))}
-          </div>
-        </FilterControl>
+          </FilterSection>
 
-        <FilterControl
-          id="notify"
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          label="Notify"
-          active={Boolean(filters.notify)}
-          summary={notifyLabel}
-          menuAlign="right"
-        >
-          <div className="flex flex-col gap-0.5">
+          <FilterSection
+            label="Notify"
+            hint={notifyHint}
+            open={openSection === "notify"}
+            onToggle={() => toggleSection("notify")}
+          >
             {NOTIFY_OPTIONS.map((opt) => (
               <MenuOption
                 key={opt.value || "any"}
                 selected={filters.notify === opt.value}
                 onClick={() => {
                   onApply({ notify: opt.value, page: 1 });
-                  setOpenMenu(null);
+                  setOpenSection(null);
                 }}
               >
                 {opt.label}
               </MenuOption>
             ))}
-          </div>
-        </FilterControl>
+          </FilterSection>
 
-        <FilterControl
-          id="rows"
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          label={`${filters.pageSize}/page`}
-          active={false}
-          summary={`${filters.pageSize}/page`}
-          menuAlign="right"
-        >
-          <div className="flex flex-col gap-0.5">
+          <FilterSection
+            label="Rows"
+            hint={`${filters.pageSize}/page`}
+            open={openSection === "rows"}
+            onToggle={() => toggleSection("rows")}
+          >
             {LEAD_PAGE_SIZES.map((n) => (
               <MenuOption
                 key={n}
                 selected={filters.pageSize === n}
                 onClick={() => {
                   onApply({ pageSize: n as LeadPageSize, page: 1 });
-                  setOpenMenu(null);
+                  setOpenSection(null);
                 }}
               >
                 {n} / page
               </MenuOption>
             ))}
-          </div>
-        </FilterControl>
-      </div>
+          </FilterSection>
+
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={() => {
+                setFromDraft("");
+                setToDraft("");
+                setStateDraft("");
+                onClear();
+                setOpenMenu(null);
+              }}
+              className="mt-1 rounded-md px-2.5 py-2 text-left text-sm text-[#ff383c] transition hover:bg-red-50"
+            >
+              Clear filters
+            </button>
+          ) : null}
+        </div>
+      </FilterControl>
+
+      {hasActive ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          className="shrink-0"
+          onClick={() => {
+            setQuery("");
+            setStateDraft("");
+            setFromDraft("");
+            setToDraft("");
+            setOpenMenu(null);
+            onClear();
+          }}
+        >
+          Clear
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function FilterSection({
+  label,
+  hint,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  hint?: string | null;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-md">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className={`flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm transition ${
+          open
+            ? "bg-bg-secondary text-brand-primary"
+            : "text-text-primary/80 hover:bg-bg-secondary"
+        }`}
+      >
+        <span className="min-w-0 truncate font-medium">{label}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          {hint ? (
+            <span className="max-w-24 truncate text-xs text-text-primary/45">
+              {hint}
+            </span>
+          ) : null}
+          <IconChevronDown
+            className={`size-3.5 opacity-55 transition ${open ? "rotate-180" : ""}`}
+            stroke={1.75}
+          />
+        </span>
+      </button>
+      {open ? (
+        <div className="flex flex-col gap-2 px-2.5 pt-1 pb-2">{children}</div>
+      ) : null}
     </div>
   );
 }
@@ -751,11 +792,24 @@ export function QuoteLeadsManager({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm tabular-nums text-text-primary/45">
-          {total === 0
-            ? "0 leads"
-            : `${pageStart}–${pageEnd} of ${total.toLocaleString()}`}
-        </p>
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          {optimisticLeads.length > 0 ? (
+            <label className="flex items-center gap-2 text-sm text-text-primary/55 md:hidden">
+              <input
+                type="checkbox"
+                checked={allOnPageSelected}
+                onChange={toggleAll}
+                aria-label="Select all on page"
+              />
+              Select page
+            </label>
+          ) : null}
+          <p className="text-sm tabular-nums text-text-primary/45">
+            {total === 0
+              ? "0 leads"
+              : `${pageStart}–${pageEnd} of ${total.toLocaleString()}`}
+          </p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {selected.size > 0 ? (
             <Button
@@ -797,85 +851,154 @@ export function QuoteLeadsManager({
             : "No leads yet."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-[9px] border border-brand-primary/8 bg-bg-primary/80">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-bg-secondary text-[11px] tracking-wide text-brand-primary/55 uppercase">
-              <tr>
-                <th className="w-10 px-3 py-2">
+        <>
+          {/* Mobile cards */}
+          <ul className="flex flex-col gap-2 md:hidden">
+            {optimisticLeads.map((lead) => (
+              <li
+                key={lead.id}
+                className="rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 p-3"
+              >
+                <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={allOnPageSelected}
-                    onChange={toggleAll}
-                    aria-label="Select all on page"
+                    className="mt-1"
+                    checked={selected.has(lead.id)}
+                    onChange={() => toggleOne(lead.id)}
+                    aria-label={`Select ${lead.full_name}`}
                   />
-                </th>
-                <th className="px-3 py-2">When</th>
-                <th className="px-3 py-2">Contact</th>
-                <th className="px-3 py-2">Location</th>
-                <th className="px-3 py-2">File</th>
-                <th className="px-3 py-2">Notify</th>
-                <th className="px-3 py-2 text-right"> </th>
-              </tr>
-            </thead>
-            <tbody>
-              {optimisticLeads.map((lead) => (
-                <tr
-                  key={lead.id}
-                  className="border-t border-brand-primary/8 align-top"
-                >
-                  <td className="px-3 py-2.5">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(lead.id)}
-                      onChange={() => toggleOne(lead.id)}
-                      aria-label={`Select ${lead.full_name}`}
-                    />
-                  </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-xs text-text-primary/50">
-                    {formatWhen(lead.created_at)}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <p className="font-medium text-brand-primary">
-                      {lead.full_name}
-                    </p>
-                    <p className="truncate text-xs text-text-primary/55">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-brand-primary">
+                        {lead.full_name}
+                      </p>
+                      <NotifyBadge lead={lead} />
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-text-primary/55">
                       {lead.email}
                     </p>
                     {lead.phone ? (
                       <p className="text-xs text-text-primary/45">{lead.phone}</p>
                     ) : null}
-                  </td>
-                  <td className="px-3 py-2.5 text-text-primary/75">
-                    {[lead.city, lead.state].filter(Boolean).join(", ") || "—"}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs text-text-primary/55">
-                    {leadHasFile(lead) ? "Yes" : "—"}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <NotifyBadge lead={lead} />
-                  </td>
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => setDetail(lead)}
-                      className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
-                    >
-                      View
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => requestDelete([lead.id])}
-                      className="ml-3 text-sm text-[#ff383c] transition hover:opacity-80"
-                    >
-                      Delete
-                    </button>
-                  </td>
+                    <p className="mt-2 text-xs text-text-primary/50">
+                      {formatWhen(lead.created_at)}
+                      <span className="mx-1.5 text-text-primary/25">·</span>
+                      {[lead.city, lead.state].filter(Boolean).join(", ") ||
+                        "—"}
+                      {leadHasFile(lead) ? (
+                        <>
+                          <span className="mx-1.5 text-text-primary/25">·</span>
+                          File
+                        </>
+                      ) : null}
+                    </p>
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setDetail(lead)}
+                        className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => requestDelete([lead.id])}
+                        className="text-sm text-[#ff383c] transition hover:opacity-80"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 md:block">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-bg-secondary text-[11px] tracking-wide text-brand-primary/55 uppercase">
+                <tr>
+                  <th className="w-10 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={allOnPageSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all on page"
+                    />
+                  </th>
+                  <th className="px-3 py-2">When</th>
+                  <th className="px-3 py-2">Contact</th>
+                  <th className="px-3 py-2">Location</th>
+                  <th className="px-3 py-2">File</th>
+                  <th className="px-3 py-2">Notify</th>
+                  <th className="px-3 py-2 text-right"> </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {optimisticLeads.map((lead) => (
+                  <tr
+                    key={lead.id}
+                    className="border-t border-brand-primary/8 align-top"
+                  >
+                    <td className="px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(lead.id)}
+                        onChange={() => toggleOne(lead.id)}
+                        aria-label={`Select ${lead.full_name}`}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-xs text-text-primary/50">
+                      {formatWhen(lead.created_at)}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <p className="font-medium text-brand-primary">
+                        {lead.full_name}
+                      </p>
+                      <p className="truncate text-xs text-text-primary/55">
+                        {lead.email}
+                      </p>
+                      {lead.phone ? (
+                        <p className="text-xs text-text-primary/45">
+                          {lead.phone}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2.5 text-text-primary/75">
+                      {[lead.city, lead.state].filter(Boolean).join(", ") ||
+                        "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-text-primary/55">
+                      {leadHasFile(lead) ? "Yes" : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <NotifyBadge lead={lead} />
+                    </td>
+                    <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setDetail(lead)}
+                        className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => requestDelete([lead.id])}
+                        className="ml-3 text-sm text-[#ff383c] transition hover:opacity-80"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {totalPages > 1 ? (

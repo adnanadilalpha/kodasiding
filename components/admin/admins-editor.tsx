@@ -10,9 +10,10 @@ import {
 } from "@/lib/cms/actions";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, Select, TextInput } from "@/components/ui/field";
+import { Field, FieldGroup, TextInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PasswordInput } from "@/components/ui/password-input";
+import { SelectMenu } from "@/components/ui/select-menu";
 
 export type AdminRow = {
   user_id: string;
@@ -21,6 +22,11 @@ export type AdminRow = {
 };
 
 type AdminRole = "owner" | "editor";
+
+const ROLE_OPTIONS = [
+  { value: "editor", label: "Editor" },
+  { value: "owner", label: "Owner" },
+] as const;
 
 /** Prevent Enter in inputs from submitting / triggering create by mistake. */
 function blockEnterSubmit(e: KeyboardEvent) {
@@ -39,6 +45,69 @@ function RoleBadge({ role }: { role: string }) {
     >
       {owner ? "Owner" : "Editor"}
     </span>
+  );
+}
+
+function AdminRoleControl({
+  row,
+  isSelf,
+  pending,
+  onRoleChange,
+}: {
+  row: AdminRow;
+  isSelf: boolean;
+  pending: boolean;
+  onRoleChange: (row: AdminRow, role: AdminRole) => void;
+}) {
+  if (isSelf) return <RoleBadge role={row.role} />;
+  return (
+    <SelectMenu
+      value={row.role}
+      options={ROLE_OPTIONS}
+      disabled={pending}
+      size="sm"
+      aria-label={`Role for ${row.email}`}
+      onChange={(value) => onRoleChange(row, value as AdminRole)}
+    />
+  );
+}
+
+function AdminRowActions({
+  row,
+  isSelf,
+  pending,
+  onPassword,
+  onRemove,
+}: {
+  row: AdminRow;
+  isSelf: boolean;
+  pending: boolean;
+  onPassword: (row: AdminRow) => void;
+  onRemove: (row: AdminRow) => void;
+}) {
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        disabled={pending}
+        onClick={() => onPassword(row)}
+      >
+        Password
+      </Button>
+      {!isSelf ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="danger"
+          disabled={pending}
+          onClick={() => onRemove(row)}
+        >
+          Remove
+        </Button>
+      ) : null}
+    </>
   );
 }
 
@@ -158,7 +227,7 @@ export function AdminsEditor({
         </Button>
       </SectionHeaderAction>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex w-full flex-col gap-5">
         {error ? (
           <p
             role="alert"
@@ -168,7 +237,7 @@ export function AdminsEditor({
           </p>
         ) : null}
 
-        <FieldGroup title="Accounts">
+        <FieldGroup title="Accounts" className="min-w-0 w-full">
           {admins.length === 0 ? (
             <div className="rounded-md border border-dashed border-brand-primary/15 bg-bg-primary/60 px-4 py-10 text-center">
               <p className="text-sm font-medium text-text-primary">
@@ -191,101 +260,129 @@ export function AdminsEditor({
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-brand-primary/8 bg-bg-primary/80">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-bg-secondary text-[11px] tracking-wide text-brand-primary/55 uppercase">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Email</th>
-                    <th className="px-3 py-2 font-medium">Role</th>
-                    <th className="px-3 py-2 text-right font-medium">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admins.map((row) => {
-                    const isSelf = row.user_id === currentUserId;
-                    return (
-                      <tr
-                        key={row.user_id}
-                        className="border-t border-brand-primary/8 align-middle"
-                      >
-                        <td className="px-3 py-2.5">
-                          <div className="flex min-w-0 flex-col gap-0.5">
-                            <p className="truncate text-text-primary">
-                              {row.email}
-                            </p>
-                            {isSelf ? (
-                              <span className="text-xs text-text-primary/40">
-                                Signed in as you
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          {isSelf ? (
-                            <RoleBadge role={row.role} />
-                          ) : (
-                            <div className="max-w-36">
-                              <Select
-                                value={row.role}
-                                disabled={pending}
-                                onChange={(e) =>
-                                  onRoleChange(
-                                    row,
-                                    e.target.value as AdminRole,
-                                  )
-                                }
-                                aria-label={`Role for ${row.email}`}
-                                className="py-2 text-sm"
-                              >
-                                <option value="editor">Editor</option>
-                                <option value="owner">Owner</option>
-                              </Select>
+            <>
+              {/* Mobile cards */}
+              <ul className="flex w-full flex-col gap-2.5 md:hidden">
+                {admins.map((row) => {
+                  const isSelf = row.user_id === currentUserId;
+                  return (
+                    <li
+                      key={row.user_id}
+                      className="flex min-w-0 flex-col gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3.5 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-brand-primary">
+                          {row.email}
+                        </p>
+                        {isSelf ? (
+                          <span className="mt-0.5 block text-xs text-text-primary/40">
+                            Signed in as you
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="mb-1.5 text-xs text-text-primary/45">
+                          Role
+                        </p>
+                        <AdminRoleControl
+                          row={row}
+                          isSelf={isSelf}
+                          pending={pending}
+                          onRoleChange={onRoleChange}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <AdminRowActions
+                          row={row}
+                          isSelf={isSelf}
+                          pending={pending}
+                          onPassword={(r) => {
+                            setError(null);
+                            setEditPassword("");
+                            setPasswordUser(r);
+                          }}
+                          onRemove={(r) => {
+                            setError(null);
+                            setRemoveUser(r);
+                          }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto rounded-xl border border-brand-primary/8 bg-bg-primary/80 md:block">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-bg-secondary text-[11px] tracking-wide text-brand-primary/55 uppercase">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Email</th>
+                      <th className="px-3 py-2 font-medium">Role</th>
+                      <th className="px-3 py-2 text-right font-medium">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.map((row) => {
+                      const isSelf = row.user_id === currentUserId;
+                      return (
+                        <tr
+                          key={row.user_id}
+                          className="border-t border-brand-primary/8 align-middle"
+                        >
+                          <td className="px-3 py-2.5">
+                            <div className="flex min-w-0 flex-col gap-0.5">
+                              <p className="truncate text-text-primary">
+                                {row.email}
+                              </p>
+                              {isSelf ? (
+                                <span className="text-xs text-text-primary/40">
+                                  Signed in as you
+                                </span>
+                              ) : null}
                             </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="flex flex-wrap items-center justify-end gap-1.5">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              disabled={pending}
-                              onClick={() => {
-                                setError(null);
-                                setEditPassword("");
-                                setPasswordUser(row);
-                              }}
-                            >
-                              Password
-                            </Button>
-                            {!isSelf ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="danger"
-                                disabled={pending}
-                                onClick={() => {
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className={isSelf ? undefined : "max-w-36"}>
+                              <AdminRoleControl
+                                row={row}
+                                isSelf={isSelf}
+                                pending={pending}
+                                onRoleChange={onRoleChange}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex flex-wrap items-center justify-end gap-1.5">
+                              <AdminRowActions
+                                row={row}
+                                isSelf={isSelf}
+                                pending={pending}
+                                onPassword={(r) => {
                                   setError(null);
-                                  setRemoveUser(row);
+                                  setEditPassword("");
+                                  setPasswordUser(r);
                                 }}
-                              >
-                                Remove
-                              </Button>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                onRemove={(r) => {
+                                  setError(null);
+                                  setRemoveUser(r);
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </FieldGroup>
 
-        <FieldGroup title="Roles">
+        <FieldGroup title="Roles" className="min-w-0 w-full">
           <ul className="flex flex-col gap-2 text-sm text-text-primary/70">
             <li>
               <span className="font-medium text-text-primary">Owner</span>
@@ -327,13 +424,12 @@ export function AdminsEditor({
             />
           </Field>
           <Field label="Role">
-            <Select
+            <SelectMenu
               value={addRole}
-              onChange={(e) => setAddRole(e.target.value as AdminRole)}
-            >
-              <option value="editor">Editor</option>
-              <option value="owner">Owner</option>
-            </Select>
+              options={ROLE_OPTIONS}
+              aria-label="Role"
+              onChange={(value) => setAddRole(value as AdminRole)}
+            />
           </Field>
           <div className="flex flex-wrap gap-2">
             <Button

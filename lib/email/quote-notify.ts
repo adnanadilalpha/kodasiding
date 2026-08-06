@@ -10,6 +10,8 @@ import {
   EMAIL_LOGO_CID,
   type QuoteMessagePayload,
 } from "@/lib/email/templates";
+import { assertSafeSmtpHost } from "@/lib/email/smtp-host";
+import { decryptSmtpPass } from "@/lib/email/smtp-crypto";
 
 export type { QuoteMessagePayload };
 
@@ -98,22 +100,28 @@ function formatSmtpError(error: unknown) {
     return "Login failed. For Gmail/Yahoo use an App Password (not your normal password). For Outlook, use your Microsoft account password or app password.";
   }
 
-  return message;
+  return "Could not send email. Check your settings and try again.";
 }
 
 function createTransport(settings: QuoteEmailSettings) {
+  const hostCheck = assertSafeSmtpHost(settings.smtp_host);
+  if (!hostCheck.ok) {
+    throw new Error(hostCheck.error);
+  }
+
   const port = Number(settings.smtp_port) || 587;
   const secure = Boolean(settings.smtp_secure) || port === 465;
   const user = (settings.smtp_user || settings.from_email).trim();
+  const pass = decryptSmtpPass(settings.smtp_pass).replaceAll(" ", "");
 
   return nodemailer.createTransport({
-    host: settings.smtp_host.trim(),
+    host: hostCheck.host,
     port,
     secure,
     requireTLS: !secure && port === 587,
     auth: {
       user,
-      pass: settings.smtp_pass.replaceAll(" ", ""),
+      pass,
     },
     connectionTimeout: SMTP_TIMEOUT_MS,
     greetingTimeout: SMTP_TIMEOUT_MS,
@@ -123,12 +131,18 @@ function createTransport(settings: QuoteEmailSettings) {
 
 function isSmtpReady(settings: QuoteEmailSettings) {
   const user = (settings.smtp_user || settings.from_email).trim();
+  let passOk = false;
+  try {
+    passOk = Boolean(decryptSmtpPass(settings.smtp_pass).trim());
+  } catch {
+    passOk = Boolean(settings.smtp_pass.trim());
+  }
   return Boolean(
     settings.to_email.trim() &&
       settings.from_email.trim() &&
       settings.smtp_host.trim() &&
       user &&
-      settings.smtp_pass.trim(),
+      passOk,
   );
 }
 

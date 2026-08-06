@@ -34,8 +34,13 @@ yarn-error.log*
 .env*
 !.env.example
 
-#supabase 
+# supabase local temp / CLI cache — keep migrations versioned
+/supabase/.temp
+/supabase/.branches
+# Ignore everything under supabase except migrations
 /supabase
+!/supabase/migrations/
+!/supabase/migrations/**
 
 #scripts 
 /scripts

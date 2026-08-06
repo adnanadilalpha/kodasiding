@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  allowRateLimitedRequest,
+  requestClientIp,
+} from "@/lib/api/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -15,28 +19,8 @@ const POSITIVE_TTL_MS = 1000 * 60 * 60 * 24;
 const NEGATIVE_TTL_MS = 1000 * 60 * 15;
 const MAX_CACHE = 500;
 
-/** Simple per-IP throttle — Nominatim asks for ≤1 req/s; we stay well under. */
-const rateByIp = new Map<string, { windowStart: number; count: number }>();
 const RATE_WINDOW_MS = 60_000;
 const RATE_MAX = 20;
-
-function clientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || "unknown";
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
-}
-
-function allowRequest(ip: string) {
-  const now = Date.now();
-  const entry = rateByIp.get(ip);
-  if (!entry || now - entry.windowStart >= RATE_WINDOW_MS) {
-    rateByIp.set(ip, { windowStart: now, count: 1 });
-    return true;
-  }
-  if (entry.count >= RATE_MAX) return false;
-  entry.count += 1;
-  return true;
-}
 
 function pruneCache(now: number) {
   if (memory.size <= MAX_CACHE) return;
@@ -58,8 +42,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing q" }, { status: 400 });
   }
 
-  const ip = clientIp(request);
-  if (!allowRequest(ip)) {
+  const ip = requestClientIp(request);
+  if (
+    !(await allowRateLimitedRequest({
+      bucket: "geocode",
+      key: ip,
+      max: RATE_MAX,
+      windowMs: RATE_WINDOW_MS,
+    }))
+  ) {
     return NextResponse.json(
       { error: "Too many requests" },
       { status: 429 },
@@ -100,7 +91,6 @@ export async function GET(request: Request) {
       signal: AbortSignal.timeout(4500),
     });
 
-    // Transient upstream failures — never cache as "not found"
     if (res.status === 429 || res.status >= 500) {
       return NextResponse.json(
         { error: "Geocoder unavailable" },
@@ -118,7 +108,6 @@ export async function GET(request: Request) {
     const data = (await res.json()) as NominatimHit[];
     const hit = data[0] ?? null;
     pruneCache(now);
-    // Only cache definitive empty results, not transport failures
     memory.set(key, { at: now, value: hit });
 
     if (!hit) {

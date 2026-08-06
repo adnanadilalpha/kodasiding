@@ -7,6 +7,7 @@ import {
   isSocialIconId,
   type SocialIconId,
 } from "@/lib/cms/social-icons";
+import { isExternalHref } from "@/lib/cms/safe-href";
 import type { SocialLink } from "@/lib/cms/types";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
@@ -34,10 +35,12 @@ export function FooterSocialEditor({
   const [open, setOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [error, setError] = useState<string | null>(null);
 
   function openAdd() {
     setEditIndex(null);
     setDraft(emptyDraft());
+    setError(null);
     setOpen(true);
   }
 
@@ -50,22 +53,31 @@ export function FooterSocialEditor({
       href: item.href,
       icon: isSocialIconId(item.icon) ? item.icon : "website",
     });
+    setError(null);
     setOpen(true);
   }
 
   function commit() {
+    const href = draft.href.trim();
+    if (!isExternalHref(href)) {
+      setError(
+        "Use a full external URL (https://…). Internal paths like /profiles are not allowed.",
+      );
+      return;
+    }
     const next: SocialLink = {
       label:
         draft.label.trim() ||
         SOCIAL_ICON_OPTIONS.find((o) => o.id === draft.icon)?.label ||
         "Social",
-      href: draft.href.trim() || "#",
+      href,
       icon: draft.icon,
     };
     setItems((prev) => {
       if (editIndex == null) return [...prev, next];
       return prev.map((item, i) => (i === editIndex ? next : item));
     });
+    setError(null);
     setOpen(false);
   }
 
@@ -74,7 +86,7 @@ export function FooterSocialEditor({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full min-w-0 flex-col gap-4">
       <input
         type="hidden"
         name="footer_social"
@@ -93,24 +105,26 @@ export function FooterSocialEditor({
           No social links yet.
         </div>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid w-full gap-3 sm:grid-cols-2">
           {items.map((item, index) => {
             const Icon = getSocialIcon(item.icon);
             return (
               <li
                 key={`${item.icon}-${item.href}-${index}`}
-                className="flex items-center gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-secondary/40 px-3 py-3"
+                className="flex min-w-0 flex-col gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-secondary/40 px-3 py-3 sm:flex-row sm:items-center"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-bg-primary text-brand-primary">
-                  <Icon size={20} stroke={1.5} aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-sm font-semibold text-brand-primary">
-                    {item.label}
-                  </p>
-                  <p className="truncate text-xs text-text-primary/45">
-                    {item.href}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-bg-primary text-brand-primary">
+                    <Icon size={20} stroke={1.5} aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-sm font-semibold text-brand-primary">
+                      {item.label}
+                    </p>
+                    <p className="truncate text-xs text-text-primary/45">
+                      {item.href}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button
@@ -136,17 +150,20 @@ export function FooterSocialEditor({
 
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          setError(null);
+          setOpen(false);
+        }}
         title={editIndex == null ? "Add social link" : "Edit social link"}
-        description="Choose an icon, then set the label and URL."
+        description="External https:// URLs only — not site paths like /profiles."
         size="lg"
       >
-        <div className="flex flex-col gap-5">
-          <div>
+        <div className="flex w-full min-w-0 flex-col gap-5">
+          <div className="min-w-0 w-full">
             <p className="mb-2.5 text-sm leading-none text-text-secondary">
               Icon
             </p>
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+            <ul className="grid w-full grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
               {SOCIAL_ICON_OPTIONS.map((option) => {
                 const selected = draft.icon === option.id;
                 const Icon = option.Icon;
@@ -191,13 +208,21 @@ export function FooterSocialEditor({
             <Field label="URL">
               <TextInput
                 value={draft.href}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, href: e.target.value }))
-                }
+                onChange={(e) => {
+                  setError(null);
+                  setDraft((d) => ({ ...d, href: e.target.value }));
+                }}
                 placeholder="https://instagram.com/…"
               />
             </Field>
           </div>
+          {error ? (
+            <p className="text-sm text-red-700">{error}</p>
+          ) : (
+            <p className="text-xs text-text-primary/45">
+              External https:// links only — not site paths like /profiles.
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={commit}>

@@ -51,6 +51,14 @@ export function SiteHeader({
     event: React.MouseEvent<HTMLAnchorElement>,
     href: string,
   ) {
+    void import("@/lib/analytics/track-client").then(
+      ({ trackAnalyticsEvent }) => {
+        void trackAnalyticsEvent("nav_click", {
+          label: href,
+          metadata: { href },
+        });
+      },
+    );
     if (scrollToHash(href)) {
       event.preventDefault();
       closeMenu();

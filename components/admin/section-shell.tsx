@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SectionPanelChrome } from "@/components/admin/section-header-action";
 
 export type SectionTab = {
@@ -26,21 +26,31 @@ export function SectionShell({
       : sections[0]?.id;
   const [activeId, setActiveId] = useState(initial);
   const active = sections.find((s) => s.id === activeId) ?? sections[0];
+  const mobileTabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  useEffect(() => {
+    const el = mobileTabRefs.current.get(activeId ?? "");
+    el?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeId]);
 
   if (!active) return null;
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div className="flex w-full flex-col gap-3 sm:gap-4">
       <header className="shrink-0">
         <h1 className="font-display text-xl font-semibold tracking-tight text-brand-primary">
           {title}
         </h1>
       </header>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        <div className="shrink-0 lg:hidden">
+      <div className="flex w-full flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:gap-5">
+        <div className="sticky top-0 z-10 -mx-5 bg-bg-primary px-5 py-1 md:-mx-7 md:px-7 lg:static lg:mx-0 lg:hidden lg:bg-transparent lg:px-0 lg:py-0">
           <nav
-            className="flex gap-1 overflow-x-auto rounded-lg border border-brand-primary/8 bg-bg-secondary/80 p-2"
+            className="-mx-1 flex gap-1 overflow-x-auto overscroll-x-contain px-1 py-1 scrollbar-none"
             aria-label={`${title} sections`}
           >
             {sections.map((section, index) => {
@@ -49,11 +59,15 @@ export function SectionShell({
                 <button
                   key={section.id}
                   type="button"
+                  ref={(node) => {
+                    if (node) mobileTabRefs.current.set(section.id, node);
+                    else mobileTabRefs.current.delete(section.id);
+                  }}
                   onClick={() => setActiveId(section.id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium transition ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-medium transition sm:gap-2 ${
                     isActive
                       ? "bg-brand-primary text-text-inverse"
-                      : "text-brand-primary/70"
+                      : "bg-bg-secondary/80 text-brand-primary/70 ring-1 ring-brand-primary/8"
                   }`}
                 >
                   <span

@@ -101,6 +101,14 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
     const q = raw.trim();
     if (!q) return;
 
+    void import("@/lib/analytics/track-client").then(
+      ({ trackAnalyticsEvent }) => {
+        void trackAnalyticsEvent("dealer_search", {
+          label: q.slice(0, 80),
+        });
+      },
+    );
+
     const id = ++requestId.current;
     setError(null);
 
@@ -151,6 +159,7 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
 
   return (
     <div className="relative flex h-[calc(100dvh-4rem)] flex-col bg-bg-secondary lg:h-[calc(100dvh-6rem)] lg:flex-row">
+      <h1 className="sr-only">Find a Koda Siding dealer</h1>
       {hasResults ? (
         <aside className="z-10 flex max-h-[42vh] w-full shrink-0 flex-col border-b border-[#d8d5cc] bg-[#fdfcf8] lg:max-h-none lg:w-88 lg:border-r lg:border-b-0">
           <div className="flex items-start justify-between gap-3 border-b border-[#d8d5cc] px-6 py-4">
@@ -325,7 +334,16 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
                 {phoneHref(selected.phone) ? (
                   <button
                     type="button"
-                    onClick={() => setCallOpen(true)}
+                    onClick={() => {
+                      setCallOpen(true);
+                      void import("@/lib/analytics/track-client").then(
+                        ({ trackAnalyticsEvent }) => {
+                          void trackAnalyticsEvent("dealer_call", {
+                            label: "Call dealer",
+                          });
+                        },
+                      );
+                    }}
                     className="inline-flex h-11.5 items-center justify-center rounded-md bg-brand-primary px-8 font-display text-sm tracking-[0.04em] text-text-inverse uppercase transition hover:bg-brand-primary-active"
                   >
                     Call

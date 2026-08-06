@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
 
 const pages = [
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/home", label: "Home" },
   { href: "/admin/profiles", label: "Profiles" },
   { href: "/admin/dealer", label: "Find dealer" },
@@ -28,11 +31,36 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
   const visibleTools = tools.filter(
     (item) => !item.ownerOnly || role === "owner",
   );
 
+  const currentLabel =
+    [...pages, ...visibleTools].find(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.label ?? "Admin";
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const unlock = lockBodyScroll();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      unlock();
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   async function signOut() {
+    setMenuOpen(false);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/admin/login");
@@ -51,10 +79,52 @@ export function AdminSidebar({
     }`;
   }
 
+  function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
+    return (
+      <nav className="flex flex-1 flex-col gap-5 p-4" aria-label="Admin">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-none text-[#ddddd7]">Pages</p>
+          <div className="flex w-full max-w-37.5 flex-col gap-2.5">
+            {pages.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={linkClass(item.href)}
+                onClick={onNavigate}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <p className="text-sm leading-none text-[#ddddd7]">System</p>
+          <div className="flex w-full max-w-37.5 flex-col gap-2.5">
+            {visibleTools.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={linkClass(item.href)}
+                onClick={onNavigate}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <>
-      {/* Small screens */}
-      <header className="flex shrink-0 items-center gap-3 bg-brand-primary px-4 py-3 md:hidden">
+      {/* Small screens — compact header + drawer */}
+      <header
+        className={`flex shrink-0 items-center gap-3 bg-brand-primary px-4 py-3 md:hidden ${
+          menuOpen ? "relative z-60" : ""
+        }`}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/koda-logo.svg"
@@ -63,29 +133,75 @@ export function AdminSidebar({
           height={23}
           className="h-5.75 w-auto shrink-0"
         />
-        <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto" aria-label="Admin">
-          {[...pages, ...visibleTools].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`shrink-0 rounded-[9px] px-2.5 py-2 text-sm ${
-                isActive(item.href)
-                  ? "bg-accent-warm text-text-primary"
-                  : "text-text-inverse"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <p className="min-w-0 flex-1 truncate text-sm font-medium text-text-inverse">
+          {currentLabel}
+        </p>
         <button
           type="button"
-          onClick={signOut}
-          className="shrink-0 text-sm text-[#ff383c]"
+          className="flex size-10 shrink-0 items-center justify-center rounded-[9px] text-text-inverse transition hover:bg-white/8"
+          aria-expanded={menuOpen}
+          aria-controls={menuId}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMenuOpen((open) => !open)}
         >
-          Sign out
+          {menuOpen ? (
+            <span className="relative block size-4" aria-hidden>
+              <span className="absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2 rotate-45 bg-current" />
+              <span className="absolute top-1/2 left-0 h-0.5 w-full -translate-y-1/2 -rotate-45 bg-current" />
+            </span>
+          ) : (
+            <span className="flex flex-col gap-1" aria-hidden>
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="block h-0.5 w-5 bg-current" />
+            </span>
+          )}
         </button>
       </header>
+
+      {menuOpen ? (
+        <div
+          id={menuId}
+          className="fixed inset-0 z-50 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Admin menu"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="relative z-10 flex h-full w-[min(100%,18.5rem)] flex-col bg-brand-primary shadow-lg">
+            <div className="px-4 py-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/koda-logo.svg"
+                alt="Koda Siding"
+                width={84}
+                height={23}
+                className="h-5.75 w-auto"
+              />
+            </div>
+
+            <NavGroups onNavigate={() => setMenuOpen(false)} />
+
+            <div className="mt-auto border-t border-white/8 p-4">
+              <div className="flex flex-col gap-3 text-base leading-none">
+                <p className="truncate text-text-inverse">{email}</p>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="w-fit text-left text-[#ff383c] transition hover:opacity-80"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Desktop — Figma: 182px rail */}
       <aside className="hidden h-full w-45.5 shrink-0 flex-col bg-brand-primary md:flex">
@@ -100,37 +216,7 @@ export function AdminSidebar({
           />
         </div>
 
-        <nav className="flex flex-1 flex-col gap-5 p-4">
-          <div className="flex flex-col gap-3">
-            <p className="text-sm leading-none text-[#ddddd7]">Pages</p>
-            <div className="flex w-37.5 flex-col gap-2.5">
-              {pages.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={linkClass(item.href)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <p className="text-sm leading-none text-[#ddddd7]">System</p>
-            <div className="flex w-37.5 flex-col gap-2.5">
-              {visibleTools.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={linkClass(item.href)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </nav>
+        <NavGroups />
 
         <div className="mt-auto border-t border-white/8 p-4">
           <div className="flex flex-col gap-3 text-base leading-none">

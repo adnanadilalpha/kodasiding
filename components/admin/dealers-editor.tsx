@@ -24,7 +24,7 @@ export type DealerItem = {
 
 function DealerFields({ dealer }: { dealer?: DealerItem }) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex w-full min-w-0 flex-col gap-5">
       <FieldGroup title="Contact" columns={2}>
         <Field label="Name">
           <TextInput
@@ -41,19 +41,23 @@ function DealerFields({ dealer }: { dealer?: DealerItem }) {
             placeholder="Enter phone"
           />
         </Field>
-        <div className="sm:col-span-2">
+        <div className="min-w-0 sm:col-span-2">
           <Field label="Website">
             <TextInput
               name="website"
+              type="url"
               defaultValue={dealer?.website}
               placeholder="https://…"
             />
+            <p className="mt-1 text-xs text-text-primary/45">
+              External https:// URL only — not site paths like /profiles.
+            </p>
           </Field>
         </div>
       </FieldGroup>
 
       <FieldGroup title="Location" columns={2}>
-        <div className="sm:col-span-2">
+        <div className="min-w-0 sm:col-span-2">
           <Field label="Address">
             <TextInput
               name="address"
@@ -149,7 +153,7 @@ export function DealersEditor({ dealers }: { dealers: DealerItem[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       <SectionHeaderAction>
         <Button size="sm" type="button" onClick={() => setAddOpen(true)}>
           Add dealer
@@ -161,23 +165,24 @@ export function DealersEditor({ dealers }: { dealers: DealerItem[] }) {
           No dealers yet.
         </div>
       ) : (
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex w-full flex-col gap-2.5">
           {dealers.map((dealer) => (
             <li
               key={dealer.id}
-              className="flex flex-wrap items-center gap-4 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3.5 py-3"
+              className="flex flex-col gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3.5 py-3 sm:flex-row sm:items-center sm:gap-4"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-display text-base font-semibold text-brand-primary">
+                <p className="font-display truncate text-base font-semibold text-brand-primary">
                   {dealer.name}
                 </p>
                 <p className="mt-0.5 truncate text-sm text-text-primary/45">
                   {[dealer.city, dealer.region].filter(Boolean).join(", ") ||
                     "No location"}
+                  {dealer.phone ? ` · ${dealer.phone}` : ""}
                   {dealer.is_published ? "" : " · Draft"}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setEditId(dealer.id)}

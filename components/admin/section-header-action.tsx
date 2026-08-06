@@ -24,8 +24,8 @@ export function SectionPanelChrome({
 
   return (
     <HeaderActionSlotContext.Provider value={slot}>
-      <section className="flex min-w-0 flex-1 flex-col self-start overflow-hidden rounded-lg border border-brand-primary/8 bg-bg-secondary/80">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-brand-primary/8 px-5 py-3">
+      <section className="flex w-full min-w-0 flex-1 flex-col self-stretch overflow-hidden rounded-lg border border-brand-primary/8 bg-bg-secondary/80 lg:self-start">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-brand-primary/8 px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-baseline gap-2">
             <h2 className="font-display text-base font-semibold tracking-tight text-brand-primary">
               {title}
@@ -36,9 +36,12 @@ export function SectionPanelChrome({
               </span>
             ) : null}
           </div>
-          <div ref={setSlot} className="flex shrink-0 items-center" />
+          <div
+            ref={setSlot}
+            className="flex min-w-0 flex-wrap items-center justify-end gap-2"
+          />
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5">{children}</div>
       </section>
     </HeaderActionSlotContext.Provider>
   );

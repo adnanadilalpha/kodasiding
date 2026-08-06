@@ -89,14 +89,14 @@ export function PartnersEditor({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       <SectionHeaderAction>
         <Button size="sm" type="button" variant="accent" onClick={() => setAddOpen(true)}>
           Add partner
         </Button>
       </SectionHeaderAction>
 
-      <form action={onSaveTitle} className="flex flex-col gap-5">
+      <form action={onSaveTitle} className="flex w-full flex-col gap-5">
         <label className="flex items-start gap-2.5 text-sm text-text-secondary">
           <input
             type="checkbox"
@@ -119,13 +119,13 @@ export function PartnersEditor({
           />
         </Field>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex w-full flex-col gap-3">
           {partners.length === 0 ? (
             <div className="rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-4 py-8 text-center">
               <p className="text-sm text-text-primary/45">No partners yet.</p>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {partners.map((partner) => {
                 const src = partner.logoPath
                   ? publicMediaUrl(partner.logoPath) ?? null
@@ -133,12 +133,12 @@ export function PartnersEditor({
                 return (
                   <li
                     key={partner.id}
-                    className="flex items-center gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3 py-2.5"
+                    className="flex flex-col gap-3 rounded-[9px] border border-brand-primary/8 bg-bg-primary/80 px-3 py-3"
                   >
                     <button
                       type="button"
                       onClick={() => setEditId(partner.id)}
-                      className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-bg-secondary/50 px-2 transition hover:bg-bg-secondary/80"
+                      className="flex h-14 w-full items-center justify-center rounded-md bg-bg-secondary/50 px-3 transition hover:bg-bg-secondary/80"
                     >
                       {src ? (
                         <Image
@@ -146,6 +146,7 @@ export function PartnersEditor({
                           alt={partner.name}
                           width={80}
                           height={48}
+                          loading="eager"
                           className="max-h-8 w-auto object-contain"
                         />
                       ) : (
@@ -154,33 +155,35 @@ export function PartnersEditor({
                         </span>
                       )}
                     </button>
-                    <label className="flex items-center gap-2 text-sm text-text-secondary">
-                      <input
-                        type="checkbox"
-                        checked={partner.is_published}
-                        disabled={pending}
-                        onChange={(e) =>
-                          onToggleLive(partner, e.target.checked)
-                        }
-                      />
-                      Live
-                    </label>
-                    <div className="ml-auto flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setEditId(partner.id)}
-                        className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => onDelete(partner.id)}
-                        className="text-sm text-[#ff383c] transition hover:opacity-80"
-                      >
-                        Remove
-                      </button>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="flex items-center gap-2 text-sm text-text-secondary">
+                        <input
+                          type="checkbox"
+                          checked={partner.is_published}
+                          disabled={pending}
+                          onChange={(e) =>
+                            onToggleLive(partner, e.target.checked)
+                          }
+                        />
+                        Live
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditId(partner.id)}
+                          className="text-sm text-brand-primary/70 transition hover:text-brand-primary"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => onDelete(partner.id)}
+                          className="text-sm text-[#ff383c] transition hover:opacity-80"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </li>
                 );

@@ -23,7 +23,13 @@ function escapeHtml(value: string) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+/** Strip CR/LF so values are safe in email subjects/headers. */
+export function sanitizeHeaderValue(value: string, max = 200) {
+  return value.replace(/[\r\n\0]+/g, " ").trim().slice(0, max);
 }
 
 function emailLogoMarkup(logoSrc?: string) {
@@ -227,13 +233,13 @@ export function buildQuoteNotificationEmail(
   `;
 
   const html = emailShell({
-    preheader: `New quote request from ${payload.full_name}${location !== "—" ? ` · ${location}` : ""}`,
+    preheader: `New quote request from ${sanitizeHeaderValue(payload.full_name)}${location !== "—" ? ` · ${sanitizeHeaderValue(location)}` : ""}`,
     bodyHtml,
     logoSrc: options?.logoSrc,
   });
 
   return {
-    subject: `New quote request from ${payload.full_name}${location !== "—" ? ` · ${location}` : ""}`,
+    subject: `New quote request from ${sanitizeHeaderValue(payload.full_name)}${location !== "—" ? ` · ${sanitizeHeaderValue(location)}` : ""}`,
     text,
     html,
   };

@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { HomeHero } from "@/lib/cms/types";
 import { PROFILES_HREF, normalizeLinkHref } from "@/lib/cms/nav-slots";
 import { safeHref } from "@/lib/cms/safe-href";
+import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
 
 export function HomeHeroSection({
   hero,
@@ -26,9 +29,8 @@ export function HomeHeroSection({
       >
         <Image
           src={imageUrl}
-          alt=""
+          alt={hero.headline || "Koda Siding"}
           fill
-          priority
           loading="eager"
           fetchPriority="high"
           quality={95}
@@ -49,6 +51,12 @@ export function HomeHeroSection({
           </div>
           <Link
             href={ctaHref}
+            onClick={() =>
+              void trackAnalyticsEvent("cta_click", {
+                label: hero.cta_label || "Hero CTA",
+                metadata: { placement: "hero" },
+              })
+            }
             className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
           >
             {hero.cta_label}
