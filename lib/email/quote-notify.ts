@@ -55,13 +55,13 @@ export type QuoteDeliveryResult = {
 export function normalizeQuoteEmailSettings(
   row: Partial<QuoteEmailSettings> | null | undefined,
 ): QuoteEmailSettings {
+  // Pick only writable columns — never forward generated fields like smtp_pass_set.
   return {
-    ...defaultQuoteEmailSettings,
-    ...row,
-    provider: "smtp",
-    smtp_port: Number(row?.smtp_port ?? defaultQuoteEmailSettings.smtp_port),
     enabled: Boolean(row?.enabled),
-    smtp_secure: Boolean(row?.smtp_secure),
+    provider: "smtp",
+    to_email: String(row?.to_email ?? defaultQuoteEmailSettings.to_email),
+    from_email: String(row?.from_email ?? defaultQuoteEmailSettings.from_email),
+    from_name: String(row?.from_name ?? defaultQuoteEmailSettings.from_name),
     reply_to_submitter:
       row?.reply_to_submitter === undefined
         ? defaultQuoteEmailSettings.reply_to_submitter
@@ -70,8 +70,14 @@ export function normalizeQuoteEmailSettings(
       row?.send_lead_confirmation === undefined
         ? defaultQuoteEmailSettings.send_lead_confirmation
         : Boolean(row.send_lead_confirmation),
-    smtp_user: String(row?.smtp_user || row?.from_email || ""),
     resend_api_key: "",
+    smtp_host: String(row?.smtp_host ?? defaultQuoteEmailSettings.smtp_host),
+    smtp_port: Number(row?.smtp_port ?? defaultQuoteEmailSettings.smtp_port),
+    smtp_secure: Boolean(
+      row?.smtp_secure ?? defaultQuoteEmailSettings.smtp_secure,
+    ),
+    smtp_user: String(row?.smtp_user || row?.from_email || ""),
+    smtp_pass: String(row?.smtp_pass ?? ""),
   };
 }
 
@@ -110,7 +116,8 @@ function createTransport(settings: QuoteEmailSettings) {
   }
 
   const port = Number(settings.smtp_port) || 587;
-  const secure = Boolean(settings.smtp_secure) || port === 465;
+  // Port 465 = implicit TLS; port 587 = plain + STARTTLS. Mixing these hangs/times out.
+  const secure = port === 465 ? true : port === 587 ? false : Boolean(settings.smtp_secure);
   const user = (settings.smtp_user || settings.from_email).trim();
   const pass = decryptSmtpPass(settings.smtp_pass).replaceAll(" ", "");
 

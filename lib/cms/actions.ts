@@ -1042,13 +1042,40 @@ export async function saveQuoteEmailSettings(
   next.provider = "smtp";
   next.resend_api_key = "";
 
-  const { error } = await supabase.from("quote_email_settings").upsert({
-    id: 1,
-    ...next,
+  // Writable columns only. Do not use upsert: PostgREST POSTs include generated
+  // columns (smtp_pass_set) and Postgres rejects them with 428C9.
+  const payload = {
+    enabled: next.enabled,
+    provider: next.provider,
+    to_email: next.to_email,
+    from_email: next.from_email,
+    from_name: next.from_name,
+    reply_to_submitter: next.reply_to_submitter,
+    send_lead_confirmation: next.send_lead_confirmation,
+    resend_api_key: next.resend_api_key,
+    smtp_host: next.smtp_host,
+    smtp_port: next.smtp_port,
+    smtp_secure: next.smtp_secure,
+    smtp_user: next.smtp_user,
+    smtp_pass: next.smtp_pass,
     updated_at: new Date().toISOString(),
-  });
+  };
 
-  if (error) return { error: error.message };
+  const { data: updated, error: updateError } = await supabase
+    .from("quote_email_settings")
+    .update(payload)
+    .eq("id", 1)
+    .select("id");
+
+  if (updateError) return { error: updateError.message };
+
+  if (!updated?.length) {
+    const { error: insertError } = await supabase
+      .from("quote_email_settings")
+      .insert({ id: 1, ...payload });
+    if (insertError) return { error: insertError.message };
+  }
+
   revalidatePath("/admin/email");
   return { success: true };
 }

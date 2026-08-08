@@ -356,9 +356,16 @@ export function QuoteEmailSettingsForm({
               <input
                 type="number"
                 value={values.smtp_port}
-                onChange={(e) =>
-                  update("smtp_port", Number(e.target.value) || 587)
-                }
+                onChange={(e) => {
+                  const port = Number(e.target.value) || 587;
+                  setValues((current) => ({
+                    ...current,
+                    smtp_port: port,
+                    // Keep SSL in sync with the usual port pairing.
+                    smtp_secure:
+                      port === 465 ? true : port === 587 ? false : current.smtp_secure,
+                  }));
+                }}
                 className={inputClass}
               />
             </label>
@@ -366,10 +373,17 @@ export function QuoteEmailSettingsForm({
               <input
                 type="checkbox"
                 checked={values.smtp_secure}
-                onChange={(e) => update("smtp_secure", e.target.checked)}
+                onChange={(e) => {
+                  const secure = e.target.checked;
+                  setValues((current) => ({
+                    ...current,
+                    smtp_secure: secure,
+                    smtp_port: secure ? 465 : 587,
+                  }));
+                }}
                 className="mt-0.5 size-4 shrink-0 rounded border-brand-primary/20 sm:mt-0"
               />
-              <span>Use SSL (usually port 465)</span>
+              <span>Use SSL (port 465). Leave off for port 587 (STARTTLS).</span>
             </label>
           </div>
         ) : null}

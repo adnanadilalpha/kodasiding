@@ -1,7 +1,7 @@
 import { QuoteEmailSettingsForm } from "@/components/admin/quote-email-settings-form";
 import { EmailTemplatePreview } from "@/components/admin/email-template-preview";
 import { requireOwner } from "@/lib/auth/admin";
-import { defaultQuoteEmailSettings } from "@/lib/email/quote-notify";
+import { normalizeQuoteEmailSettings } from "@/lib/email/quote-notify";
 import type { QuoteEmailSettings } from "@/lib/cms/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,13 +20,10 @@ export default async function EmailSetupPage() {
     | (Partial<QuoteEmailSettings> & { smtp_pass_set?: boolean })
     | null;
 
-  const settings: QuoteEmailSettings = {
-    ...defaultQuoteEmailSettings,
+  const settings = normalizeQuoteEmailSettings({
     ...row,
-    provider: "smtp",
-    resend_api_key: "",
     smtp_pass: "",
-  };
+  });
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-5 sm:gap-6">
