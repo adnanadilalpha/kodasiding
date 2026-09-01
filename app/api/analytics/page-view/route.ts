@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ENGAGED_SESSION_SECONDS } from "@/lib/analytics/engagement";
 import { deviceTypeFromUserAgent } from "@/lib/analytics/device";
 import { isInternalAnalyticsRequest } from "@/lib/analytics/internal-traffic";
 import { normalizeAnalyticsPath } from "@/lib/analytics/normalize-path";
@@ -227,9 +228,8 @@ export async function PATCH(request: Request) {
   const duration = clampDuration(durationSeconds);
   if (duration != null) {
     updates.duration_seconds = duration;
-  }
-
-  if (typeof isBounce === "boolean") {
+    updates.is_bounce = duration < ENGAGED_SESSION_SECONDS;
+  } else if (typeof isBounce === "boolean") {
     updates.is_bounce = isBounce;
   }
 

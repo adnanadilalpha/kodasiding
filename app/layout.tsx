@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { buildRootMetadata } from "@/lib/cms/seo-metadata";
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
         className="flex min-h-full flex-col font-sans"
         suppressHydrationWarning
       >
+        <GoogleAnalytics />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:rounded-md focus:bg-bg-primary focus:px-4 focus:py-2 focus:text-brand-primary focus:shadow-lg"

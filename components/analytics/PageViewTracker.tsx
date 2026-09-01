@@ -4,6 +4,7 @@ import {
   getOrRefreshSession,
   touchSession,
 } from "@/lib/analytics/client-session";
+import { ENGAGED_SESSION_SECONDS } from "@/lib/analytics/engagement";
 import { canTrackAnalytics } from "@/lib/analytics/track-client";
 import { normalizeAnalyticsPath } from "@/lib/analytics/normalize-path";
 import { usePathname } from "next/navigation";
@@ -11,6 +12,7 @@ import { useEffect, useRef } from "react";
 
 const VIEW_KEY = "koda.analytics.view";
 const SESSION_VIEWS_KEY = "koda.analytics.session-views";
+const DURATION_HEARTBEAT_MS = 30_000;
 
 type SessionViewMap = Record<string, Record<string, string>>;
 
@@ -52,6 +54,22 @@ async function patchPageView(
   });
 
   touchSession();
+}
+
+function currentDurationSeconds(startedAt: number): number {
+  return Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+}
+
+function flushActiveViewDuration(
+  viewId: string,
+  sessionId: string,
+  startedAt: number,
+) {
+  const durationSeconds = currentDurationSeconds(startedAt);
+  void patchPageView(viewId, sessionId, {
+    durationSeconds,
+    isBounce: durationSeconds < ENGAGED_SESSION_SECONDS,
+  });
 }
 
 async function trackPageView(path: string, sessionId: string) {
@@ -138,21 +156,29 @@ export function PageViewTracker() {
       });
     }
 
-    const handlePageHide = () => {
+    const flushActiveView = () => {
       const viewId = sessionStorage.getItem(VIEW_KEY);
       if (!viewId) return;
-
-      void patchPageView(viewId, session.id, {
-        durationSeconds: Math.max(
-          1,
-          Math.round((Date.now() - startedAtRef.current) / 1000),
-        ),
-        isBounce: true,
-      });
+      flushActiveViewDuration(viewId, session.id, startedAtRef.current);
     };
 
+    const handlePageHide = () => {
+      flushActiveView();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushActiveView();
+      }
+    };
+
+    const heartbeat = window.setInterval(flushActiveView, DURATION_HEARTBEAT_MS);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", handlePageHide);
     return () => {
+      window.clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
     };
   }, [pathname]);

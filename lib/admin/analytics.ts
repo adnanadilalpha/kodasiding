@@ -1,6 +1,11 @@
 import { getPageLabel } from "@/lib/admin/page-labels";
 import { filterAudiencePageViews } from "@/lib/analytics/audience";
 import {
+  groupViewsBySession,
+  isBounceSession,
+  sessionDurationSeconds,
+} from "@/lib/analytics/engagement";
+import {
   getVisitorDedupKey,
   countActiveUsers,
   countUniqueSessions,
@@ -218,23 +223,15 @@ function filterAudienceEvents(events: AnalyticsEventRecord[]): AnalyticsEventRec
 }
 
 function computeAvgSessionDuration(views: PageViewRow[]): number {
-  const sessionTotals = new Map<string, number>();
+  const sessions = groupViewsBySession(views);
+  if (sessions.size === 0) return 0;
 
-  for (const view of views) {
-    if (typeof view.duration_seconds !== "number" || view.duration_seconds <= 0) {
-      continue;
-    }
-
-    sessionTotals.set(
-      view.session_id,
-      (sessionTotals.get(view.session_id) ?? 0) + view.duration_seconds,
-    );
+  let totalSeconds = 0;
+  for (const sessionViews of sessions.values()) {
+    totalSeconds += sessionDurationSeconds(sessionViews);
   }
 
-  const totals = [...sessionTotals.values()];
-  if (totals.length === 0) return 0;
-
-  return totals.reduce((sum, value) => sum + value, 0) / totals.length;
+  return totalSeconds / sessions.size;
 }
 
 export function buildVisitorsOverTime(
@@ -498,23 +495,20 @@ export function buildTopEvents(
     .slice(0, limit);
 }
 
-export function computeBounceRate(views: PageViewRow[]): number {
-  const sessions = new Map<string, { count: number; bounced: boolean }>();
-
-  for (const view of views) {
-    const existing = sessions.get(view.session_id) ?? { count: 0, bounced: true };
-    existing.count += 1;
-    if (!view.is_bounce) {
-      existing.bounced = false;
-    }
-    sessions.set(view.session_id, existing);
-  }
+export function computeBounceRate(
+  views: PageViewRow[],
+  events: AnalyticsEventRecord[] = [],
+): number {
+  const sessions = groupViewsBySession(views);
+  const engagedSessions = new Set(
+    filterAudienceEvents(events).map((event) => event.session_id),
+  );
 
   if (sessions.size === 0) return 0;
 
   let bounces = 0;
-  for (const session of sessions.values()) {
-    if (session.count === 1 && session.bounced) {
+  for (const [sessionId, sessionViews] of sessions) {
+    if (isBounceSession(sessionViews, engagedSessions.has(sessionId))) {
       bounces += 1;
     }
   }
@@ -585,7 +579,7 @@ export async function buildAnalyticsSummary(
     formatPercentChange(totalPageViews, previousPageViews),
   );
   const avgDuration = computeAvgSessionDuration(currentViews);
-  const bounce = computeBounceRate(currentViews);
+  const bounce = computeBounceRate(currentViews, currentEvents);
   const visitorLocations = await buildVisitorLocations(currentViews);
 
   return {

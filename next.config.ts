@@ -18,10 +18,10 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   // Production: no unsafe-eval. Dev keeps it for Next/Turbopack HMR tooling.
   isDev
-    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com"
-    : "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com",
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com"
+    : "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com",
   "frame-src 'self' https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
-  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://www.google.com https://www.gstatic.com`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com`,
   "media-src 'self' https: blob:",
   "worker-src 'self' blob:",
   "upgrade-insecure-requests",
