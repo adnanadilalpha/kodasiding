@@ -81,7 +81,7 @@ export async function saveHomeWhyKoda(formData: FormData) {
   const prevWhy = previous?.why_koda as {
     image_media_id?: string | null;
   } | null;
-  const features = [0, 1, 2].map((i) => ({
+  const features = [0, 1, 2, 3, 4].map((i) => ({
     number: String(formData.get(`feature_${i}_number`) ?? ""),
     title: String(formData.get(`feature_${i}_title`) ?? ""),
     body: String(formData.get(`feature_${i}_body`) ?? ""),

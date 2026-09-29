@@ -156,38 +156,38 @@ function ProfileTileForm({
         className={tab === "details" ? "flex w-full flex-col gap-5" : "hidden"}
       >
         <FieldGroup title="Specs" columns={2}>
-          <Field label="Face width">
+          <Field label="Coverage">
+            <TextInput
+              name="exposure"
+              defaultValue={profile?.exposure}
+              placeholder='6"'
+            />
+          </Field>
+          <Field label="Height">
             <TextInput
               name="face_width"
               defaultValue={profile?.face_width}
-              placeholder='3 1/2"'
+              placeholder='7 5/16"'
             />
           </Field>
           <Field label="Depth">
             <TextInput
               name="depth"
               defaultValue={profile?.depth}
-              placeholder='7/16"'
-            />
-          </Field>
-          <Field label="Install">
-            <TextInput
-              name="install"
-              defaultValue={profile?.install}
-              placeholder="Starter Profile"
+              placeholder='11/16"'
             />
           </Field>
         </FieldGroup>
 
-        <input type="hidden" name="exposure" value={profile?.exposure ?? ""} />
+        <input type="hidden" name="install" value={profile?.install ?? ""} />
 
         <FieldGroup title="Description">
-          <Field label="Description">
+          <Field label="Description (optional)">
             <TextArea
               name="description"
               rows={4}
               defaultValue={profile?.description}
-              placeholder="Shown in the Learn more modal"
+              placeholder="Optional — leave blank to hide in the Learn more modal"
             />
           </Field>
         </FieldGroup>

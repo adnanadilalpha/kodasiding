@@ -56,20 +56,21 @@ function ProfileMedia({
 
 function hasDetails(profile: ProfileTileData) {
   return Boolean(
-    profile.face_width?.trim() ||
+    profile.exposure?.trim() ||
+      profile.face_width?.trim() ||
       profile.depth?.trim() ||
-      profile.install?.trim() ||
       profile.description?.trim() ||
       profile.diagramUrl,
   );
 }
 
-function SpecCell({ label, value }: { label: string; value: string }) {
-  if (!value.trim()) return null;
+function SpecCell({ label, value }: { label: string; value?: string | null }) {
+  const text = value?.trim();
+  if (!text) return null;
   return (
     <div className="min-w-0">
       <p className="text-base leading-none text-text-secondary">{label}</p>
-      <p className="mt-2 text-base text-text-primary">{value}</p>
+      <p className="mt-2 text-base text-text-primary">{text}</p>
     </div>
   );
 }
@@ -84,6 +85,12 @@ function ProfileDetailModal({
   const titleId = useId();
   const [entered, setEntered] = useState(false);
   const hasDiagram = Boolean(profile.diagramUrl);
+  const description = profile.description?.trim() ?? "";
+  const hasSpecs = Boolean(
+    profile.exposure?.trim() ||
+      profile.face_width?.trim() ||
+      profile.depth?.trim(),
+  );
 
   useEffect(() => {
     const unlock = lockBodyScroll();
@@ -138,48 +145,46 @@ function ProfileDetailModal({
           </span>
         </button>
 
-        <div className="px-6 py-10 sm:px-10 sm:py-12 lg:px-12">
-          <h2
-            id={titleId}
-            className="font-display pr-10 text-2xl font-bold text-brand-primary uppercase sm:text-[28px]"
-          >
-            {profile.name}
-          </h2>
+        <div
+          className={`px-6 py-10 sm:px-10 sm:py-12 lg:px-12 ${
+            hasDiagram
+              ? "lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-12"
+              : ""
+          }`}
+        >
+          <div className="flex min-w-0 flex-col gap-8 self-start">
+            <h2
+              id={titleId}
+              className="font-display pr-10 text-2xl font-bold whitespace-nowrap text-brand-primary uppercase sm:text-[28px]"
+            >
+              {profile.name}
+            </h2>
 
-          <div className="mt-8 grid grid-cols-3 gap-x-6 gap-y-6">
-            <SpecCell label="Face Width" value={profile.face_width} />
-            <SpecCell label="Depth" value={profile.depth} />
-            <SpecCell label="Install" value={profile.install} />
+            {hasSpecs ? (
+              <div className="grid grid-cols-3 gap-x-6 gap-y-6">
+                <SpecCell label="Coverage" value={profile.exposure} />
+                <SpecCell label="Height" value={profile.face_width} />
+                <SpecCell label="Depth" value={profile.depth} />
+              </div>
+            ) : null}
+
+            {description ? (
+              <p className="text-base leading-relaxed text-text-secondary lg:max-w-prose">
+                {description}
+              </p>
+            ) : null}
           </div>
 
-          {profile.description?.trim() || hasDiagram ? (
-            <div
-              className={`mt-8 ${
-                profile.description?.trim() && hasDiagram
-                  ? "lg:grid lg:grid-cols-2 lg:item-top lg:gap-12"
-                  : ""
-              }`}
-            >
-              {profile.description?.trim() ? (
-                <p className="text-base leading-relaxed text-text-secondary lg:max-w-prose">
-                  {profile.description}
-                </p>
-              ) : null}
-
-              {hasDiagram && profile.diagramUrl ? (
-                <div
-                  className={`relative h-48 w-full sm:h-56 lg:h-60 ${
-                    profile.description?.trim() ? "mt-8 lg:mt-0" : ""
-                  }`}
-                >
-                  <ProfileMedia
-                    src={profile.diagramUrl}
-                    alt={`${profile.name} cross-section diagram`}
-                    sizes="(max-width: 1024px) 90vw, 40vw"
-                    className="object-contain object-left lg:object-center"
-                  />
-                </div>
-              ) : null}
+          {hasDiagram && profile.diagramUrl ? (
+            <div className="relative mt-8 flex h-52 w-full items-center justify-center sm:h-64 lg:mt-0 lg:h-full lg:min-h-72">
+              <div className="relative h-52 w-full sm:h-64 lg:h-72">
+                <ProfileMedia
+                  src={profile.diagramUrl}
+                  alt={`${profile.name} cross-section diagram`}
+                  sizes="(max-width: 1024px) 90vw, 40vw"
+                  className="object-contain object-center"
+                />
+              </div>
             </div>
           ) : null}
         </div>

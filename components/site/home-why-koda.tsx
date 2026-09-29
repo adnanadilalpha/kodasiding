@@ -21,7 +21,9 @@ export function HomeWhyKodaSection({
             </p>
           </div>
           <ul className="flex flex-col">
-            {(why.features ?? []).map((feature) => (
+            {(why.features ?? [])
+              .filter((feature) => feature.title.trim() || feature.body.trim())
+              .map((feature) => (
               <li
                 key={feature.number + feature.title}
                 className="border-t border-[#1e2e28] pt-3 pb-6"

@@ -186,7 +186,7 @@ export default async function HomeEditorPage({
                     </Field>
                   </FieldGroup>
                   <FieldGroup title="Features">
-                    {[0, 1, 2].map((i) => (
+                    {[0, 1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
                         className="grid w-full gap-2 rounded-lg bg-bg-secondary/50 p-2 sm:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.5fr)]"

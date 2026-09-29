@@ -6,16 +6,16 @@ import type { NavLink } from "@/lib/cms/types";
  */
 export const NAV_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why koda" },
+  { href: "/profiles", defaultLabel: "Profiles" },
   { href: "/#installation", defaultLabel: "Installation" },
   { href: "/#contact", defaultLabel: "Contact" },
-  { href: "/profiles", defaultLabel: "Profiles" },
 ] as const;
 
 export const FOOTER_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why Koda" },
+  { href: "/profiles", defaultLabel: "Profiles" },
   { href: "/#installation", defaultLabel: "Installations" },
   { href: "/#contact", defaultLabel: "Contact" },
-  { href: "/profiles", defaultLabel: "Profiles" },
 ] as const;
 
 export const FIND_DEALER_HREF = "/find-dealer";
