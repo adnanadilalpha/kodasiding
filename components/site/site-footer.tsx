@@ -47,7 +47,7 @@ export function SiteFooter({
                   }}
                   className="text-lg whitespace-nowrap text-text-primary sm:text-2xl lg:text-2xl"
                 >
-                  {isProfiles ? `${link.label} →` : link.label}
+                  {isProfiles ? `${link.label}` : link.label}
                 </Link>
               );
             })}

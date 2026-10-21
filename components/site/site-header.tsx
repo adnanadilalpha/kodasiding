@@ -103,11 +103,11 @@ export function SiteHeader({
                 onClick={(e) => onNavClick(e, link.href)}
                 className={
                   isProfiles
-                    ? "text-base font-medium text-text-inverse uppercase"
+                    ? "text-base font-medium text-text-inverse"
                     : "text-base text-text-inverse"
                 }
               >
-                {isProfiles ? `${link.label} →` : link.label}
+                {isProfiles ? `${link.label}` : link.label}
               </Link>
             );
           })}
