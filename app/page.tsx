@@ -84,12 +84,12 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
 
   const heroImage =
     mediaUrlFromMap(media, home.hero.image_media_id, LANDING_FALLBACKS.hero)!;
-  const whyImage =
-    mediaUrlFromMap(
-      media,
-      home.why_koda.image_media_id,
-      LANDING_FALLBACKS.whyKoda,
-    )!;
+  const whyFeatureImages: Record<string, string> = {};
+  for (const feature of home.why_koda.features ?? []) {
+    if (!feature.image_media_id) continue;
+    const url = mediaUrlFromMap(media, feature.image_media_id);
+    if (url) whyFeatureImages[feature.image_media_id] = url;
+  }
   const quoteImage =
     mediaUrlFromMap(
       media,
@@ -152,7 +152,10 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
               logos={partnerLogos}
             />
           ) : null}
-          <HomeWhyKodaSection why={home.why_koda} imageUrl={whyImage} />
+          <HomeWhyKodaSection
+            why={home.why_koda}
+            featureImages={whyFeatureImages}
+          />
           <HomeProfilesSection
             teaser={home.profiles_teaser}
             jewels={home_profile_jewels}

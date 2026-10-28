@@ -1,7 +1,6 @@
 import {
   saveHomeCtas,
   saveHomeHero,
-  saveHomeWhyKoda,
 } from "@/lib/cms/actions";
 import { getMediaMap } from "@/lib/cms/media";
 import { LANDING_FALLBACKS, jewelFallback } from "@/lib/cms/landing-fallbacks";
@@ -12,6 +11,7 @@ import { MediaField } from "@/components/admin/media-field";
 import { PartnersEditor } from "@/components/admin/partners-editor";
 import { SectionShell } from "@/components/admin/section-shell";
 import { VideosManualEditor } from "@/components/admin/videos-manual-editor";
+import { WhyKodaEditor } from "@/components/admin/why-koda-editor";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
 import { FIND_DEALER_HREF, PROFILES_HREF } from "@/lib/cms/nav-slots";
@@ -63,7 +63,6 @@ export default async function HomeEditorPage({
 
   const page = home as PageHome;
   const why = page.why_koda as HomeWhyKoda;
-  const features = why.features ?? [];
   const partnerRows = partners ?? [];
   const jewelRows = jewels ?? [];
   const videoRows = videos ?? [];
@@ -71,6 +70,7 @@ export default async function HomeEditorPage({
   const media = await getMediaMap([
     page.hero.image_media_id,
     why.image_media_id,
+    ...(why.features ?? []).map((f) => f.image_media_id ?? null),
     page.ctas.quote.image_media_id,
     page.ctas.dealer.image_media_id,
     ...partnerRows.map((p) => p.logo_media_id),
@@ -167,74 +167,7 @@ export default async function HomeEditorPage({
           id: "why-koda",
           label: "Why Koda",
           content: (
-            <form action={saveHomeWhyKoda} className="flex w-full flex-col gap-5">
-              <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-stretch">
-                <div className="flex min-w-0 flex-col gap-5">
-                  <FieldGroup title="Copy">
-                    <Field label="Headline">
-                      <TextInput
-                        name="why_headline"
-                        defaultValue={why.headline}
-                      />
-                    </Field>
-                    <Field label="Body">
-                      <TextArea
-                        name="why_body"
-                        rows={2}
-                        defaultValue={why.body}
-                      />
-                    </Field>
-                  </FieldGroup>
-                  <FieldGroup title="Features">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="grid w-full gap-2 rounded-lg bg-bg-secondary/50 p-2 sm:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1.5fr)]"
-                      >
-                        <Field label="No.">
-                          <TextInput
-                            name={`feature_${i}_number`}
-                            defaultValue={features[i]?.number ?? ""}
-                            placeholder="01"
-                          />
-                        </Field>
-                        <Field label="Title">
-                          <TextInput
-                            name={`feature_${i}_title`}
-                            defaultValue={features[i]?.title ?? ""}
-                            placeholder="Title"
-                          />
-                        </Field>
-                        <Field label="Body">
-                          <TextInput
-                            name={`feature_${i}_body`}
-                            defaultValue={features[i]?.body ?? ""}
-                            placeholder="Short description"
-                          />
-                        </Field>
-                      </div>
-                    ))}
-                  </FieldGroup>
-                </div>
-                <FieldGroup title="Media" className="min-w-0 self-stretch">
-                  <MediaField
-                    name="why_image_media_id"
-                    label="Section image"
-                    compact
-                    initialId={why.image_media_id}
-                    initialPath={
-                      why.image_media_id
-                        ? media[why.image_media_id]?.path
-                        : null
-                    }
-                    fallbackSrc={LANDING_FALLBACKS.whyKoda}
-                  />
-                </FieldGroup>
-              </div>
-              <div className="pt-1">
-                <Button type="submit">Save</Button>
-              </div>
-            </form>
+            <WhyKodaEditor why={why} media={media} />
           ),
         },
         {

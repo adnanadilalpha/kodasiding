@@ -111,6 +111,8 @@ export type WhyFeature = {
   number: string;
   title: string;
   body: string;
+  /** Per-card image for the zigzag Why Koda layout. */
+  image_media_id?: string | null;
 };
 
 export type HomeHero = {
@@ -124,6 +126,7 @@ export type HomeHero = {
 export type HomeWhyKoda = {
   headline: string;
   body: string;
+  /** @deprecated Per-card images only; kept null for backwards-compatible JSON. */
   image_media_id: string | null;
   features: WhyFeature[];
 };

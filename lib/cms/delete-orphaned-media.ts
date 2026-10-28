@@ -177,6 +177,17 @@ async function findReferencedMediaIds(
     ]) {
       if (id && ids.includes(id)) used.add(id);
     }
+
+    const whyFeatures = why?.features;
+    if (Array.isArray(whyFeatures)) {
+      for (const feature of whyFeatures) {
+        if (!feature || typeof feature !== "object") continue;
+        const featureImage = asMediaId(
+          (feature as Record<string, unknown>).image_media_id,
+        );
+        if (featureImage && ids.includes(featureImage)) used.add(featureImage);
+      }
+    }
   }
 
   const seo = settings.data?.seo as Record<string, unknown> | null;

@@ -29,6 +29,8 @@ type Props = {
   aspect?: "video" | "square" | "wide";
   /** Match sibling column height in side-by-side layouts. */
   compact?: boolean;
+  /** Fires when the linked media id changes (upload, replace, or clear). */
+  onIdChange?: (id: string | null) => void;
 };
 
 function isSvgFile(file: File) {
@@ -57,6 +59,7 @@ export function MediaField({
   fallbackSrc = null,
   aspect = "video",
   compact = false,
+  onIdChange,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [mediaId, setMediaId] = useState(initialId ?? "");
@@ -69,12 +72,30 @@ export function MediaField({
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const usingFallback = Boolean(previewUrl && !mediaId && fallbackSrc);
+  const onIdChangeRef = useRef(onIdChange);
+  onIdChangeRef.current = onIdChange;
+
+  function commitMediaId(nextId: string) {
+    setMediaId(nextId);
+    onIdChangeRef.current?.(nextId || null);
+  }
 
   // Keep preview in sync when server props refresh after save / navigation.
+  // If the parent echoes a newly uploaded id before it has a storage path,
+  // keep the local upload preview instead of wiping it back to fallback/empty.
   useEffect(() => {
-    setMediaId(initialId ?? "");
-    setPreviewUrl(resolvePreview(initialPath, initialBucket, fallbackSrc));
-    setPreviewIsSvg(isSvgMedia(initialPath) || isSvgMedia(fallbackSrc));
+    const nextId = initialId ?? "";
+    setMediaId(nextId);
+    const nextPreview = resolvePreview(initialPath, initialBucket, fallbackSrc);
+    if (nextPreview) {
+      setPreviewUrl(nextPreview);
+      setPreviewIsSvg(isSvgMedia(initialPath) || isSvgMedia(fallbackSrc));
+      return;
+    }
+    if (!nextId) {
+      setPreviewUrl(fallbackSrc || null);
+      setPreviewIsSvg(isSvgMedia(fallbackSrc));
+    }
   }, [initialId, initialPath, initialBucket, fallbackSrc]);
 
   const fillSibling = compact && aspect !== "square";
@@ -161,7 +182,7 @@ export function MediaField({
         mime_type: contentType,
       });
 
-      setMediaId(asset.id);
+      commitMediaId(asset.id);
       setPreviewUrl(publicMediaUrl(path, "media"));
       setPreviewIsSvg(ext === "svg");
       setStatus("Ready");
@@ -181,7 +202,7 @@ export function MediaField({
   function clear() {
     const previousId = mediaId;
     const savedId = initialId ?? "";
-    setMediaId("");
+    commitMediaId("");
     setPreviewUrl(fallbackSrc || null);
     setPreviewIsSvg(isSvgMedia(fallbackSrc));
     setStatus(null);

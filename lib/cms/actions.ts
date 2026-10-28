@@ -70,26 +70,61 @@ export async function saveHomePartnersTitle(formData: FormData) {
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
-export async function saveHomeWhyKoda(formData: FormData) {
+type WhyKodaStored = {
+  headline?: string;
+  body?: string;
+  image_media_id?: string | null;
+  features?: {
+    number?: string;
+    title?: string;
+    body?: string;
+    image_media_id?: string | null;
+  }[];
+};
+
+function emptyWhyFeature(index: number) {
+  return {
+    number: String(index + 1).padStart(2, "0"),
+    title: "",
+    body: "",
+    image_media_id: null as string | null,
+  };
+}
+
+/** Auto-saves a single Why Koda card image (no form Save needed). */
+export async function saveHomeWhyKodaFeatureImage(
+  index: number,
+  imageMediaId: string | null,
+) {
   const admin = await requireAdmin();
+  if (!Number.isInteger(index) || index < 0 || index > 23) {
+    throw new Error("Invalid card index.");
+  }
   const supabase = await createClient();
   const { data: previous } = await supabase
     .from("page_home")
     .select("why_koda")
     .eq("id", 1)
     .maybeSingle();
-  const prevWhy = previous?.why_koda as {
-    image_media_id?: string | null;
-  } | null;
-  const features = [0, 1, 2, 3, 4].map((i) => ({
-    number: String(formData.get(`feature_${i}_number`) ?? ""),
-    title: String(formData.get(`feature_${i}_title`) ?? ""),
-    body: String(formData.get(`feature_${i}_body`) ?? ""),
+  const prevWhy = (previous?.why_koda ?? {}) as WhyKodaStored;
+  const features = [...(prevWhy.features ?? [])].map((f, i) => ({
+    number: f.number ?? String(i + 1).padStart(2, "0"),
+    title: f.title ?? "",
+    body: f.body ?? "",
+    image_media_id: f.image_media_id ?? null,
   }));
+  while (features.length <= index) {
+    features.push(emptyWhyFeature(features.length));
+  }
+  const prevImage = features[index]?.image_media_id ?? null;
+  features[index] = {
+    ...features[index],
+    image_media_id: imageMediaId,
+  };
   const why_koda = {
-    headline: String(formData.get("why_headline") ?? ""),
-    body: String(formData.get("why_body") ?? ""),
-    image_media_id: emptyToNull(formData.get("why_image_media_id")),
+    headline: prevWhy.headline ?? "",
+    body: prevWhy.body ?? "",
+    image_media_id: null as string | null,
     features,
   };
   const { error } = await supabase
@@ -98,7 +133,55 @@ export async function saveHomeWhyKoda(formData: FormData) {
     .eq("id", 1);
   if (error) throw new Error(error.message);
   await deleteOrphanedMediaAssets(
-    releasedMediaIds([prevWhy?.image_media_id], [why_koda.image_media_id]),
+    releasedMediaIds(
+      [prevWhy.image_media_id, prevImage],
+      [imageMediaId],
+    ),
+  );
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+/** Saves Why Koda copy/text only — card images are auto-saved on upload. */
+export async function saveHomeWhyKoda(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("why_koda")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevWhy = (previous?.why_koda ?? {}) as WhyKodaStored;
+  const prevFeatures = prevWhy.features ?? [];
+  const count = Math.max(
+    0,
+    Math.min(24, Number(formData.get("feature_count") ?? 8) || 8),
+  );
+  const features = Array.from({ length: count }, (_, i) => ({
+    number: String(formData.get(`feature_${i}_number`) ?? ""),
+    title: String(formData.get(`feature_${i}_title`) ?? ""),
+    body: String(formData.get(`feature_${i}_body`) ?? ""),
+    // Images are persisted immediately on upload — never wipe them here.
+    image_media_id: prevFeatures[i]?.image_media_id ?? null,
+  }));
+  const why_koda = {
+    headline: String(formData.get("why_headline") ?? ""),
+    body: String(formData.get("why_body") ?? ""),
+    image_media_id: null as string | null,
+    features,
+  };
+  const { error } = await supabase
+    .from("page_home")
+    .update({ why_koda })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [
+        prevWhy.image_media_id,
+        ...prevFeatures.map((f) => f.image_media_id ?? null),
+      ],
+      features.map((f) => f.image_media_id),
+    ),
   );
   await afterPublicChange(admin.user_id, "/admin/home");
 }
