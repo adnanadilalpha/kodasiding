@@ -107,12 +107,21 @@ export type SiteSettings = {
   updated_at?: string;
 };
 
+/** Where the card image sits relative to the text. */
+export type WhyFeatureLayout =
+  | "image-right"
+  | "image-left"
+  | "image-top"
+  | "image-bottom";
+
 export type WhyFeature = {
   number: string;
   title: string;
   body: string;
-  /** Per-card image for the zigzag Why Koda layout. */
+  /** Per-card image for the Why Koda layout. */
   image_media_id?: string | null;
+  /** Image position relative to text. Defaults to alternating left/right. */
+  layout?: WhyFeatureLayout | null;
 };
 
 export type HomeHero = {

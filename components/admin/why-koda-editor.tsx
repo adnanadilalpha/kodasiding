@@ -5,14 +5,32 @@ import { useRouter } from "next/navigation";
 import {
   saveHomeWhyKoda,
   saveHomeWhyKodaFeatureImage,
+  saveHomeWhyKodaFeatureLayout,
 } from "@/lib/cms/actions";
-import type { HomeWhyKoda, WhyFeature } from "@/lib/cms/types";
+import type {
+  HomeWhyKoda,
+  WhyFeature,
+  WhyFeatureLayout,
+} from "@/lib/cms/types";
 import { MediaField } from "@/components/admin/media-field";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
+import {
+  Field,
+  FieldGroup,
+  Select,
+  TextArea,
+  TextInput,
+} from "@/components/ui/field";
 
 const DEFAULT_SLOT_COUNT = 8;
 const MAX_SLOT_COUNT = 24;
+
+const LAYOUT_OPTIONS: { value: WhyFeatureLayout; label: string }[] = [
+  { value: "image-right", label: "Image right (text left)" },
+  { value: "image-left", label: "Image left (text right)" },
+  { value: "image-top", label: "Full width — image top, text below" },
+  { value: "image-bottom", label: "Full width — text top, image below" },
+];
 
 type FeatureDraft = {
   key: string;
@@ -21,7 +39,27 @@ type FeatureDraft = {
   body: string;
   image_media_id: string | null;
   imagePath: string | null;
+  layout: WhyFeatureLayout;
 };
+
+function defaultLayout(index: number): WhyFeatureLayout {
+  return index % 2 === 1 ? "image-left" : "image-right";
+}
+
+function resolveLayout(
+  layout: WhyFeature["layout"],
+  index: number,
+): WhyFeatureLayout {
+  if (
+    layout === "image-right" ||
+    layout === "image-left" ||
+    layout === "image-top" ||
+    layout === "image-bottom"
+  ) {
+    return layout;
+  }
+  return defaultLayout(index);
+}
 
 function padFeatures(
   features: WhyFeature[],
@@ -39,6 +77,7 @@ function padFeatures(
       body: feature?.body ?? "",
       image_media_id: imageId,
       imagePath: imageId ? (media[imageId]?.path ?? null) : null,
+      layout: resolveLayout(feature?.layout, i),
     };
   });
 }
@@ -72,6 +111,7 @@ export function WhyKodaEditor({
   function addCard() {
     setFeatures((prev) => {
       if (prev.length >= MAX_SLOT_COUNT) return prev;
+      const index = prev.length;
       imageIdsRef.current = [...imageIdsRef.current, null];
       return [
         ...prev,
@@ -82,6 +122,7 @@ export function WhyKodaEditor({
           body: "",
           image_media_id: null,
           imagePath: null,
+          layout: defaultLayout(index),
         },
       ];
     });
@@ -118,6 +159,16 @@ export function WhyKodaEditor({
     });
   }
 
+  function setCardLayout(index: number, layout: WhyFeatureLayout) {
+    setFeatures((prev) =>
+      prev.map((feature, i) => (i === index ? { ...feature, layout } : feature)),
+    );
+    startTransition(async () => {
+      await saveHomeWhyKodaFeatureLayout(index, layout);
+      router.refresh();
+    });
+  }
+
   function onSaveText(formData: FormData) {
     formData.set("feature_count", String(features.length));
     startTransition(async () => {
@@ -146,8 +197,8 @@ export function WhyKodaEditor({
               Cards
             </h3>
             <p className="mt-1 text-sm text-text-primary/45">
-              Images save as soon as you upload. Use Save only for text changes.
-              Empty cards stay hidden on the site.
+              Images and layout save immediately. Use Save text only for copy
+              changes. Empty cards stay hidden on the site.
             </p>
           </div>
           <Button
@@ -209,6 +260,21 @@ export function WhyKodaEditor({
                     defaultValue={feature.body}
                     placeholder="Short description"
                   />
+                </Field>
+                <Field label="Image position">
+                  <Select
+                    name={`feature_${i}_layout`}
+                    value={feature.layout}
+                    onChange={(e) =>
+                      setCardLayout(i, e.target.value as WhyFeatureLayout)
+                    }
+                  >
+                    {LAYOUT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
                 </Field>
               </div>
               <MediaField

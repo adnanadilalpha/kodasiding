@@ -1,10 +1,30 @@
 import Image from "next/image";
-import type { HomeWhyKoda, WhyFeature } from "@/lib/cms/types";
+import type {
+  HomeWhyKoda,
+  WhyFeature,
+  WhyFeatureLayout,
+} from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
 
 type FeatureCard = WhyFeature & {
   imageUrl: string | null;
+  resolvedLayout: WhyFeatureLayout;
 };
+
+function resolveLayout(
+  layout: WhyFeature["layout"],
+  index: number,
+): WhyFeatureLayout {
+  if (
+    layout === "image-right" ||
+    layout === "image-left" ||
+    layout === "image-top" ||
+    layout === "image-bottom"
+  ) {
+    return layout;
+  }
+  return index % 2 === 1 ? "image-left" : "image-right";
+}
 
 function FeatureMedia({
   src,
@@ -39,13 +59,19 @@ function FeatureMedia({
 function FeatureImageBox({
   imageUrl,
   title,
+  fullWidth = false,
 }: {
   imageUrl: string | null;
   title: string;
+  fullWidth?: boolean;
 }) {
   return (
     <div
-      className="relative aspect-4/3 w-full overflow-hidden rounded-tr-[40px] rounded-bl-[40px] bg-bg-secondary sm:aspect-16/10 lg:aspect-4/3 lg:min-h-72"
+      className={`relative w-full overflow-hidden rounded-tr-[40px] rounded-bl-[40px] bg-bg-secondary ${
+        fullWidth
+          ? "aspect-2/1 min-h-56 sm:min-h-72 lg:min-h-96"
+          : "aspect-4/3 sm:aspect-16/10 lg:aspect-4/3 lg:min-h-72"
+      }`}
       aria-hidden={!imageUrl}
     >
       {imageUrl ? (
@@ -55,16 +81,8 @@ function FeatureImageBox({
   );
 }
 
-function WhyFeatureRow({
-  feature,
-  index,
-}: {
-  feature: FeatureCard;
-  index: number;
-}) {
-  const imageFirst = index % 2 === 1;
-
-  const text = (
+function FeatureText({ feature }: { feature: FeatureCard }) {
+  return (
     <div className="flex flex-col justify-center gap-4 text-text-primary lg:gap-5">
       <h3 className="font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]">
         {feature.title}
@@ -76,24 +94,53 @@ function WhyFeatureRow({
       ) : null}
     </div>
   );
+}
 
-  const media = (
+function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
+  const layout = feature.resolvedLayout;
+  const text = <FeatureText feature={feature} />;
+  const sideMedia = (
     <FeatureImageBox imageUrl={feature.imageUrl} title={feature.title} />
   );
+  const fullMedia = (
+    <FeatureImageBox
+      imageUrl={feature.imageUrl}
+      title={feature.title}
+      fullWidth
+    />
+  );
+
+  if (layout === "image-top") {
+    return (
+      <li className="flex w-full flex-col gap-8 lg:gap-12">
+        {fullMedia}
+        <div className="max-w-2xl">{text}</div>
+      </li>
+    );
+  }
+
+  if (layout === "image-bottom") {
+    return (
+      <li className="flex w-full flex-col gap-8 lg:gap-12">
+        <div className="max-w-2xl">{text}</div>
+        {fullMedia}
+      </li>
+    );
+  }
+
+  if (layout === "image-left") {
+    return (
+      <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
+        <div className="order-2 lg:order-1">{sideMedia}</div>
+        <div className="order-1 lg:order-2">{text}</div>
+      </li>
+    );
+  }
 
   return (
     <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
-      {imageFirst ? (
-        <>
-          <div className="order-2 lg:order-1">{media}</div>
-          <div className="order-1 lg:order-2">{text}</div>
-        </>
-      ) : (
-        <>
-          <div>{text}</div>
-          <div>{media}</div>
-        </>
-      )}
+      <div>{text}</div>
+      <div>{sideMedia}</div>
     </li>
   );
 }
@@ -107,11 +154,12 @@ export function HomeWhyKodaSection({
 }) {
   const cards = (why.features ?? [])
     .filter((feature) => feature.title.trim() || feature.body.trim())
-    .map((feature) => {
+    .map((feature, index) => {
       const imageId = feature.image_media_id ?? null;
       return {
         ...feature,
         imageUrl: (imageId && featureImages[imageId]) || null,
+        resolvedLayout: resolveLayout(feature.layout, index),
       };
     });
 
@@ -144,7 +192,6 @@ export function HomeWhyKodaSection({
               <WhyFeatureRow
                 key={`${feature.title}-${index}`}
                 feature={feature}
-                index={index}
               />
             ))}
           </ul>

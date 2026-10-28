@@ -70,6 +70,19 @@ export async function saveHomePartnersTitle(formData: FormData) {
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
+type WhyFeatureLayoutValue =
+  | "image-right"
+  | "image-left"
+  | "image-top"
+  | "image-bottom";
+
+const WHY_FEATURE_LAYOUTS = new Set<WhyFeatureLayoutValue>([
+  "image-right",
+  "image-left",
+  "image-top",
+  "image-bottom",
+]);
+
 type WhyKodaStored = {
   headline?: string;
   body?: string;
@@ -79,8 +92,17 @@ type WhyKodaStored = {
     title?: string;
     body?: string;
     image_media_id?: string | null;
+    layout?: string | null;
   }[];
 };
+
+function parseWhyFeatureLayout(value: unknown): WhyFeatureLayoutValue {
+  const raw = String(value ?? "").trim();
+  if (WHY_FEATURE_LAYOUTS.has(raw as WhyFeatureLayoutValue)) {
+    return raw as WhyFeatureLayoutValue;
+  }
+  return "image-right";
+}
 
 function emptyWhyFeature(index: number) {
   return {
@@ -88,7 +110,22 @@ function emptyWhyFeature(index: number) {
     title: "",
     body: "",
     image_media_id: null as string | null,
+    layout: (index % 2 === 1
+      ? "image-left"
+      : "image-right") as WhyFeatureLayoutValue,
   };
+}
+
+function normalizeStoredFeatures(prevWhy: WhyKodaStored) {
+  return [...(prevWhy.features ?? [])].map((f, i) => ({
+    number: f.number ?? String(i + 1).padStart(2, "0"),
+    title: f.title ?? "",
+    body: f.body ?? "",
+    image_media_id: f.image_media_id ?? null,
+    layout: parseWhyFeatureLayout(
+      f.layout ?? (i % 2 === 1 ? "image-left" : "image-right"),
+    ),
+  }));
 }
 
 /** Auto-saves a single Why Koda card image (no form Save needed). */
@@ -107,12 +144,7 @@ export async function saveHomeWhyKodaFeatureImage(
     .eq("id", 1)
     .maybeSingle();
   const prevWhy = (previous?.why_koda ?? {}) as WhyKodaStored;
-  const features = [...(prevWhy.features ?? [])].map((f, i) => ({
-    number: f.number ?? String(i + 1).padStart(2, "0"),
-    title: f.title ?? "",
-    body: f.body ?? "",
-    image_media_id: f.image_media_id ?? null,
-  }));
+  const features = normalizeStoredFeatures(prevWhy);
   while (features.length <= index) {
     features.push(emptyWhyFeature(features.length));
   }
@@ -141,7 +173,46 @@ export async function saveHomeWhyKodaFeatureImage(
   await afterPublicChange(admin.user_id, "/admin/home");
 }
 
-/** Saves Why Koda copy/text only — card images are auto-saved on upload. */
+/** Auto-saves a single Why Koda card layout (image left/right/top/bottom). */
+export async function saveHomeWhyKodaFeatureLayout(
+  index: number,
+  layout: string,
+) {
+  const admin = await requireAdmin();
+  if (!Number.isInteger(index) || index < 0 || index > 23) {
+    throw new Error("Invalid card index.");
+  }
+  const nextLayout = parseWhyFeatureLayout(layout);
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("why_koda")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevWhy = (previous?.why_koda ?? {}) as WhyKodaStored;
+  const features = normalizeStoredFeatures(prevWhy);
+  while (features.length <= index) {
+    features.push(emptyWhyFeature(features.length));
+  }
+  features[index] = {
+    ...features[index],
+    layout: nextLayout,
+  };
+  const why_koda = {
+    headline: prevWhy.headline ?? "",
+    body: prevWhy.body ?? "",
+    image_media_id: null as string | null,
+    features,
+  };
+  const { error } = await supabase
+    .from("page_home")
+    .update({ why_koda })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+/** Saves Why Koda copy/text + layouts — card images are auto-saved on upload. */
 export async function saveHomeWhyKoda(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
@@ -162,6 +233,11 @@ export async function saveHomeWhyKoda(formData: FormData) {
     body: String(formData.get(`feature_${i}_body`) ?? ""),
     // Images are persisted immediately on upload — never wipe them here.
     image_media_id: prevFeatures[i]?.image_media_id ?? null,
+    layout: parseWhyFeatureLayout(
+      formData.get(`feature_${i}_layout`) ??
+        prevFeatures[i]?.layout ??
+        (i % 2 === 1 ? "image-left" : "image-right"),
+    ),
   }));
   const why_koda = {
     headline: String(formData.get("why_headline") ?? ""),
