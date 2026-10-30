@@ -83,12 +83,12 @@ function FeatureImageBox({
 
 function FeatureText({ feature }: { feature: FeatureCard }) {
   return (
-    <div className="flex flex-col justify-center gap-4 text-text-primary lg:gap-5">
+    <div className="flex w-full min-w-0 flex-col justify-center gap-4 text-text-primary lg:gap-5">
       <h3 className="font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]">
         {feature.title}
       </h3>
       {feature.body.trim() ? (
-        <p className="max-w-md text-base leading-normal text-text-primary/80 lg:text-lg">
+        <p className="w-full text-base leading-normal text-text-primary/80 lg:text-lg">
           {feature.body}
         </p>
       ) : null}
@@ -98,7 +98,6 @@ function FeatureText({ feature }: { feature: FeatureCard }) {
 
 function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
   const layout = feature.resolvedLayout;
-  const text = <FeatureText feature={feature} />;
   const sideMedia = (
     <FeatureImageBox imageUrl={feature.imageUrl} title={feature.title} />
   );
@@ -114,7 +113,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
     return (
       <li className="flex w-full flex-col gap-8 lg:gap-12">
         {fullMedia}
-        <div className="max-w-2xl">{text}</div>
+        <FeatureText feature={feature} />
       </li>
     );
   }
@@ -122,7 +121,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
   if (layout === "image-bottom") {
     return (
       <li className="flex w-full flex-col gap-8 lg:gap-12">
-        <div className="max-w-2xl">{text}</div>
+        <FeatureText feature={feature} />
         {fullMedia}
       </li>
     );
@@ -131,16 +130,20 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
   if (layout === "image-left") {
     return (
       <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
-        <div className="order-2 lg:order-1">{sideMedia}</div>
-        <div className="order-1 lg:order-2">{text}</div>
+        <div className="order-2 min-w-0 lg:order-1">{sideMedia}</div>
+        <div className="order-1 min-w-0 lg:order-2">
+          <FeatureText feature={feature} />
+        </div>
       </li>
     );
   }
 
   return (
     <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
-      <div>{text}</div>
-      <div>{sideMedia}</div>
+      <div className="min-w-0">
+        <FeatureText feature={feature} />
+      </div>
+      <div className="min-w-0">{sideMedia}</div>
     </li>
   );
 }
