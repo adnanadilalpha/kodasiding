@@ -5,6 +5,8 @@ import type {
   WhyFeatureLayout,
 } from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
+import { richTextHasContent } from "@/lib/cms/sanitize-rich-text";
+import { RichText } from "@/components/site/rich-text";
 
 type FeatureCard = WhyFeature & {
   imageUrl: string | null;
@@ -81,17 +83,29 @@ function FeatureImageBox({
   );
 }
 
-function FeatureText({ feature }: { feature: FeatureCard }) {
+function FeatureText({
+  feature,
+  centered = false,
+}: {
+  feature: FeatureCard;
+  centered?: boolean;
+}) {
   return (
-    <div className="flex w-full min-w-0 flex-col justify-center gap-4 text-text-primary lg:gap-5">
-      <h3 className="font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]">
-        {feature.title}
-      </h3>
-      {feature.body.trim() ? (
-        <p className="w-full text-base leading-normal text-text-primary/80 lg:text-lg">
-          {feature.body}
-        </p>
-      ) : null}
+    <div
+      className={`flex w-full min-w-0 flex-col justify-center gap-4 text-text-primary lg:gap-5 ${
+        centered ? "items-center text-center" : ""
+      }`}
+    >
+      <RichText
+        as="div"
+        html={feature.title}
+        className="font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]"
+      />
+      <RichText
+        as="p"
+        html={feature.body}
+        className="w-full text-base leading-normal text-text-primary/80 lg:text-lg"
+      />
     </div>
   );
 }
@@ -113,7 +127,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
     return (
       <li className="flex w-full flex-col gap-8 lg:gap-12">
         {fullMedia}
-        <FeatureText feature={feature} />
+        <FeatureText feature={feature} centered />
       </li>
     );
   }
@@ -121,7 +135,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
   if (layout === "image-bottom") {
     return (
       <li className="flex w-full flex-col gap-8 lg:gap-12">
-        <FeatureText feature={feature} />
+        <FeatureText feature={feature} centered />
         {fullMedia}
       </li>
     );
@@ -156,7 +170,10 @@ export function HomeWhyKodaSection({
   featureImages: Record<string, string>;
 }) {
   const cards = (why.features ?? [])
-    .filter((feature) => feature.title.trim() || feature.body.trim())
+    .filter(
+      (feature) =>
+        richTextHasContent(feature.title) || richTextHasContent(feature.body),
+    )
     .map((feature, index) => {
       const imageId = feature.image_media_id ?? null;
       return {
@@ -166,7 +183,7 @@ export function HomeWhyKodaSection({
       };
     });
 
-  if (!why.headline.trim() && cards.length === 0) return null;
+  if (!richTextHasContent(why.headline) && cards.length === 0) return null;
 
   return (
     <section
@@ -174,18 +191,18 @@ export function HomeWhyKodaSection({
       className="scroll-mt-16 bg-bg-primary py-12 lg:scroll-mt-24 lg:py-24"
     >
       <div className="flex w-full flex-col gap-12 px-page lg:gap-20">
-        {(why.headline.trim() || why.body.trim()) && (
+        {(richTextHasContent(why.headline) || richTextHasContent(why.body)) && (
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center text-text-primary">
-            {why.headline.trim() ? (
-              <h2 className="font-display text-[1.75rem] leading-[1.3] font-bold uppercase sm:text-4xl lg:text-5xl">
-                {why.headline}
-              </h2>
-            ) : null}
-            {why.body.trim() ? (
-              <p className="max-w-2xl text-base leading-[1.4] text-text-primary/75 lg:text-lg">
-                {why.body}
-              </p>
-            ) : null}
+            <RichText
+              as="div"
+              html={why.headline}
+              className="font-display text-[1.75rem] leading-[1.3] font-bold uppercase sm:text-4xl lg:text-5xl"
+            />
+            <RichText
+              as="p"
+              html={why.body}
+              className="max-w-2xl text-base leading-[1.4] text-text-primary/75 lg:text-lg"
+            />
           </div>
         )}
 

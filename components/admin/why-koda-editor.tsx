@@ -13,14 +13,9 @@ import type {
   WhyFeatureLayout,
 } from "@/lib/cms/types";
 import { MediaField } from "@/components/admin/media-field";
+import { RichTextField } from "@/components/admin/rich-text-field";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldGroup,
-  Select,
-  TextArea,
-  TextInput,
-} from "@/components/ui/field";
+import { Field, FieldGroup, Select } from "@/components/ui/field";
 
 const DEFAULT_SLOT_COUNT = 8;
 const MAX_SLOT_COUNT = 24;
@@ -98,11 +93,25 @@ export function WhyKodaEditor({
   const imageIdsRef = useRef<(string | null)[]>(
     features.map((f) => f.image_media_id),
   );
+  const layoutsRef = useRef<WhyFeatureLayout[]>(
+    features.map((f) => f.layout),
+  );
   const serverSignature = JSON.stringify(why.features ?? []);
 
   useEffect(() => {
     const next = padFeatures(why.features ?? [], media, DEFAULT_SLOT_COUNT);
-    setFeatures(next);
+    setFeatures((prev) => {
+      const merged = next.map((serverFeature, i) => ({
+        ...serverFeature,
+        // Never let an image refresh wipe the user's layout picks.
+        layout:
+          layoutsRef.current[i] ??
+          prev[i]?.layout ??
+          serverFeature.layout,
+      }));
+      layoutsRef.current = merged.map((f) => f.layout);
+      return merged;
+    });
     imageIdsRef.current = next.map((f) => f.image_media_id);
     // Re-sync after admin save / server refresh only.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- media paths follow feature ids
@@ -112,7 +121,9 @@ export function WhyKodaEditor({
     setFeatures((prev) => {
       if (prev.length >= MAX_SLOT_COUNT) return prev;
       const index = prev.length;
+      const layout = defaultLayout(index);
       imageIdsRef.current = [...imageIdsRef.current, null];
+      layoutsRef.current = [...layoutsRef.current, layout];
       return [
         ...prev,
         {
@@ -122,7 +133,7 @@ export function WhyKodaEditor({
           body: "",
           image_media_id: null,
           imagePath: null,
-          layout: defaultLayout(index),
+          layout,
         },
       ];
     });
@@ -132,6 +143,7 @@ export function WhyKodaEditor({
     if (index < DEFAULT_SLOT_COUNT) return;
     setFeatures((prev) => prev.filter((_, i) => i !== index));
     imageIdsRef.current = imageIdsRef.current.filter((_, i) => i !== index);
+    layoutsRef.current = layoutsRef.current.filter((_, i) => i !== index);
   }
 
   function setCardImage(index: number, id: string | null) {
@@ -148,10 +160,11 @@ export function WhyKodaEditor({
           : feature,
       ),
     );
+    const layoutsSnapshot = [...layoutsRef.current];
     setImagePending(index);
     startTransition(async () => {
       try {
-        await saveHomeWhyKodaFeatureImage(index, id);
+        await saveHomeWhyKodaFeatureImage(index, id, layoutsSnapshot);
         router.refresh();
       } finally {
         setImagePending((current) => (current === index ? null : current));
@@ -160,6 +173,7 @@ export function WhyKodaEditor({
   }
 
   function setCardLayout(index: number, layout: WhyFeatureLayout) {
+    layoutsRef.current[index] = layout;
     setFeatures((prev) =>
       prev.map((feature, i) => (i === index ? { ...feature, layout } : feature)),
     );
@@ -171,6 +185,10 @@ export function WhyKodaEditor({
 
   function onSaveText(formData: FormData) {
     formData.set("feature_count", String(features.length));
+    // Ensure submitted layout fields match the live ref (controlled selects).
+    layoutsRef.current.forEach((layout, i) => {
+      formData.set(`feature_${i}_layout`, layout);
+    });
     startTransition(async () => {
       await saveHomeWhyKoda(formData);
       router.refresh();
@@ -183,10 +201,20 @@ export function WhyKodaEditor({
 
       <FieldGroup title="Copy">
         <Field label="Headline">
-          <TextInput name="why_headline" defaultValue={why.headline} />
+          <RichTextField
+            name="why_headline"
+            defaultValue={why.headline}
+            placeholder="Section headline"
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Body (optional)">
-          <TextArea name="why_body" rows={2} defaultValue={why.body} />
+          <RichTextField
+            name="why_body"
+            defaultValue={why.body}
+            placeholder="Optional supporting copy"
+            minHeightClassName="min-h-20"
+          />
         </Field>
       </FieldGroup>
 
@@ -247,18 +275,19 @@ export function WhyKodaEditor({
                   readOnly
                 />
                 <Field label="Title">
-                  <TextInput
+                  <RichTextField
                     name={`feature_${i}_title`}
                     defaultValue={feature.title}
-                    placeholder="Title"
+                    placeholder="Title — select text to bold, italic, or underline"
+                    minHeightClassName="min-h-12"
                   />
                 </Field>
                 <Field label="Body">
-                  <TextArea
+                  <RichTextField
                     name={`feature_${i}_body`}
-                    rows={3}
                     defaultValue={feature.body}
-                    placeholder="Short description"
+                    placeholder="Short description — select text to bold, italic, or underline"
+                    minHeightClassName="min-h-24"
                   />
                 </Field>
                 <Field label="Image position">

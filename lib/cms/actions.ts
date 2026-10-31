@@ -16,6 +16,7 @@ import {
 import { isSocialIconId } from "@/lib/cms/social-icons";
 import { externalHref } from "@/lib/cms/safe-href";
 import { syncPublicSite } from "@/lib/cms/sync-public";
+import { sanitizeRichText } from "@/lib/cms/sanitize-rich-text";
 import type { QuoteEmailSettings, QuoteFormSettings, SocialLink } from "@/lib/cms/types";
 import { revalidatePath } from "next/cache";
 
@@ -132,6 +133,8 @@ function normalizeStoredFeatures(prevWhy: WhyKodaStored) {
 export async function saveHomeWhyKodaFeatureImage(
   index: number,
   imageMediaId: string | null,
+  /** Current layouts from the admin UI — kept so image saves don't reset them. */
+  layouts?: string[],
 ) {
   const admin = await requireAdmin();
   if (!Number.isInteger(index) || index < 0 || index > 23) {
@@ -145,8 +148,24 @@ export async function saveHomeWhyKodaFeatureImage(
     .maybeSingle();
   const prevWhy = (previous?.why_koda ?? {}) as WhyKodaStored;
   const features = normalizeStoredFeatures(prevWhy);
-  while (features.length <= index) {
+  const targetLength = Math.max(
+    index + 1,
+    features.length,
+    Array.isArray(layouts) ? layouts.length : 0,
+  );
+  while (features.length < targetLength) {
     features.push(emptyWhyFeature(features.length));
+  }
+  if (Array.isArray(layouts)) {
+    layouts.forEach((layout, i) => {
+      if (i >= features.length) return;
+      features[i] = {
+        ...features[i],
+        layout: parseWhyFeatureLayout(
+          layout || features[i].layout || emptyWhyFeature(i).layout,
+        ),
+      };
+    });
   }
   const prevImage = features[index]?.image_media_id ?? null;
   features[index] = {
@@ -229,8 +248,8 @@ export async function saveHomeWhyKoda(formData: FormData) {
   );
   const features = Array.from({ length: count }, (_, i) => ({
     number: String(formData.get(`feature_${i}_number`) ?? ""),
-    title: String(formData.get(`feature_${i}_title`) ?? ""),
-    body: String(formData.get(`feature_${i}_body`) ?? ""),
+    title: sanitizeRichText(String(formData.get(`feature_${i}_title`) ?? "")),
+    body: sanitizeRichText(String(formData.get(`feature_${i}_body`) ?? "")),
     // Images are persisted immediately on upload — never wipe them here.
     image_media_id: prevFeatures[i]?.image_media_id ?? null,
     layout: parseWhyFeatureLayout(
@@ -240,8 +259,8 @@ export async function saveHomeWhyKoda(formData: FormData) {
     ),
   }));
   const why_koda = {
-    headline: String(formData.get("why_headline") ?? ""),
-    body: String(formData.get("why_body") ?? ""),
+    headline: sanitizeRichText(String(formData.get("why_headline") ?? "")),
+    body: sanitizeRichText(String(formData.get("why_body") ?? "")),
     image_media_id: null as string | null,
     features,
   };
