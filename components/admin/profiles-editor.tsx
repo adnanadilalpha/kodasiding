@@ -144,7 +144,7 @@ function ProfileTileForm({
           <MediaField
             name="image_media_id"
             label="Cutout"
-            hint="JPG · PNG · WebP · SVG · Shown on the profile tile"
+            hint="JPG · PNG · WebP · HEIC · SVG · Shown on the profile tile"
             compact
             initialId={profile?.image_media_id}
             initialPath={profile?.imagePath}
@@ -196,7 +196,7 @@ function ProfileTileForm({
           <MediaField
             name="diagram_media_id"
             label="Diagram"
-            hint="JPG · PNG · WebP · SVG · Shown in the Learn more modal"
+            hint="JPG · PNG · WebP · HEIC · SVG · Shown in the Learn more modal"
             compact
             initialId={profile?.diagram_media_id}
             initialPath={profile?.diagramPath}

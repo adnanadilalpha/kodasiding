@@ -315,7 +315,7 @@ function JewelForm({
         <MediaField
           name="image_media_id"
           label="Profile cutout"
-          hint="JPG · PNG · WebP · SVG"
+          hint="JPG · PNG · WebP · HEIC · SVG"
           compact
           initialId={jewel?.image_media_id}
           initialPath={jewel?.imagePath}

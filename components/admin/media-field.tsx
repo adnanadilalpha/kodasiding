@@ -1,6 +1,7 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
+import heic2any from "heic2any";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -15,7 +16,7 @@ const MAX_RASTER_BYTES = 800_000;
 const MAX_SVG_BYTES = 1_500_000;
 
 const ACCEPT =
-  "image/jpeg,image/png,image/webp,image/svg+xml,.svg";
+  "image/jpeg,image/png,image/webp,image/heic,image/heif,image/svg+xml,.svg,.heic,.heif";
 
 type Props = {
   name: string;
@@ -38,6 +39,32 @@ function isSvgFile(file: File) {
     file.type === "image/svg+xml" ||
     file.name.toLowerCase().endsWith(".svg")
   );
+}
+
+function isHeicFile(file: File) {
+  const name = file.name.toLowerCase();
+  const type = (file.type || "").toLowerCase();
+  return (
+    type === "image/heic" ||
+    type === "image/heif" ||
+    name.endsWith(".heic") ||
+    name.endsWith(".heif")
+  );
+}
+
+/** HEIC is not displayable in most browsers — convert to JPEG first. */
+async function heicToJpegFile(file: File): Promise<File> {
+  const result = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: 0.92,
+  });
+  const blob = Array.isArray(result) ? result[0] : result;
+  if (!(blob instanceof Blob)) {
+    throw new Error("Could not convert HEIC image.");
+  }
+  const base = file.name.replace(/\.(heic|heif)$/i, "") || "image";
+  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
 }
 
 function resolvePreview(
@@ -103,7 +130,13 @@ export function MediaField({
   async function onFileChange(file: File | null) {
     if (!file) return;
     setLoading(true);
-    setStatus(isSvgFile(file) ? "Preparing SVG…" : "Compressing…");
+    setStatus(
+      isSvgFile(file)
+        ? "Preparing SVG…"
+        : isHeicFile(file)
+          ? "Converting HEIC…"
+          : "Compressing…",
+    );
 
     const previousId = mediaId;
     const savedId = initialId ?? "";
@@ -115,6 +148,7 @@ export function MediaField({
       let ext = "bin";
       let width: number | null = null;
       let height: number | null = null;
+      let rasterFile = file;
 
       if (isSvgFile(file)) {
         if (file.size > MAX_SVG_BYTES) {
@@ -137,7 +171,12 @@ export function MediaField({
         ext = "svg";
         uploadBlob = new Blob([raw], { type: "image/svg+xml" });
       } else {
-        const compressed = await imageCompression(file, {
+        if (isHeicFile(file)) {
+          rasterFile = await heicToJpegFile(file);
+          setStatus("Compressing…");
+        }
+
+        const compressed = await imageCompression(rasterFile, {
           maxSizeMB: 0.8,
           maxWidthOrHeight: 2000,
           useWebWorker: true,
@@ -270,7 +309,7 @@ export function MediaField({
                 No file
               </p>
               <p className="text-xs leading-none text-[#8a8d86]">
-                JPG · PNG · WebP · SVG
+                JPG · PNG · WebP · HEIC · SVG
               </p>
               <span className="text-base leading-none font-bold text-text-primary uppercase">
                 {loading ? "Uploading…" : "upload"}
