@@ -35,7 +35,8 @@ export function SiteHeader({
 
   useEffect(() => {
     function update() {
-      setScrolled(window.scrollY > 0);
+      // Small threshold avoids 1px bounce flicker; no color transition (avoids white flash)
+      setScrolled(window.scrollY > 8);
     }
 
     update();
@@ -67,7 +68,7 @@ export function SiteHeader({
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 transition-colors duration-300 ${menuOpen ? "z-60" : "z-40"} ${
+      className={`fixed inset-x-0 top-0 ${menuOpen ? "z-60" : "z-40"} ${
         solidNav ? "bg-brand-primary-active" : "bg-transparent"
       }`}
       style={{
@@ -125,7 +126,7 @@ export function SiteHeader({
           <button
             type="button"
             onClick={openQuote}
-            className="rounded-md border border-border-strong bg-bg-primary px-8 py-3 font-display text-base whitespace-nowrap text-brand-primary uppercase"
+            className="rounded-md border border-transparent bg-white px-8 py-3 font-display text-base whitespace-nowrap text-text-primary uppercase"
           >
             {nav.quote_label}
           </button>
@@ -230,7 +231,7 @@ export function SiteHeader({
                     closeMenu();
                     openQuote();
                   }}
-                  className="rounded-md border border-border-strong bg-bg-primary px-6 py-3 font-display text-base leading-none whitespace-nowrap text-brand-primary uppercase sm:px-8"
+                  className="rounded-md border border-transparent bg-white px-6 py-3 font-display text-base leading-none whitespace-nowrap text-text-primary uppercase sm:px-8"
                 >
                   {nav.quote_label}
                 </button>

@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --koda-brand-primary: #183f31;
-  --koda-brand-primary-active: #101613;
+  /* KodaVent packaging palette — dark forest + lime accent */
+  --koda-brand-primary: #264835;
+  --koda-brand-primary-active: #182e22;
   --koda-bg-primary: #f7f5ec;
   --koda-bg-secondary: #ecebe4;
-  --koda-accent-warm: #c8b891;
-  --koda-text-primary: #101613;
+  --koda-accent-warm: #c2d46a;
+  --koda-text-primary: #14271d;
   --koda-text-secondary: #5f625d;
   --koda-text-inverse: #f7f5ec;
   --koda-border-strong: #5f625d;
@@ -60,6 +61,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Match hero/nav so overscroll at top doesn't flash cream/white */
+  background: var(--koda-brand-primary-active);
 }
 
 body {

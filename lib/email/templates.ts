@@ -55,7 +55,7 @@ function detailRow(label: string, value: string, last = false) {
         </p>
       </td>
       <td style="padding:13px 0;${border}vertical-align:top;">
-        <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#101613;">
+        <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#14271d;">
           ${value}
         </p>
       </td>
@@ -93,7 +93,7 @@ function emailShell(options: {
       <td align="center" style="padding:40px 16px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;background:#ffffff;border:1px solid #d9d8d1;border-radius:8px;overflow:hidden;">
           <tr>
-            <td style="background:#183f31;padding:0;">
+            <td style="background:#264835;padding:0;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td style="padding:22px 28px;">
@@ -101,7 +101,7 @@ function emailShell(options: {
                   </td>
                 </tr>
                 <tr>
-                  <td style="height:3px;background:#c8b891;font-size:0;line-height:0;">&nbsp;</td>
+                  <td style="height:3px;background:#c2d46a;font-size:0;line-height:0;">&nbsp;</td>
                 </tr>
               </table>
             </td>
@@ -145,10 +145,10 @@ export function buildQuoteNotificationEmail(
   const location =
     [payload.city.trim(), payload.state.trim()].filter(Boolean).join(", ") ||
     "—";
-  const emailLink = `<a href="mailto:${escapeHtml(payload.email)}" style="color:#183f31;text-decoration:none;font-weight:600;">${escapeHtml(payload.email)}</a>`;
+  const emailLink = `<a href="mailto:${escapeHtml(payload.email)}" style="color:#264835;text-decoration:none;font-weight:600;">${escapeHtml(payload.email)}</a>`;
   const phoneLink =
     payload.phone.trim().length > 0
-      ? `<a href="tel:${escapeHtml(payload.phone.replaceAll(" ", ""))}" style="color:#101613;text-decoration:none;">${escapeHtml(payload.phone)}</a>`
+      ? `<a href="tel:${escapeHtml(payload.phone.replaceAll(" ", ""))}" style="color:#14271d;text-decoration:none;">${escapeHtml(payload.phone)}</a>`
       : "—";
   const message =
     payload.message.trim() || "(No message included)";
@@ -194,12 +194,12 @@ export function buildQuoteNotificationEmail(
 
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:22px;border:1px solid #ecebe4;border-radius:8px;overflow:hidden;">
       <tr>
-        <td style="width:4px;background:#183f31;font-size:0;line-height:0;">&nbsp;</td>
+        <td style="width:4px;background:#264835;font-size:0;line-height:0;">&nbsp;</td>
         <td style="padding:18px 20px;background:#ffffff;">
           <p style="margin:0 0 10px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:11px;line-height:1.4;letter-spacing:0.06em;text-transform:uppercase;color:#5f625d;font-weight:600;">
             Message
           </p>
-          <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.75;color:#101613;white-space:pre-wrap;">${escapeHtml(message)}</p>
+          <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.75;color:#14271d;white-space:pre-wrap;">${escapeHtml(message)}</p>
         </td>
       </tr>
     </table>
@@ -214,7 +214,7 @@ export function buildQuoteNotificationEmail(
       <tr>
         <td align="left">
           <!--[if mso]>
-          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${replyHref}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="10%" stroke="f" fillcolor="#183f31">
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${replyHref}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="10%" stroke="f" fillcolor="#264835">
             <w:anchorlock/>
             <center style="color:#f7f5ec;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">
               Reply to ${escapeHtml(payload.full_name)}
@@ -223,7 +223,7 @@ export function buildQuoteNotificationEmail(
           <![endif]-->
           <!--[if !mso]><!-- -->
           <a href="${replyHref}"
-             style="display:inline-block;background:#183f31;border-radius:6px;padding:13px 24px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.2;font-weight:650;color:#f7f5ec !important;text-decoration:none;">
+             style="display:inline-block;background:#264835;border-radius:6px;padding:13px 24px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.2;font-weight:650;color:#f7f5ec !important;text-decoration:none;">
             Reply to ${escapeHtml(payload.full_name)}
           </a>
           <!--<![endif]-->
@@ -256,12 +256,12 @@ export function buildTestEmail(options?: EmailTemplateOptions) {
   const bodyHtml = `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #ecebe4;border-radius:8px;overflow:hidden;">
       <tr>
-        <td style="width:4px;background:#183f31;font-size:0;line-height:0;">&nbsp;</td>
+        <td style="width:4px;background:#264835;font-size:0;line-height:0;">&nbsp;</td>
         <td style="padding:20px;background:#f7f5ec;">
           <p style="margin:0 0 6px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5f625d;font-weight:600;">
             Status
           </p>
-          <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.4;color:#101613;font-weight:650;">
+          <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.4;color:#14271d;font-weight:650;">
             Email delivery verified
           </p>
         </td>
@@ -306,22 +306,22 @@ export function buildLeadConfirmationEmail(
     .join("\n");
 
   const bodyHtml = `
-    <p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#101613;">
+    <p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#14271d;">
       Hi ${escapeHtml(firstName)},
     </p>
-    <p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#101613;">
+    <p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#14271d;">
       Thanks for requesting a quote from Koda Siding. We received your details and a specialist will follow up shortly.
     </p>
     ${
       payload.has_attachment
-        ? `<p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#101613;">
+        ? `<p style="margin:0 0 16px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#14271d;">
       We also received the file you attached with your request.
     </p>`
         : ""
     }
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:8px;border:1px solid #ecebe4;border-radius:8px;overflow:hidden;">
       <tr>
-        <td style="width:4px;background:#c8b891;font-size:0;line-height:0;">&nbsp;</td>
+        <td style="width:4px;background:#c2d46a;font-size:0;line-height:0;">&nbsp;</td>
         <td style="padding:18px 20px;background:#f7f5ec;">
           <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#5f625d;">
             No action needed from you right now. If you need to add details, just reply to this email.

@@ -141,9 +141,13 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
     );
   }
 
+  // Left/right only: cap width on large screens so image + text stay in proportion.
+  const sideBySideClass =
+    "mx-auto grid w-full items-center gap-8 lg:max-w-7xl lg:grid-cols-2 lg:gap-12 xl:max-w-8xl xl:gap-16";
+
   if (layout === "image-left") {
     return (
-      <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
+      <li className={sideBySideClass}>
         <div className="order-2 min-w-0 lg:order-1">{sideMedia}</div>
         <div className="order-1 min-w-0 lg:order-2">
           <FeatureText feature={feature} />
@@ -153,7 +157,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
   }
 
   return (
-    <li className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
+    <li className={sideBySideClass}>
       <div className="min-w-0">
         <FeatureText feature={feature} />
       </div>

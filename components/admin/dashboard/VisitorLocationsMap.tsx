@@ -133,7 +133,7 @@ export function VisitorLocationsMap({
               pathOptions={{
                 color: "#ffffff",
                 weight: 2,
-                fillColor: isFocused ? "#c8b891" : "#183f31",
+                fillColor: isFocused ? "#c2d46a" : "#264835",
                 fillOpacity: isFocused ? 0.95 : 0.82,
               }}
               eventHandlers={{
