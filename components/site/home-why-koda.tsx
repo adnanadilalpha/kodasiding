@@ -99,12 +99,12 @@ function FeatureText({
       <RichText
         as="div"
         html={feature.title}
-        className="font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]"
+        className="w-full max-w-full wrap-break-word font-display text-xl leading-tight font-bold uppercase sm:text-2xl lg:text-[1.75rem]"
       />
       <RichText
         as="p"
         html={feature.body}
-        className="w-full text-base leading-normal text-text-primary/80 lg:text-lg"
+        className="w-full max-w-full wrap-break-word text-base leading-normal text-text-primary/80 lg:text-lg"
       />
     </div>
   );

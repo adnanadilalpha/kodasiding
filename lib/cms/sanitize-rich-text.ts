@@ -22,11 +22,32 @@ export function richTextHasContent(html: string | null | undefined) {
 }
 
 /**
+ * Collapse over-encoded entities from repeated sanitize passes
+ * (e.g. `&amp;amp;amp;` → `&`) before a single clean escape.
+ */
+function decodeBasicEntities(text: string) {
+  let out = text;
+  let prev = "";
+  while (out !== prev) {
+    prev = out;
+    out = out
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;|&apos;/gi, "'")
+      .replace(/&#0*38;/gi, "&");
+  }
+  return out;
+}
+
+/**
  * Allow only bold / italic / underline markup (plus basic line breaks).
  * Strips attributes and unknown tags. Safe for CMS → public HTML.
  */
 export function sanitizeRichText(html: string | null | undefined): string {
-  const raw = String(html ?? "").trim();
+  // Decode first so contentEditable / re-saves don't stack `&amp;amp;…`
+  const raw = decodeBasicEntities(String(html ?? "")).trim();
   if (!raw) return "";
 
   // Plain text (legacy CMS content) — escape and keep.
@@ -109,6 +130,19 @@ function sanitizeRichTextString(html: string): string {
   // Collapse noisy break runs from pasted HTML.
   out = out.replace(/(?:<br>\s*){3,}/gi, "<br><br>");
   out = out.replace(/^(?:<br>\s*)+|(?:<br>\s*)+$/gi, "");
+
+  // Escape bare & / < / > outside allowed tags (after decode step).
+  out = out
+    .split(/(<\/?(?:strong|em|u|br)\b[^>]*>)/gi)
+    .map((part, i) =>
+      i % 2 === 1
+        ? part
+        : part
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;"),
+    )
+    .join("");
 
   return out.trim();
 }

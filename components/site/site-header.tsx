@@ -209,7 +209,7 @@ export function SiteHeader({
                           : "text-[32px] leading-none whitespace-nowrap text-text-inverse sm:text-[64px]"
                       }
                     >
-                      {isProfiles ? `${link.label} →` : link.label}
+                      {isProfiles ? `${link.label}` : link.label}
                     </Link>
                   );
                 })}
