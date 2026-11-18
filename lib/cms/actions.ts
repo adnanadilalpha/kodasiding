@@ -17,7 +17,16 @@ import { isSocialIconId } from "@/lib/cms/social-icons";
 import { externalHref } from "@/lib/cms/safe-href";
 import { syncPublicSite } from "@/lib/cms/sync-public";
 import { sanitizeRichText } from "@/lib/cms/sanitize-rich-text";
-import type { QuoteEmailSettings, QuoteFormSettings, SocialLink } from "@/lib/cms/types";
+import type {
+  KodaVentAnnotation,
+  KodaVentInstallMethod,
+  KodaVentInstallStep,
+  PageKodaVent,
+  QuoteEmailSettings,
+  QuoteFormSettings,
+  SocialLink,
+} from "@/lib/cms/types";
+import { collectKodaVentMediaIds } from "@/lib/cms/kodavent-defaults";
 import { revalidatePath } from "next/cache";
 
 /** After CMS write: rebuild public snapshot + refresh admin + marketing paths. */
@@ -30,6 +39,7 @@ async function afterPublicChange(
   revalidatePath("/");
   revalidatePath("/profiles");
   revalidatePath("/find-dealer");
+  revalidatePath("/kodavent");
 }
 
 export async function saveHomeHero(formData: FormData) {
@@ -1103,6 +1113,259 @@ export async function deleteAdminAccount(formData: FormData) {
 function emptyToNull(value: FormDataEntryValue | null) {
   const s = String(value ?? "").trim();
   return s === "" ? null : s;
+}
+
+function formFlag(formData: FormData, key: string) {
+  return formData.get(key) === "on" || formData.get(key) === "true";
+}
+
+function parseAnnotationsJson(raw: string): KodaVentAnnotation[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+      .map((item, index) => ({
+        id: String(item.id ?? `ann-${index + 1}`),
+        title: String(item.title ?? ""),
+        description: String(item.description ?? ""),
+        x: Number.isFinite(Number(item.x)) ? Number(item.x) : 50,
+        y: Number.isFinite(Number(item.y)) ? Number(item.y) : 50,
+        visible: item.visible !== false,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function parseMethodsJson(raw: string): KodaVentInstallMethod[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+      .map((item, methodIndex) => {
+        const stepsRaw = Array.isArray(item.steps) ? item.steps : [];
+        const steps: KodaVentInstallStep[] = stepsRaw
+          .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
+          .map((s, stepIndex) => ({
+            id: String(s.id ?? `step-${methodIndex + 1}-${stepIndex + 1}`),
+            number: String(s.number ?? String(stepIndex + 1).padStart(2, "0")),
+            title: String(s.title ?? ""),
+            description: String(s.description ?? ""),
+            image_media_id: emptyToNull(
+              (s.image_media_id as FormDataEntryValue | null) ?? null,
+            ),
+            image_alt: String(s.image_alt ?? ""),
+            visible: s.visible !== false,
+          }));
+        return {
+          id: String(item.id ?? `method-${methodIndex + 1}`),
+          tab_label: String(item.tab_label ?? ""),
+          heading: String(item.heading ?? ""),
+          intro: String(item.intro ?? ""),
+          pdf_document_key: String(item.pdf_document_key ?? ""),
+          steps,
+          visible: item.visible !== false,
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
+async function loadKodaVentDraft() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("page_kodavent")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as PageKodaVent | null) ?? null;
+}
+
+export async function saveKodaVentHero(formData: FormData) {
+  const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
+  const hero = {
+    eyebrow: String(formData.get("eyebrow") ?? ""),
+    heading: String(formData.get("heading") ?? ""),
+    supporting_headline: String(formData.get("supporting_headline") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    image_media_id: emptyToNull(formData.get("image_media_id")),
+    image_alt: String(formData.get("image_alt") ?? ""),
+    primary_cta_label: String(formData.get("primary_cta_label") ?? ""),
+    primary_cta_href: String(formData.get("primary_cta_href") ?? "#installation"),
+    secondary_cta_label: String(formData.get("secondary_cta_label") ?? ""),
+    secondary_cta_href: String(formData.get("secondary_cta_href") ?? "#product-design"),
+    visible: formFlag(formData, "visible"),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ hero, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previous?.hero?.image_media_id],
+      [hero.image_media_id],
+    ),
+  );
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveKodaVentProductDesign(formData: FormData) {
+  const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
+  const product_design = {
+    heading: String(formData.get("heading") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    image_media_id: emptyToNull(formData.get("image_media_id")),
+    image_alt: String(formData.get("image_alt") ?? ""),
+    annotations: parseAnnotationsJson(String(formData.get("annotations_json") ?? "[]")),
+    visible: formFlag(formData, "visible"),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ product_design, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previous?.product_design?.image_media_id],
+      [product_design.image_media_id],
+    ),
+  );
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveKodaVentInstalled(formData: FormData) {
+  const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
+  const image_media_id = emptyToNull(formData.get("image_media_id"));
+  const installed = {
+    heading: String(formData.get("heading") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    image_media_id,
+    image_alt: String(formData.get("image_alt") ?? ""),
+    caption: String(formData.get("caption") ?? ""),
+    // Require an image before the section can go live.
+    visible: formFlag(formData, "visible") && Boolean(image_media_id),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ installed, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previous?.installed?.image_media_id],
+      [installed.image_media_id],
+    ),
+  );
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveKodaVentInstallation(formData: FormData) {
+  const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
+  const installation = {
+    heading: String(formData.get("heading") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    methods: parseMethodsJson(String(formData.get("methods_json") ?? "[]")),
+    visible: formFlag(formData, "visible"),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ installation, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+
+  const beforeIds = previous ? collectKodaVentMediaIds(previous) : [];
+  const afterIds = collectKodaVentMediaIds({
+    ...(previous as PageKodaVent),
+    installation,
+  } as PageKodaVent);
+  await deleteOrphanedMediaAssets(releasedMediaIds(beforeIds, afterIds));
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveKodaVentCta(formData: FormData) {
+  const admin = await requireAdmin();
+  const cta = {
+    heading: String(formData.get("heading") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    cta_label: String(formData.get("cta_label") ?? ""),
+    cta_href: String(formData.get("cta_href") ?? "#quote"),
+    visible: formFlag(formData, "visible"),
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ cta, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveKodaVentSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
+  const seo = {
+    title: String(formData.get("title") ?? ""),
+    description: String(formData.get("description") ?? ""),
+    og_title: String(formData.get("og_title") ?? ""),
+    og_description: String(formData.get("og_description") ?? ""),
+    og_image_media_id: emptyToNull(formData.get("og_image_media_id")),
+    canonical_path: String(formData.get("canonical_path") ?? "/kodavent").trim() || "/kodavent",
+  };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("page_kodavent")
+    .update({ seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [previous?.seo?.og_image_media_id],
+      [seo.og_image_media_id],
+    ),
+  );
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+/** PDF upload for KodaVent guides — same documents table pattern as install manual. */
+export async function saveKodaVentDocument(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const key = String(formData.get("key") ?? "");
+  const allowed = new Set([
+    "kodavent_new_construction",
+    "kodavent_retrofit",
+  ]);
+  if (!allowed.has(key)) {
+    throw new Error("Invalid KodaVent document key.");
+  }
+  const bucket = String(formData.get("bucket") ?? "documents");
+  if (bucket !== "documents") {
+    throw new Error("Invalid document bucket.");
+  }
+  const { error } = await supabase.from("documents").upsert(
+    {
+      key,
+      title: String(formData.get("title") ?? ""),
+      storage_path: String(formData.get("storage_path") ?? ""),
+      bucket,
+    },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/kodavent");
 }
 
 function parseAdminRole(value: FormDataEntryValue | null): "owner" | "editor" {

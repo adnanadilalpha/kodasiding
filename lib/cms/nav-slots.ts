@@ -7,6 +7,7 @@ import type { NavLink } from "@/lib/cms/types";
 export const NAV_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why koda" },
   { href: "/profiles", defaultLabel: "Profiles" },
+  { href: "/kodavent", defaultLabel: "KodaVent" },
   { href: "/#installation", defaultLabel: "Installation" },
   { href: "/#contact", defaultLabel: "Contact" },
 ] as const;
@@ -14,6 +15,7 @@ export const NAV_LINK_SLOTS = [
 export const FOOTER_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why Koda" },
   { href: "/profiles", defaultLabel: "Profiles" },
+  { href: "/kodavent", defaultLabel: "KodaVent" },
   { href: "/#installation", defaultLabel: "Installations" },
   { href: "/#contact", defaultLabel: "Contact" },
 ] as const;
@@ -41,10 +43,8 @@ export function labelsForSlots(
   slots: readonly { href: string; defaultLabel: string }[],
   links: NavLink[] | undefined,
 ): string[] {
-  return slots.map((slot, i) => {
-    const match =
-      links?.find((l) => normalizeLinkHref(l.href) === slot.href) ??
-      links?.[i];
+  return slots.map((slot) => {
+    const match = links?.find((l) => normalizeLinkHref(l.href) === slot.href);
     return match?.label?.trim() || slot.defaultLabel;
   });
 }
@@ -66,10 +66,9 @@ export function syncLinksToSlots(
   slots: readonly { href: string; defaultLabel: string }[],
   links: NavLink[] | undefined,
 ): NavLink[] {
-  return slots.map((slot, i) => {
-    const match =
-      links?.find((l) => normalizeLinkHref(l.href) === slot.href) ??
-      links?.[i];
+  return slots.map((slot) => {
+    // Match by href only — never borrow another slot's label by index.
+    const match = links?.find((l) => normalizeLinkHref(l.href) === slot.href);
     return {
       href: slot.href,
       label: match?.label?.trim() || slot.defaultLabel,

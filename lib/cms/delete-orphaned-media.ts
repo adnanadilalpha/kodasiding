@@ -101,6 +101,7 @@ async function findReferencedMediaIds(
     jewelImages,
     videoThumbs,
     pageHome,
+    pageKodavent,
     settings,
   ] = await Promise.all([
     supabase.from("profiles").select("image_media_id").in("image_media_id", ids),
@@ -118,6 +119,11 @@ async function findReferencedMediaIds(
       .select("thumbnail_media_id")
       .in("thumbnail_media_id", ids),
     supabase.from("page_home").select("hero, why_koda, ctas").eq("id", 1).maybeSingle(),
+    supabase
+      .from("page_kodavent")
+      .select("hero, product_design, installed, installation, seo")
+      .eq("id", 1)
+      .maybeSingle(),
     supabase.from("site_settings").select("seo").eq("id", 1).maybeSingle(),
   ]);
 
@@ -128,6 +134,7 @@ async function findReferencedMediaIds(
     jewelImages.error,
     videoThumbs.error,
     pageHome.error,
+    pageKodavent.error,
     settings.error,
   ].filter(Boolean);
   if (checkErrors.length > 0) {
@@ -193,6 +200,33 @@ async function findReferencedMediaIds(
   const seo = settings.data?.seo as Record<string, unknown> | null;
   const og = asMediaId(seo?.og_image_media_id);
   if (og && ids.includes(og)) used.add(og);
+
+  const kodavent = pageKodavent.data;
+  if (kodavent) {
+    const hero = kodavent.hero as Record<string, unknown> | null;
+    const design = kodavent.product_design as Record<string, unknown> | null;
+    const installed = kodavent.installed as Record<string, unknown> | null;
+    const installation = kodavent.installation as {
+      methods?: Array<{ steps?: Array<Record<string, unknown>> }>;
+    } | null;
+    const pageSeo = kodavent.seo as Record<string, unknown> | null;
+
+    for (const id of [
+      asMediaId(hero?.image_media_id),
+      asMediaId(design?.image_media_id),
+      asMediaId(installed?.image_media_id),
+      asMediaId(pageSeo?.og_image_media_id),
+    ]) {
+      if (id && ids.includes(id)) used.add(id);
+    }
+
+    for (const method of installation?.methods ?? []) {
+      for (const step of method.steps ?? []) {
+        const stepImage = asMediaId(step.image_media_id);
+        if (stepImage && ids.includes(stepImage)) used.add(stepImage);
+      }
+    }
+  }
 
   return used;
 }

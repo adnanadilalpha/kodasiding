@@ -1,7 +1,6 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import heic2any from "heic2any";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -54,6 +53,8 @@ function isHeicFile(file: File) {
 
 /** HEIC is not displayable in most browsers — convert to JPEG first. */
 async function heicToJpegFile(file: File): Promise<File> {
+  // Dynamic import: heic2any touches `window` at module load and breaks SSR.
+  const heic2any = (await import("heic2any")).default;
   const result = await heic2any({
     blob: file,
     toType: "image/jpeg",

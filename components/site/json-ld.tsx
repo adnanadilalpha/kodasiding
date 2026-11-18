@@ -75,3 +75,37 @@ export function BreadcrumbJsonLd({
     />
   );
 }
+
+/** Product schema using only confirmed attributes (no price, reviews, or availability). */
+export function ProductJsonLd({
+  seo,
+  name,
+  description,
+  imageUrl,
+  path = "/kodavent",
+}: {
+  seo: SiteSeo;
+  name: string;
+  description: string;
+  imageUrl?: string | null;
+  path?: string;
+}) {
+  const base = resolveSiteUrl(seo.site_url);
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name,
+    description,
+    brand: {
+      "@type": "Brand",
+      name: "KODA Siding",
+    },
+    url: absoluteUrl(base, path),
+  };
+  if (imageUrl) {
+    data.image = imageUrl.startsWith("http")
+      ? imageUrl
+      : absoluteUrl(base, imageUrl);
+  }
+  return <JsonLd data={data} />;
+}

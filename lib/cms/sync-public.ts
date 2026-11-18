@@ -1,4 +1,5 @@
-import type { MediaAsset, SiteSnapshotPayload } from "@/lib/cms/types";
+import type { MediaAsset, PageKodaVent, SiteSnapshotPayload } from "@/lib/cms/types";
+import { DEFAULT_PAGE_KODAVENT } from "@/lib/cms/kodavent-defaults";
 import { LIVE_SNAPSHOT_STATUS, SITE_CACHE_TAG } from "@/lib/cms/constants";
 import { normalizeGeoAccess } from "@/lib/cms/geo-access";
 import { compareProfiles } from "@/lib/cms/profile-sort";
@@ -6,6 +7,30 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidateTag } from "next/cache";
 
 export { LIVE_SNAPSHOT_STATUS, SITE_CACHE_TAG };
+
+function mergeKodaVentPage(row: PageKodaVent | null | undefined): PageKodaVent {
+  const base = DEFAULT_PAGE_KODAVENT;
+  if (!row) return base;
+  return {
+    id: row.id ?? 1,
+    hero: { ...base.hero, ...row.hero },
+    product_design: {
+      ...base.product_design,
+      ...row.product_design,
+      annotations:
+        row.product_design?.annotations ?? base.product_design.annotations,
+    },
+    installed: { ...base.installed, ...row.installed },
+    installation: {
+      ...base.installation,
+      ...row.installation,
+      methods: row.installation?.methods ?? base.installation.methods,
+    },
+    cta: { ...base.cta, ...row.cta },
+    seo: { ...base.seo, ...row.seo },
+    updated_at: row.updated_at,
+  };
+}
 
 /** Build public payload from current draft CMS tables (admin session). */
 export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
@@ -15,6 +40,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     settingsRes,
     homeRes,
     pageProfilesRes,
+    pageKodaventRes,
     partnersRes,
     jewelsRes,
     profilesRes,
@@ -26,6 +52,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     supabase.from("site_settings").select("*").eq("id", 1).single(),
     supabase.from("page_home").select("*").eq("id", 1).single(),
     supabase.from("page_profiles").select("*").eq("id", 1).single(),
+    supabase.from("page_kodavent").select("*").eq("id", 1).single(),
     supabase
       .from("partners")
       .select("id, name, logo_media_id, sort_order, is_published")
@@ -68,6 +95,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
   if (settingsRes.error) throw new Error(settingsRes.error.message);
   if (homeRes.error) throw new Error(homeRes.error.message);
   if (pageProfilesRes.error) throw new Error(pageProfilesRes.error.message);
+  if (pageKodaventRes.error) throw new Error(pageKodaventRes.error.message);
 
   const mediaMap: Record<string, MediaAsset> = {};
   for (const asset of mediaRes.data ?? []) {
@@ -95,6 +123,7 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
       },
     },
     page_profiles: pageProfilesRes.data,
+    page_kodavent: mergeKodaVentPage(pageKodaventRes.data as PageKodaVent),
     partners: partnersRes.data ?? [],
     home_profile_jewels: jewelsRes.data ?? [],
     profiles: [...(profilesRes.data ?? [])].sort(compareProfiles),

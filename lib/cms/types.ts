@@ -276,6 +276,105 @@ export type DocumentRow = {
   bucket: string;
 };
 
+/** KodaVent product page — singleton CMS content */
+export type KodaVentAnnotation = {
+  id: string;
+  title: string;
+  description: string;
+  /** Desktop pin position as percent of illustration (0–100). */
+  x: number;
+  y: number;
+  visible: boolean;
+};
+
+export type KodaVentHero = {
+  eyebrow: string;
+  heading: string;
+  supporting_headline: string;
+  description: string;
+  image_media_id: string | null;
+  image_alt: string;
+  primary_cta_label: string;
+  primary_cta_href: string;
+  secondary_cta_label: string;
+  secondary_cta_href: string;
+  visible: boolean;
+};
+
+export type KodaVentProductDesign = {
+  heading: string;
+  description: string;
+  image_media_id: string | null;
+  image_alt: string;
+  annotations: KodaVentAnnotation[];
+  visible: boolean;
+};
+
+export type KodaVentInstalled = {
+  heading: string;
+  description: string;
+  image_media_id: string | null;
+  image_alt: string;
+  caption: string;
+  visible: boolean;
+};
+
+export type KodaVentInstallStep = {
+  id: string;
+  number: string;
+  title: string;
+  description: string;
+  image_media_id: string | null;
+  image_alt: string;
+  visible: boolean;
+};
+
+export type KodaVentInstallMethod = {
+  id: string;
+  tab_label: string;
+  heading: string;
+  intro: string;
+  pdf_document_key: string;
+  steps: KodaVentInstallStep[];
+  visible: boolean;
+};
+
+export type KodaVentInstallation = {
+  heading: string;
+  description: string;
+  methods: KodaVentInstallMethod[];
+  visible: boolean;
+};
+
+export type KodaVentCta = {
+  heading: string;
+  description: string;
+  cta_label: string;
+  /** Empty or "#quote" opens the quote modal. */
+  cta_href: string;
+  visible: boolean;
+};
+
+export type KodaVentSeo = {
+  title: string;
+  description: string;
+  og_title: string;
+  og_description: string;
+  og_image_media_id: string | null;
+  canonical_path: string;
+};
+
+export type PageKodaVent = {
+  id: number;
+  hero: KodaVentHero;
+  product_design: KodaVentProductDesign;
+  installed: KodaVentInstalled;
+  installation: KodaVentInstallation;
+  cta: KodaVentCta;
+  seo: KodaVentSeo;
+  updated_at?: string;
+};
+
 export type QuoteLead = {
   id: string;
   full_name: string;
@@ -312,6 +411,7 @@ export type SiteSnapshotPayload = {
   settings: SiteSettings;
   home: PageHome;
   page_profiles: PageProfiles;
+  page_kodavent: PageKodaVent;
   partners: Partner[];
   home_profile_jewels: HomeProfileJewel[];
   profiles: Profile[];
