@@ -306,6 +306,9 @@ export type KodaVentProductDesign = {
   description: string;
   image_media_id: string | null;
   image_alt: string;
+  /** Optional exploded / how-it-works image (falls back to public asset). */
+  exploded_image_media_id?: string | null;
+  exploded_image_alt?: string;
   annotations: KodaVentAnnotation[];
   visible: boolean;
 };
@@ -346,12 +349,20 @@ export type KodaVentInstallation = {
   visible: boolean;
 };
 
+export type KodaVentRetailerLink = {
+  id: string;
+  label: string;
+  href: string;
+  visible: boolean;
+};
+
 export type KodaVentCta = {
   heading: string;
   description: string;
   cta_label: string;
-  /** Empty or "#quote" opens the quote modal. */
+  /** Empty or "#quote" opens the quote modal. Prefer retailer links for Order Now. */
   cta_href: string;
+  retailers?: KodaVentRetailerLink[];
   visible: boolean;
 };
 

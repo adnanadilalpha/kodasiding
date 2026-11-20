@@ -161,7 +161,44 @@ body {
   font-size: 11px;
 }
 
+/* KodaVent hero — product floats above a breathing ground shadow */
+@keyframes kodavent-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-4%) rotate(0.6deg);
+  }
+}
+
+@keyframes kodavent-float-shadow {
+  0%,
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+  50% {
+    scale: 0.78;
+    opacity: 0.55;
+  }
+}
+
+.kodavent-float {
+  animation: kodavent-float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.kodavent-float-shadow {
+  animation: kodavent-float-shadow 6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .kodavent-float,
+  .kodavent-float-shadow {
+    animation: none;
+  }
+
   .partners-marquee {
     animation: none;
   }

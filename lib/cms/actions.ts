@@ -1297,11 +1297,33 @@ export async function saveKodaVentInstallation(formData: FormData) {
 
 export async function saveKodaVentCta(formData: FormData) {
   const admin = await requireAdmin();
+  let retailers: Array<{
+    id: string;
+    label: string;
+    href: string;
+    visible: boolean;
+  }> = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("retailers_json") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      retailers = parsed
+        .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === "object")
+        .map((r, index) => ({
+          id: String(r.id ?? `retailer-${index + 1}`),
+          label: String(r.label ?? ""),
+          href: String(r.href ?? ""),
+          visible: r.visible !== false,
+        }));
+    }
+  } catch {
+    retailers = [];
+  }
   const cta = {
     heading: String(formData.get("heading") ?? ""),
     description: String(formData.get("description") ?? ""),
     cta_label: String(formData.get("cta_label") ?? ""),
     cta_href: String(formData.get("cta_href") ?? "#quote"),
+    retailers,
     visible: formFlag(formData, "visible"),
   };
   const supabase = await createClient();

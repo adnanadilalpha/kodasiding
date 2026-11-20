@@ -16,6 +16,7 @@ import type {
   KodaVentAnnotation,
   KodaVentInstallMethod,
   KodaVentInstallStep,
+  KodaVentRetailerLink,
   MediaAsset,
   PageKodaVent,
 } from "@/lib/cms/types";
@@ -195,7 +196,7 @@ export function KodaVentProductDesignEditor({
         </Field>
         <MediaField
           name="image_media_id"
-          label="Product illustration"
+          label="Packaging / box image"
           initialId={section.image_media_id}
           initialPath={image?.path}
           initialBucket={image?.bucket ?? "media"}
@@ -204,9 +205,13 @@ export function KodaVentProductDesignEditor({
         <Field label="Image alt text">
           <TextInput name="image_alt" defaultValue={section.image_alt} />
         </Field>
+        <LockedHint>
+          Public page currently uses the packaged box + exploded product assets.
+          Keep this copy simple — no annotation pins on the live page.
+        </LockedHint>
       </FieldGroup>
 
-      <FieldGroup title="Annotations">
+      <FieldGroup title="Annotations (optional / unused on public page)">
         <div className="flex flex-col gap-4">
           {annotations.map((annotation, index) => (
             <div
@@ -838,10 +843,14 @@ export function KodaVentInstallationEditor({
 export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [retailers, setRetailers] = useState<KodaVentRetailerLink[]>(
+    cta.retailers ?? [],
+  );
 
   return (
     <form
       action={(fd) => {
+        fd.set("retailers_json", JSON.stringify(retailers));
         startTransition(async () => {
           await saveKodaVentCta(fd);
           router.refresh();
@@ -850,22 +859,93 @@ export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
       className="flex w-full flex-col gap-5"
     >
       <VisibilityToggle defaultChecked={cta.visible !== false} />
-      <FieldGroup title="Final CTA">
+      <FieldGroup title="Order Now">
         <Field label="Heading">
           <TextInput name="heading" defaultValue={cta.heading} />
         </Field>
         <Field label="Description">
           <TextArea name="description" rows={3} defaultValue={cta.description} />
         </Field>
-        <Field label="CTA label">
+        <Field label="Fallback CTA label">
           <TextInput name="cta_label" defaultValue={cta.cta_label} />
         </Field>
-        <Field label="CTA destination">
+        <Field label="Fallback CTA destination">
           <TextInput name="cta_href" defaultValue={cta.cta_href} />
           <LockedHint>
-            Use #quote to open the quote modal, or a path like /find-dealer
+            Used only when no retailer links are set. Prefer retailer rows below
+            for Amazon and other stores.
           </LockedHint>
         </Field>
+      </FieldGroup>
+
+      <FieldGroup title="Retailer links">
+        <div className="flex flex-col gap-4">
+          {retailers.map((retailer, index) => (
+            <div
+              key={retailer.id}
+              className="rounded-md border border-brand-primary/10 bg-bg-secondary/40 p-4"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-brand-primary">
+                  Retailer {index + 1}
+                </p>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  onClick={() =>
+                    setRetailers((prev) => prev.filter((_, i) => i !== index))
+                  }
+                >
+                  Remove
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Label">
+                  <TextInput
+                    value={retailer.label}
+                    onChange={(e) =>
+                      setRetailers((prev) =>
+                        prev.map((r, i) =>
+                          i === index ? { ...r, label: e.target.value } : r,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="URL (blank = Coming soon)">
+                  <TextInput
+                    value={retailer.href}
+                    onChange={(e) =>
+                      setRetailers((prev) =>
+                        prev.map((r, i) =>
+                          i === index ? { ...r, href: e.target.value } : r,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+              </div>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() =>
+              setRetailers((prev) => [
+                ...prev,
+                {
+                  id: `retailer-${prev.length + 1}`,
+                  label: "Retailer",
+                  href: "",
+                  visible: true,
+                },
+              ])
+            }
+          >
+            Add retailer
+          </Button>
+        </div>
       </FieldGroup>
       <div className="pt-1">
         <Button type="submit" disabled={pending}>

@@ -39,45 +39,46 @@ function annotation(
 }
 
 export const DEFAULT_KODAVENT_HERO: KodaVentHero = {
-  eyebrow: "KODA SIDING / PRODUCT",
-  heading: "KodaVent.",
-  supporting_headline: "A better finish for exterior exhausts.",
-  description:
-    "A 4-inch exhaust vent cover designed with thoughtful installation detailing for new construction and retrofit applications.",
+  eyebrow: '4" Magnetic',
+  heading: "KodaVent",
+  supporting_headline: "Exhaust vent cover",
+  description: "Flashed like a window. Sealed like one too.",
   image_media_id: null,
-  image_alt: "KodaVent 4-inch exhaust vent cover",
-  primary_cta_label: "Explore Installation",
-  primary_cta_href: "#installation",
-  secondary_cta_label: "Product Details",
-  secondary_cta_href: "#product-design",
+  image_alt: "KodaVent retail packaging",
+  primary_cta_label: "Order now",
+  primary_cta_href: "#order",
+  secondary_cta_label: "Installation",
+  secondary_cta_href: "#installation",
   visible: true,
 };
 
 export const DEFAULT_KODAVENT_PRODUCT_DESIGN: KodaVentProductDesign = {
-  heading: "Flashed like a window. Sealed like one too.",
+  heading: "It's more than a vent cover.",
   description:
-    "A mounting flange for new construction, scored for retrofit — installed with the same care as a flashed opening.",
+    "Three reasons builders and homeowners choose a cover designed for water detailing, a cleaner wall, and either new construction or retrofit.",
   image_media_id: null,
-  image_alt: "KodaVent product illustration with mounting flange",
+  image_alt: "KodaVent product components",
+  exploded_image_media_id: null,
+  exploded_image_alt: "KodaVent exploded view showing flap and mounting plate",
   annotations: [
     annotation(
       "ann-flange",
-      "Mounting Flange",
-      "Designed for fastening and flashing during new construction.",
+      "Built for water detailing",
+      "Exterior penetrations need careful water management. KodaVent’s mounting flange is installed with silicone and overlapping flashing tape — the same logic used at a window opening — so the install sequence is clear and documented.",
       36,
       28,
     ),
     annotation(
       "ann-seal",
-      "Sealing Detail",
-      "Exterior-grade silicone is applied around the back perimeter during installation.",
+      "A cleaner exterior detail",
+      "Many exhaust covers look bulky or out of place. KodaVent’s simple square face sits flush with the siding for a tidy wall detail you can see without technical knowledge.",
       68,
       46,
     ),
     annotation(
       "ann-retrofit",
-      "Retrofit Configuration",
-      "Scored flange grooves allow the flanges to be removed for retrofit installation.",
+      "New construction or retrofit",
+      "New walls and finished walls need different approaches. Scored flanges come off for retrofit, so one product covers both documented installation configurations.",
       42,
       74,
     ),
@@ -86,13 +87,13 @@ export const DEFAULT_KODAVENT_PRODUCT_DESIGN: KodaVentProductDesign = {
 };
 
 export const DEFAULT_KODAVENT_INSTALLED: KodaVentInstalled = {
-  heading: "Designed for the finished wall.",
+  heading: "A small detail. A cleaner finish.",
   description:
-    "A considered exterior detail for new construction and retrofit installations.",
+    "See how the cover reads on the wall — quiet, square, and scaled to the siding.",
   image_media_id: null,
-  image_alt: "KodaVent installed on an exterior wall",
-  caption: "KODAVENT / INSTALLED APPLICATION",
-  visible: false,
+  image_alt: "KodaVent installed on exterior lap siding",
+  caption: "KODAVENT / INSTALLED",
+  visible: true,
 };
 
 const NEW_CONSTRUCTION_STEPS: KodaVentInstallStep[] = [
@@ -265,21 +266,25 @@ export const DEFAULT_KODAVENT_INSTALLATION: KodaVentInstallation = {
 };
 
 export const DEFAULT_KODAVENT_CTA: KodaVentCta = {
-  heading: "Ready to specify KodaVent?",
+  heading: "Order KodaVent",
   description:
-    "Get in touch with the KODA team to learn more about KodaVent and its availability.",
+    "Buy KodaVent from the retailers below. Ordering for a larger project? Request a quote from the KODA team.",
   cta_label: "Request a quote",
   cta_href: "#quote",
+  retailers: [
+    { id: "amazon", label: "Amazon", href: "", visible: true },
+    { id: "more", label: "More retailers", href: "", visible: true },
+  ],
   visible: true,
 };
 
 export const DEFAULT_KODAVENT_SEO: KodaVentSeo = {
   title: "KodaVent | 4-Inch Exhaust Vent Cover | KODA Siding",
   description:
-    "KodaVent is a 4-inch magnetic exhaust vent cover from KODA Siding, designed for new construction and retrofit installation.",
+    "KodaVent is a 4-inch exterior exhaust vent cover from KODA Siding — designed for a clean finish, documented flashing detail, and new construction or retrofit installation.",
   og_title: "KodaVent | 4-Inch Exhaust Vent Cover",
   og_description:
-    "A 4-inch exhaust vent cover designed with thoughtful installation detailing for new construction and retrofit applications.",
+    "A 4-inch exterior exhaust vent cover designed for a clean finish and properly detailed installation.",
   og_image_media_id: null,
   canonical_path: "/kodavent",
 };
@@ -298,6 +303,7 @@ export function collectKodaVentMediaIds(page: PageKodaVent): string[] {
   const ids: Array<string | null | undefined> = [
     page.hero?.image_media_id,
     page.product_design?.image_media_id,
+    page.product_design?.exploded_image_media_id,
     page.installed?.image_media_id,
     page.seo?.og_image_media_id,
   ];

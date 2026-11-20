@@ -3,48 +3,42 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { KodaVentHero } from "@/lib/cms/types";
-import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { safeHref } from "@/lib/cms/safe-href";
 import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
 
 export function KodaVentHeroSection({
   hero,
   imageUrl,
+  imageAlt,
 }: {
   hero: KodaVentHero;
   imageUrl: string | null;
+  imageAlt?: string;
 }) {
   if (!hero.visible) return null;
 
-  const primaryHref = safeHref(hero.primary_cta_href, "#installation");
-  const secondaryHref = safeHref(hero.secondary_cta_href, "#product-design");
+  const primaryHref = safeHref(hero.primary_cta_href, "#order");
+  const secondaryHref = safeHref(hero.secondary_cta_href, "#installation");
 
   return (
-    <section
-      id="hero"
-      className="relative overflow-hidden bg-brand-primary-active pt-28 lg:pt-32"
-    >
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-brand-primary-active via-brand-primary to-brand-primary-active opacity-90" />
-
-      <div className="relative z-10 grid items-center gap-10 px-page pb-16 lg:grid-cols-12 lg:gap-8 lg:pb-24">
-        <div className="flex flex-col gap-6 text-text-inverse lg:col-span-5 lg:py-8">
+    <section id="hero" className="bg-bg-primary pt-28 lg:pt-36">
+      <div className="grid items-center gap-10 px-page pb-16 lg:grid-cols-2 lg:gap-16 lg:pb-24">
+        <div className="flex flex-col gap-6 text-brand-primary">
           {hero.eyebrow ? (
-            <p className="text-xs tracking-[0.16em] text-[#ddddd7] uppercase">
+            <p className="inline-flex w-fit bg-accent-warm px-2.5 py-1 text-xs font-bold tracking-[0.08em] text-text-primary uppercase">
               {hero.eyebrow}
             </p>
           ) : null}
-          <div className="flex flex-col gap-3">
-            <h1 className="font-display text-[2.5rem] leading-[1.05] font-bold tracking-tight uppercase sm:text-5xl lg:text-6xl">
-              {hero.heading}
-            </h1>
+          <h1 className="font-display text-6xl leading-[0.95] font-bold tracking-tight uppercase sm:text-7xl lg:text-8xl">
+            {hero.heading}
             {hero.supporting_headline ? (
-              <p className="max-w-md text-xl leading-[1.3] text-text-inverse sm:text-2xl">
+              <span className="mt-3 block text-xl tracking-[0.12em] text-brand-primary/75 sm:text-2xl">
                 {hero.supporting_headline}
-              </p>
+              </span>
             ) : null}
-          </div>
+          </h1>
           {hero.description ? (
-            <p className="max-w-md text-base leading-normal text-[#ddddd7]">
+            <p className="max-w-md font-display text-2xl leading-tight font-bold uppercase sm:text-3xl">
               {hero.description}
             </p>
           ) : null}
@@ -58,7 +52,7 @@ export function KodaVentHeroSection({
                     metadata: { placement: "kodavent-hero-primary" },
                   })
                 }
-                className="inline-flex items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary transition hover:opacity-95"
+                className="inline-flex items-center justify-center rounded-md bg-brand-primary px-8 py-3 text-base text-text-inverse transition hover:bg-brand-primary-active"
               >
                 {hero.primary_cta_label}
               </Link>
@@ -66,59 +60,33 @@ export function KodaVentHeroSection({
             {hero.secondary_cta_label ? (
               <Link
                 href={secondaryHref}
-                className="inline-flex items-center justify-center rounded-md px-4 py-3 text-sm text-text-inverse underline-offset-4 transition hover:underline"
+                className="inline-flex items-center justify-center rounded-md px-4 py-3 text-sm text-brand-primary underline-offset-4 transition hover:underline"
               >
                 {hero.secondary_cta_label}
               </Link>
             ) : null}
           </div>
-
-          <dl className="mt-4 hidden max-w-sm grid-cols-2 gap-x-6 gap-y-3 border-t border-white/15 pt-6 text-xs tracking-wide text-[#ddddd7] uppercase lg:grid">
-            <div>
-              <dt className="text-white/40">Opening</dt>
-              <dd className="mt-1 text-text-inverse">4¼ inch</dd>
-            </div>
-            <div>
-              <dt className="text-white/40">Duct</dt>
-              <dd className="mt-1 text-text-inverse">4 inch</dd>
-            </div>
-          </dl>
         </div>
 
-        <div className="relative lg:col-span-7">
-          <div className="relative mx-auto aspect-square w-full max-w-xl lg:max-w-none">
+        {imageUrl ? (
+          <div className="relative order-first mx-auto aspect-square w-full max-w-md lg:order-last lg:max-w-xl">
             <div
-              className="pointer-events-none absolute inset-10 rounded-full border border-white/10 lg:inset-14"
               aria-hidden
+              className="kodavent-float-shadow absolute bottom-[2%] left-1/2 h-[7%] w-[62%] -translate-x-1/2 rounded-[50%] bg-brand-primary/35 blur-xl"
             />
-            {imageUrl ? (
-              isSvgMedia(imageUrl) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl}
-                  alt={hero.image_alt || hero.heading}
-                  className="relative z-1 size-full object-contain p-6 sm:p-10"
-                />
-              ) : (
-                <Image
-                  src={imageUrl}
-                  alt={hero.image_alt || hero.heading}
-                  fill
-                  priority
-                  loading="eager"
-                  fetchPriority="high"
-                  quality={95}
-                  sizes="(max-width: 1024px) 90vw, 55vw"
-                  className="object-contain p-4 sm:p-8"
-                />
-              )
-            ) : (
-              <div className="flex size-full items-center justify-center text-sm text-white/40">
-                Product image
-              </div>
-            )}
+            <div className="kodavent-float absolute inset-x-[6%] top-[4%] bottom-[14%]">
+              <Image
+                src={imageUrl}
+                alt={imageAlt || hero.image_alt || hero.heading}
+                fill
+                priority
+                unoptimized
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-contain drop-shadow-[0_28px_32px_rgb(24_46_34/0.22)]"
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </section>
   );

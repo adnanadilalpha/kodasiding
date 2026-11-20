@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="211" height="104" viewBox="0 0 211 104" fill="none"><defs>
+<clipPath id="clip0_0_1">
+<rect width="211" height="104" fill="white"/>
+</clipPath>
+</defs>
+<g id="Diagram" clip-path="url(#clip0_0_1)">
+<g id="Group">
+<path id="Vector" d="M73 26H138L131.5 4.33337H79.5L73 26Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M140.166 26H70.8327C69.6361 26 68.666 26.97 68.666 28.1667V91C68.666 92.1966 69.6361 93.1667 70.8327 93.1667H140.166C141.363 93.1667 142.333 92.1966 142.333 91V28.1667C142.333 26.97 141.363 26 140.166 26Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M88.1659 46.8C90.0805 46.8 91.6326 45.248 91.6326 43.3334C91.6326 41.4188 90.0805 39.8667 88.1659 39.8667C86.2513 39.8667 84.6992 41.4188 84.6992 43.3334C84.6992 45.248 86.2513 46.8 88.1659 46.8Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.33 4.33"/>
+<path id="Vector_4" d="M122.832 46.8C124.746 46.8 126.299 45.248 126.299 43.3334C126.299 41.4188 124.746 39.8667 122.832 39.8667C120.917 39.8667 119.365 41.4188 119.365 43.3334C119.365 45.248 120.917 46.8 122.832 46.8Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.33 4.33"/>
+<path id="Vector_5" d="M88.1659 81.4667C90.0805 81.4667 91.6326 79.9146 91.6326 78C91.6326 76.0854 90.0805 74.5333 88.1659 74.5333C86.2513 74.5333 84.6992 76.0854 84.6992 78C84.6992 79.9146 86.2513 81.4667 88.1659 81.4667Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.33 4.33"/>
+<path id="Vector_6" d="M122.832 81.4667C124.746 81.4667 126.299 79.9146 126.299 78C126.299 76.0854 124.746 74.5333 122.832 74.5333C120.917 74.5333 119.365 76.0854 119.365 78C119.365 79.9146 120.917 81.4667 122.832 81.4667Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4.33 4.33"/>
+</g>
+<path id="Vector_7" d="M140.708 -4.33337H70.291C69.3936 -4.33337 68.666 -3.60584 68.666 -2.70837V2.70829C68.666 3.60576 69.3936 4.33329 70.291 4.33329H140.708C141.605 4.33329 142.333 3.60576 142.333 2.70829V-2.70837C142.333 -3.60584 141.605 -4.33337 140.708 -4.33337Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_8" d="M105.501 2.38337C106.817 2.38337 107.884 1.31631 107.884 3.26633e-05C107.884 -1.31625 106.817 -2.3833 105.501 -2.3833C104.184 -2.3833 103.117 -1.31625 103.117 3.26633e-05C103.117 1.31631 104.184 2.38337 105.501 2.38337Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<g id="Group_2">
+<path id="Vector_9" d="M88.1673 47.6667C90.5606 47.6667 92.5007 45.7266 92.5007 43.3333C92.5007 40.9401 90.5606 39 88.1673 39C85.7741 39 83.834 40.9401 83.834 43.3333C83.834 45.7266 85.7741 47.6667 88.1673 47.6667Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_10" d="M85.5664 43.3334H90.7664" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="Group_3">
+<path id="Vector_11" d="M122.833 47.6667C125.227 47.6667 127.167 45.7266 127.167 43.3333C127.167 40.9401 125.227 39 122.833 39C120.44 39 118.5 40.9401 118.5 43.3333C118.5 45.7266 120.44 47.6667 122.833 47.6667Z" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_12" d="M120.232 43.3334H125.432" stroke="#111614" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</svg>
