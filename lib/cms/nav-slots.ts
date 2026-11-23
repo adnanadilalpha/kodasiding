@@ -7,16 +7,16 @@ import type { NavLink } from "@/lib/cms/types";
 export const NAV_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why koda" },
   { href: "/profiles", defaultLabel: "Profiles" },
+  { href: "/installation", defaultLabel: "Installation" },
   { href: "/kodavent", defaultLabel: "KodaVent" },
-  { href: "/#installation", defaultLabel: "Installation" },
   { href: "/#contact", defaultLabel: "Contact" },
 ] as const;
 
 export const FOOTER_LINK_SLOTS = [
   { href: "/#why-koda", defaultLabel: "Why Koda" },
   { href: "/profiles", defaultLabel: "Profiles" },
+  { href: "/installation", defaultLabel: "Installations" },
   { href: "/kodavent", defaultLabel: "KodaVent" },
-  { href: "/#installation", defaultLabel: "Installations" },
   { href: "/#contact", defaultLabel: "Contact" },
 ] as const;
 
@@ -27,6 +27,8 @@ export const PROFILES_HREF = "/profiles";
 const HREF_ALIASES: Record<string, string> = {
   "/#profiles": "/profiles",
   "#profiles": "/profiles",
+  "/#installation": "/installation",
+  "#installation": "/installation",
 };
 
 export function normalizeLinkHref(href: string) {

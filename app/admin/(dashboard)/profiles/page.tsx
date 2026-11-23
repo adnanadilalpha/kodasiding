@@ -1,7 +1,13 @@
+import { saveProfilesPageSeo } from "@/lib/cms/actions";
 import { getMediaMap } from "@/lib/cms/media";
+import {
+  DEFAULT_PROFILES_PAGE_SEO,
+  mergePageSeo,
+} from "@/lib/cms/page-seo-defaults";
 import { compareProfiles } from "@/lib/cms/profile-sort";
 import { createClient } from "@/lib/supabase/server";
 import type { PageProfiles, ProfileSheetCopy } from "@/lib/cms/types";
+import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { ProfileSheetEditor } from "@/components/admin/profiles-editor";
 import { SectionShell } from "@/components/admin/section-shell";
 
@@ -32,10 +38,17 @@ export default async function ProfilesPage({
     defaultSheet("Vertical profiles")) as ProfileSheetCopy;
   const universal = (pageProfiles?.universal ??
     defaultSheet("Universal profiles")) as ProfileSheetCopy;
+  const soffit = (pageProfiles?.soffit ??
+    defaultSheet("Soffit and fascia")) as ProfileSheetCopy;
 
+  const pageSeo = mergePageSeo(
+    DEFAULT_PROFILES_PAGE_SEO,
+    pageProfiles?.seo,
+  );
   const media = await getMediaMap([
     ...(profiles ?? []).map((p) => p.image_media_id),
     ...(profiles ?? []).map((p) => p.diagram_media_id),
+    pageSeo.og_image_media_id,
   ]);
 
   const mapped = (profiles ?? []).map((profile) => ({
@@ -60,6 +73,9 @@ export default async function ProfilesPage({
     .sort(compareProfiles);
   const universalProfiles = mapped
     .filter((p) => p.orientation === "universal")
+    .sort(compareProfiles);
+  const soffitProfiles = mapped
+    .filter((p) => p.orientation === "soffit")
     .sort(compareProfiles);
 
   return (
@@ -100,8 +116,31 @@ export default async function ProfilesPage({
               orientation="universal"
               sheet={universal}
               profiles={universalProfiles}
+            />
+          ),
+        },
+        {
+          id: "soffit",
+          label: "Soffit and fascia",
+          count: soffitProfiles.length,
+          content: (
+            <ProfileSheetEditor
+              orientation="soffit"
+              sheet={soffit}
+              profiles={soffitProfiles}
               showCtas
               quoteCtaLabel={pageProfiles?.quote_cta_label ?? "Request a quote"}
+            />
+          ),
+        },
+        {
+          id: "seo",
+          label: "SEO",
+          content: (
+            <PageSeoEditor
+              seo={pageSeo}
+              media={media}
+              onSave={saveProfilesPageSeo}
             />
           ),
         },

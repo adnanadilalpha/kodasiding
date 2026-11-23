@@ -27,6 +27,7 @@ import type {
   SocialLink,
 } from "@/lib/cms/types";
 import { collectKodaVentMediaIds } from "@/lib/cms/kodavent-defaults";
+import { parsePageSeoFromForm } from "@/lib/cms/page-seo-defaults";
 import { revalidatePath } from "next/cache";
 
 /** After CMS write: rebuild public snapshot + refresh admin + marketing paths. */
@@ -38,6 +39,7 @@ async function afterPublicChange(
   for (const path of adminPaths) revalidatePath(path);
   revalidatePath("/");
   revalidatePath("/profiles");
+  revalidatePath("/installation");
   revalidatePath("/find-dealer");
   revalidatePath("/kodavent");
 }
@@ -94,9 +96,17 @@ const WHY_FEATURE_LAYOUTS = new Set<WhyFeatureLayoutValue>([
   "image-bottom",
 ]);
 
+type WhyFactStored = {
+  value?: string;
+  label?: string;
+  body?: string;
+};
+
 type WhyKodaStored = {
   headline?: string;
   body?: string;
+  highlights?: string;
+  facts?: WhyFactStored[];
   image_media_id?: string | null;
   features?: {
     number?: string;
@@ -106,6 +116,14 @@ type WhyKodaStored = {
     layout?: string | null;
   }[];
 };
+
+function normalizeStoredFacts(prevWhy: WhyKodaStored) {
+  return (prevWhy.facts ?? []).map((fact) => ({
+    value: String(fact?.value ?? "").trim(),
+    label: String(fact?.label ?? "").trim(),
+    body: String(fact?.body ?? "").trim(),
+  }));
+}
 
 function parseWhyFeatureLayout(value: unknown): WhyFeatureLayoutValue {
   const raw = String(value ?? "").trim();
@@ -185,6 +203,8 @@ export async function saveHomeWhyKodaFeatureImage(
   const why_koda = {
     headline: prevWhy.headline ?? "",
     body: prevWhy.body ?? "",
+    highlights: prevWhy.highlights ?? "",
+    facts: normalizeStoredFacts(prevWhy),
     image_media_id: null as string | null,
     features,
   };
@@ -230,6 +250,8 @@ export async function saveHomeWhyKodaFeatureLayout(
   const why_koda = {
     headline: prevWhy.headline ?? "",
     body: prevWhy.body ?? "",
+    highlights: prevWhy.highlights ?? "",
+    facts: normalizeStoredFacts(prevWhy),
     image_media_id: null as string | null,
     features,
   };
@@ -268,9 +290,20 @@ export async function saveHomeWhyKoda(formData: FormData) {
         (i % 2 === 1 ? "image-left" : "image-right"),
     ),
   }));
+  const factCount = Math.max(
+    0,
+    Math.min(6, Number(formData.get("fact_count") ?? 4) || 4),
+  );
+  const facts = Array.from({ length: factCount }, (_, i) => ({
+    value: String(formData.get(`fact_${i}_value`) ?? "").trim(),
+    label: String(formData.get(`fact_${i}_label`) ?? "").trim(),
+    body: String(formData.get(`fact_${i}_body`) ?? "").trim(),
+  })).filter((fact) => fact.value || fact.label || fact.body);
   const why_koda = {
     headline: sanitizeRichText(String(formData.get("why_headline") ?? "")),
     body: sanitizeRichText(String(formData.get("why_body") ?? "")),
+    highlights: prevWhy.highlights ?? "",
+    facts,
     image_media_id: null as string | null,
     features,
   };
@@ -312,20 +345,97 @@ export async function saveHomeProfilesTeaser(formData: FormData) {
 export async function saveHomeVideosSection(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
-  const videos_section = {
-    headline: String(formData.get("videos_headline") ?? ""),
-    body: String(formData.get("videos_body") ?? ""),
-    manual_label: String(formData.get("manual_label") ?? ""),
-    manual_document_key: String(
-      formData.get("manual_document_key") ?? "installation_manual",
-    ),
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("videos_section")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevSection = (previous?.videos_section ?? {}) as Record<
+    string,
+    unknown
+  > & {
+    hero_image_media_id?: string | null;
+    services_image_media_id?: string | null;
+    manual_document_key?: string;
   };
+
+  const section = String(formData.get("install_section") ?? "all");
+  const videos_section: Record<string, unknown> = {
+    ...prevSection,
+    manual_document_key:
+      String(
+        formData.get("manual_document_key") ??
+          prevSection.manual_document_key ??
+          "installation_manual",
+      ) || "installation_manual",
+  };
+
+  if (section === "hero" || section === "all") {
+    const nextImageId = String(
+      formData.get("hero_image_media_id") ?? "",
+    ).trim();
+    videos_section.headline = String(formData.get("videos_headline") ?? "");
+    videos_section.body = String(formData.get("videos_body") ?? "");
+    videos_section.hero_service_label = String(
+      formData.get("hero_service_label") ?? "",
+    );
+    videos_section.hero_image_media_id = nextImageId || null;
+  }
+
+  if (section === "coverage" || section === "all") {
+    const radiusRaw = Number(formData.get("install_radius_miles") ?? 60);
+    videos_section.install_radius_miles =
+      Number.isFinite(radiusRaw) && radiusRaw > 0
+        ? Math.min(200, Math.max(5, Math.round(radiusRaw)))
+        : 60;
+    videos_section.cities_intro = String(formData.get("cities_intro") ?? "");
+    videos_section.cities = String(formData.get("cities") ?? "");
+  }
+
+  if (section === "manual" || section === "all") {
+    videos_section.manual_label = String(formData.get("manual_label") ?? "");
+  }
+
+  if (section === "home-teaser" || section === "all") {
+    videos_section.services_headline = String(
+      formData.get("services_headline") ?? "",
+    );
+    videos_section.services_body = String(formData.get("services_body") ?? "");
+    videos_section.service_area = String(
+      formData.get("service_area") ?? "Nebraska",
+    );
+    videos_section.services_cta_label = String(
+      formData.get("services_cta_label") ?? "",
+    );
+    videos_section.diy_link_label = String(
+      formData.get("diy_link_label") ?? "",
+    );
+  }
+
+  const nextHeroId =
+    typeof videos_section.hero_image_media_id === "string"
+      ? videos_section.hero_image_media_id
+      : null;
+
   const { error } = await supabase
     .from("page_home")
     .update({ videos_section })
     .eq("id", 1);
   if (error) throw new Error(error.message);
-  await afterPublicChange(admin.user_id, "/admin/home");
+
+  if (section === "hero" || section === "all") {
+    await deleteOrphanedMediaAssets(
+      releasedMediaIds(
+        [
+          prevSection.hero_image_media_id ?? null,
+          prevSection.services_image_media_id ?? null,
+        ],
+        [nextHeroId],
+      ),
+    );
+  }
+
+  await afterPublicChange(admin.user_id, "/admin/installation", "/admin/home");
 }
 
 export async function saveHomeCtas(formData: FormData) {
@@ -615,7 +725,9 @@ export async function saveProfilesSection(formData: FormData) {
       ? { vertical: payload }
       : sheet === "universal"
         ? { universal: payload }
-        : { horizontal: payload };
+        : sheet === "soffit"
+          ? { soffit: payload }
+          : { horizontal: payload };
 
   if (formData.has("quote_cta_label")) {
     patch.quote_cta_label = String(formData.get("quote_cta_label") ?? "");
@@ -847,7 +959,7 @@ export async function upsertVideo(formData: FormData) {
   await deleteOrphanedMediaAssets(
     releasedMediaIds([previousThumb], [row.thumbnail_media_id]),
   );
-  await afterPublicChange(admin.user_id, "/admin/home");
+  await afterPublicChange(admin.user_id, "/admin/installation");
 }
 
 export async function deleteVideo(formData: FormData) {
@@ -864,7 +976,7 @@ export async function deleteVideo(formData: FormData) {
   await deleteOrphanedMediaAssets(
     releasedMediaIds([previous?.thumbnail_media_id], []),
   );
-  await afterPublicChange(admin.user_id, "/admin/home");
+  await afterPublicChange(admin.user_id, "/admin/installation");
 }
 
 export async function saveDocument(formData: FormData) {
@@ -885,7 +997,7 @@ export async function saveDocument(formData: FormData) {
     { onConflict: "key" },
   );
   if (error) throw new Error(error.message);
-  await afterPublicChange(admin.user_id, "/admin/home");
+  await afterPublicChange(admin.user_id, "/admin/installation", "/admin/kodavent");
 }
 
 export async function registerMediaAsset(input: {
@@ -1338,14 +1450,7 @@ export async function saveKodaVentCta(formData: FormData) {
 export async function saveKodaVentSeo(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
-  const seo = {
-    title: String(formData.get("title") ?? ""),
-    description: String(formData.get("description") ?? ""),
-    og_title: String(formData.get("og_title") ?? ""),
-    og_description: String(formData.get("og_description") ?? ""),
-    og_image_media_id: emptyToNull(formData.get("og_image_media_id")),
-    canonical_path: String(formData.get("canonical_path") ?? "/kodavent").trim() || "/kodavent",
-  };
+  const seo = parsePageSeoFromForm(formData, "/kodavent");
   const supabase = await createClient();
   const { error } = await supabase
     .from("page_kodavent")
@@ -1359,6 +1464,98 @@ export async function saveKodaVentSeo(formData: FormData) {
     ),
   );
   await afterPublicChange(admin.user_id, "/admin/kodavent");
+}
+
+export async function saveHomePageSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_home")
+    .select("seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const seo = parsePageSeoFromForm(formData, "/");
+  const { error } = await supabase
+    .from("page_home")
+    .update({ seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  const prevSeo = previous?.seo as { og_image_media_id?: string | null } | null;
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
+  );
+  await afterPublicChange(admin.user_id, "/admin/home");
+}
+
+export async function saveProfilesPageSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("page_profiles")
+    .select("seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const seo = parsePageSeoFromForm(formData, "/profiles");
+  const { error } = await supabase
+    .from("page_profiles")
+    .update({ seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  const prevSeo = previous?.seo as { og_image_media_id?: string | null } | null;
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
+  );
+  await afterPublicChange(admin.user_id, "/admin/profiles");
+}
+
+export async function saveInstallationPageSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("pages_seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevBag = (previous?.pages_seo ?? {}) as Record<string, unknown>;
+  const seo = parsePageSeoFromForm(formData, "/installation");
+  const pages_seo = { ...prevBag, installation: seo };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ pages_seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  const prevSeo = prevBag.installation as
+    | { og_image_media_id?: string | null }
+    | undefined;
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
+  );
+  await afterPublicChange(admin.user_id, "/admin/installation");
+}
+
+export async function saveFindDealerPageSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("pages_seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevBag = (previous?.pages_seo ?? {}) as Record<string, unknown>;
+  const seo = parsePageSeoFromForm(formData, "/find-dealer");
+  const pages_seo = { ...prevBag, find_dealer: seo };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ pages_seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  const prevSeo = prevBag.find_dealer as
+    | { og_image_media_id?: string | null }
+    | undefined;
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
+  );
+  await afterPublicChange(admin.user_id, "/admin/dealer");
 }
 
 /** PDF upload for KodaVent guides — same documents table pattern as install manual. */

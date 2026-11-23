@@ -101,6 +101,7 @@ async function findReferencedMediaIds(
     jewelImages,
     videoThumbs,
     pageHome,
+    pageProfiles,
     pageKodavent,
     settings,
   ] = await Promise.all([
@@ -118,13 +119,26 @@ async function findReferencedMediaIds(
       .from("videos")
       .select("thumbnail_media_id")
       .in("thumbnail_media_id", ids),
-    supabase.from("page_home").select("hero, why_koda, ctas").eq("id", 1).maybeSingle(),
+    supabase
+      .from("page_home")
+      .select("hero, why_koda, ctas, videos_section, seo")
+      .eq("id", 1)
+      .maybeSingle(),
+    supabase
+      .from("page_profiles")
+      .select("seo")
+      .eq("id", 1)
+      .maybeSingle(),
     supabase
       .from("page_kodavent")
       .select("hero, product_design, installed, installation, seo")
       .eq("id", 1)
       .maybeSingle(),
-    supabase.from("site_settings").select("seo").eq("id", 1).maybeSingle(),
+    supabase
+      .from("site_settings")
+      .select("seo, pages_seo")
+      .eq("id", 1)
+      .maybeSingle(),
   ]);
 
   const checkErrors = [
@@ -134,6 +148,7 @@ async function findReferencedMediaIds(
     jewelImages.error,
     videoThumbs.error,
     pageHome.error,
+    pageProfiles.error,
     pageKodavent.error,
     settings.error,
   ].filter(Boolean);
@@ -171,16 +186,22 @@ async function findReferencedMediaIds(
   if (home) {
     const hero = home.hero as Record<string, unknown> | null;
     const why = home.why_koda as Record<string, unknown> | null;
+    const videosSection = home.videos_section as Record<string, unknown> | null;
     const ctas = home.ctas as {
       quote?: Record<string, unknown>;
       dealer?: Record<string, unknown>;
     } | null;
+
+    const homeSeo = home.seo as Record<string, unknown> | null;
 
     for (const id of [
       asMediaId(hero?.image_media_id),
       asMediaId(why?.image_media_id),
       asMediaId(ctas?.quote?.image_media_id),
       asMediaId(ctas?.dealer?.image_media_id),
+      asMediaId(videosSection?.hero_image_media_id),
+      asMediaId(videosSection?.services_image_media_id),
+      asMediaId(homeSeo?.og_image_media_id),
     ]) {
       if (id && ids.includes(id)) used.add(id);
     }
@@ -197,9 +218,22 @@ async function findReferencedMediaIds(
     }
   }
 
+  const profilesSeo = pageProfiles.data?.seo as Record<string, unknown> | null;
+  const profilesOg = asMediaId(profilesSeo?.og_image_media_id);
+  if (profilesOg && ids.includes(profilesOg)) used.add(profilesOg);
+
   const seo = settings.data?.seo as Record<string, unknown> | null;
   const og = asMediaId(seo?.og_image_media_id);
   if (og && ids.includes(og)) used.add(og);
+
+  const pagesSeo = settings.data?.pages_seo as {
+    installation?: Record<string, unknown>;
+    find_dealer?: Record<string, unknown>;
+  } | null;
+  for (const page of [pagesSeo?.installation, pagesSeo?.find_dealer]) {
+    const pageOg = asMediaId(page?.og_image_media_id);
+    if (pageOg && ids.includes(pageOg)) used.add(pageOg);
+  }
 
   const kodavent = pageKodavent.data;
   if (kodavent) {

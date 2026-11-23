@@ -70,7 +70,7 @@ export type SheetCopy = {
   helper: string;
 };
 
-type SheetOrientation = "horizontal" | "vertical" | "universal";
+type SheetOrientation = "horizontal" | "vertical" | "universal" | "soffit";
 type FormTab = "tile" | "details";
 
 function ProfileTileForm({
@@ -88,7 +88,9 @@ function ProfileTileForm({
       ? 'H4 3" Double Lap'
       : orientation === "vertical"
         ? 'V4 7" V Groove'
-        : "U1 Edge Trim";
+        : orientation === "soffit"
+          ? "S1 Soffit Panel"
+          : "U1 Edge Trim";
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-5">
@@ -291,7 +293,9 @@ export function ProfileSheetEditor({
                   ? "Horizontal profiles"
                   : orientation === "vertical"
                     ? "Vertical profiles"
-                    : "Universal profiles"
+                    : orientation === "soffit"
+                      ? "Soffit and fascia"
+                      : "Universal profiles"
               }
             />
           </Field>

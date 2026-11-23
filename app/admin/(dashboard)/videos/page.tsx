@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function VideosRedirect() {
-  redirect("/admin/home");
+  redirect("/admin/installation");
 }

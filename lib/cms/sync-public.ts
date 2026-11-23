@@ -2,6 +2,12 @@ import type { MediaAsset, PageKodaVent, SiteSnapshotPayload } from "@/lib/cms/ty
 import { DEFAULT_PAGE_KODAVENT } from "@/lib/cms/kodavent-defaults";
 import { LIVE_SNAPSHOT_STATUS, SITE_CACHE_TAG } from "@/lib/cms/constants";
 import { normalizeGeoAccess } from "@/lib/cms/geo-access";
+import {
+  DEFAULT_HOME_PAGE_SEO,
+  DEFAULT_PROFILES_PAGE_SEO,
+  mergePageSeo,
+  mergePagesSeoBag,
+} from "@/lib/cms/page-seo-defaults";
 import { compareProfiles } from "@/lib/cms/profile-sort";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateTag } from "next/cache";
@@ -104,12 +110,14 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
 
   const settings = settingsRes.data;
   const home = homeRes.data;
+  const pageProfiles = pageProfilesRes.data;
 
   return {
     settings: {
       ...settings,
       show_partners: settings.show_partners !== false,
       geo_access: normalizeGeoAccess(settings.geo_access),
+      pages_seo: mergePagesSeoBag(settings.pages_seo),
       nav: {
         ...settings.nav,
         show_find_dealer: settings.nav?.show_find_dealer === true,
@@ -117,12 +125,16 @@ export async function buildSnapshotPayload(): Promise<SiteSnapshotPayload> {
     },
     home: {
       ...home,
+      seo: mergePageSeo(DEFAULT_HOME_PAGE_SEO, home.seo),
       ctas: {
         ...home.ctas,
         show_dealer: home.ctas?.show_dealer === true,
       },
     },
-    page_profiles: pageProfilesRes.data,
+    page_profiles: {
+      ...pageProfiles,
+      seo: mergePageSeo(DEFAULT_PROFILES_PAGE_SEO, pageProfiles?.seo),
+    },
     page_kodavent: mergeKodaVentPage(pageKodaventRes.data as PageKodaVent),
     partners: partnersRes.data ?? [],
     home_profile_jewels: jewelsRes.data ?? [],

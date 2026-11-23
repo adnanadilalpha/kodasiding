@@ -21,8 +21,8 @@ function linkKind(href: string): { kind: "hash"; id: string } | { kind: "path"; 
 function navLinkClass(active: boolean, mobile: boolean) {
   if (mobile) {
     return active
-      ? "text-[32px] leading-none font-medium whitespace-nowrap text-text-inverse uppercase sm:text-[64px]"
-      : "text-[32px] leading-none whitespace-nowrap text-text-inverse/55 uppercase sm:text-[64px]";
+      ? "text-[32px] leading-none font-medium whitespace-nowrap text-text-inverse sm:text-[64px]"
+      : "text-[32px] leading-none whitespace-nowrap text-text-inverse/55 sm:text-[64px]";
   }
   return active
     ? "text-base font-medium text-text-inverse"

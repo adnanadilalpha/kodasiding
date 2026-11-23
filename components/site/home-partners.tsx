@@ -17,7 +17,7 @@ export function HomePartnersSection({
   return (
     <section className="border-y border-brand-primary/13 bg-bg-primary py-12 lg:py-10">
       <div className="flex flex-col items-center gap-6 lg:gap-8">
-        <h2 className="px-page text-center text-xl font-bold text-brand-primary/80 uppercase sm:text-2xl lg:text-3xl">
+        <h2 className="px-page text-center text-xl font-bold text-brand-primary/80 sm:text-2xl lg:text-3xl">
           {title}
         </h2>
         <div className="relative w-full overflow-hidden">

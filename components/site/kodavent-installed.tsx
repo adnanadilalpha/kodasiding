@@ -25,7 +25,7 @@ export function KodaVentInstalledSection({
           <p className="text-xs tracking-[0.16em] text-text-secondary uppercase">
             See it installed
           </p>
-          <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight text-brand-primary uppercase sm:text-4xl lg:text-5xl">
+          <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight text-brand-primary sm:text-4xl lg:text-5xl">
             {section.heading}
           </h2>
           {section.description ? (
@@ -43,7 +43,7 @@ export function KodaVentInstalledSection({
                 <span className="text-xs tracking-[0.14em] text-text-secondary tabular-nums">
                   {`0${i + 1}`}
                 </span>
-                <span className="font-display text-xl font-bold tracking-tight text-brand-primary uppercase lg:text-2xl">
+                <span className="font-display text-xl font-bold tracking-tight text-brand-primary lg:text-2xl">
                   {trait}
                 </span>
               </li>
@@ -82,7 +82,7 @@ export function KodaVentInstalledSection({
             <span className="block text-xs tracking-[0.14em] text-text-secondary uppercase">
               {caption}
             </span>
-            <span className="mt-1 block font-display text-lg font-bold tracking-tight text-brand-primary uppercase">
+            <span className="mt-1 block font-display text-lg font-bold tracking-tight text-brand-primary">
               4&quot; Exhaust vent cover
             </span>
           </figcaption>

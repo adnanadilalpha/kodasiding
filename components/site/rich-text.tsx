@@ -14,7 +14,7 @@ export function RichText({
 
   return (
     <Tag
-      className={`[&_em]:italic [&_strong]:font-bold [&_u]:underline ${className}`}
+      className={`[&_em]:italic [&_strong]:font-bold [&_u]:underline [&_small]:text-[0.85em] [&_small]:font-normal ${className}`}
       dangerouslySetInnerHTML={{ __html: safe }}
     />
   );

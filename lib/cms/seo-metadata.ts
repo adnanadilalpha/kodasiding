@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/cms/queries";
 import { mediaUrlFromMap } from "@/lib/cms/urls";
-import type { SiteSeo } from "@/lib/cms/types";
+import type { PageSeo, SiteSeo } from "@/lib/cms/types";
 
 export const DEFAULT_SEO: SiteSeo = {
   title: "Koda Siding",
@@ -147,4 +147,87 @@ export function buildPageMetadata(
 export async function buildRootMetadata(): Promise<Metadata> {
   const { seo, ogImage } = await loadSeoContext();
   return buildPageMetadata(seo, ogImage, { isHome: true, path: "/" });
+}
+
+/**
+ * Apply CMS page SEO (absolute title + OG overrides) on top of site defaults.
+ * Matches the KodaVent metadata pattern used across marketing pages.
+ */
+export function applyPageSeoMetadata(
+  seo: SiteSeo,
+  pageOgImage: string | null | undefined,
+  pageSeo: PageSeo,
+  options: {
+    fallbackTitle: string;
+    fallbackDescription: string;
+    fallbackOgTitle?: string;
+    fallbackOgDescription?: string;
+    fallbackPath: string;
+    isHome?: boolean;
+    noIndex?: boolean;
+  },
+): Metadata {
+  const path = pageSeo.canonical_path?.trim() || options.fallbackPath;
+  const description =
+    pageSeo.description?.trim() ||
+    options.fallbackDescription ||
+    seo.description;
+  const absoluteTitle = pageSeo.title?.trim() || options.fallbackTitle;
+  const ogTitle =
+    pageSeo.og_title?.trim() || options.fallbackOgTitle || absoluteTitle;
+  const ogDescription =
+    pageSeo.og_description?.trim() ||
+    options.fallbackOgDescription ||
+    description;
+
+  const base = buildPageMetadata(seo, pageOgImage, {
+    title: options.isHome ? undefined : absoluteTitle,
+    description,
+    path,
+    isHome: options.isHome,
+    noIndex: options.noIndex,
+  });
+
+  const metadataBase = parseSiteUrl(seo.site_url);
+  const canonical = absoluteUrl(metadataBase, path);
+
+  if (options.noIndex) {
+    return {
+      ...base,
+      title: { absolute: absoluteTitle },
+      description,
+    };
+  }
+
+  return {
+    ...base,
+    title: { absolute: absoluteTitle },
+    description,
+    alternates: { canonical },
+    openGraph: {
+      ...base.openGraph,
+      title: ogTitle,
+      description: ogDescription,
+      url: canonical,
+    },
+    twitter: {
+      ...base.twitter,
+      title: ogTitle,
+      description: ogDescription,
+    },
+  };
+}
+
+/** Resolve page OG image URL from snapshot media, then optional fallbacks. */
+export function resolvePageOgImage(
+  media: Record<string, { bucket: string; path: string }> | undefined,
+  pageSeo: PageSeo,
+  ...fallbacks: Array<string | null | undefined>
+): string | null {
+  const fromPage = media
+    ? mediaUrlFromMap(media, pageSeo.og_image_media_id)
+    : null;
+  return (
+    [fromPage, ...fallbacks].find((url): url is string => Boolean(url)) ?? null
+  );
 }

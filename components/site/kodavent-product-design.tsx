@@ -99,7 +99,7 @@ export function KodaVentProductDesignSection({
             <p className="text-xs tracking-[0.16em] text-text-inverse/55 uppercase">
               Why KodaVent
             </p>
-            <h2 className="mt-4 font-display text-3xl leading-[1.08] font-bold tracking-tight text-text-inverse uppercase sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-3xl leading-[1.08] font-bold tracking-tight text-text-inverse sm:text-4xl lg:text-5xl">
               {section.heading}
             </h2>
           </div>
@@ -136,7 +136,7 @@ export function KodaVentProductDesignSection({
                 <p className="font-display text-xs tracking-[0.16em] text-accent-warm uppercase">
                   {String(index + 1).padStart(2, "0")}
                 </p>
-                <h3 className="mt-3 font-display text-xl font-bold tracking-tight text-text-inverse uppercase sm:text-2xl">
+                <h3 className="mt-3 font-display text-xl font-bold tracking-tight text-text-inverse sm:text-2xl">
                   {benefit.title}
                 </h3>
                 {benefit.body ? (

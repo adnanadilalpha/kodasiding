@@ -29,16 +29,16 @@ export function KodaVentHeroSection({
               {hero.eyebrow}
             </p>
           ) : null}
-          <h1 className="font-display text-6xl leading-[0.95] font-bold tracking-tight uppercase sm:text-7xl lg:text-8xl">
+          <h1 className="font-display text-6xl leading-[0.95] font-bold tracking-tight sm:text-7xl lg:text-8xl">
             {hero.heading}
             {hero.supporting_headline ? (
-              <span className="mt-3 block text-xl tracking-[0.12em] text-brand-primary/75 sm:text-2xl">
+              <span className="mt-3 block text-xl tracking-normal text-brand-primary/75 sm:text-2xl">
                 {hero.supporting_headline}
               </span>
             ) : null}
           </h1>
           {hero.description ? (
-            <p className="max-w-md font-display text-2xl leading-tight font-bold uppercase sm:text-3xl">
+            <p className="max-w-md font-display text-2xl leading-tight font-bold sm:text-3xl">
               {hero.description}
             </p>
           ) : null}

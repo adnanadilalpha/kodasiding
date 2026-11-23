@@ -1,13 +1,28 @@
-import { saveFindDealerVisibility } from "@/lib/cms/actions";
+import {
+  saveFindDealerPageSeo,
+  saveFindDealerVisibility,
+} from "@/lib/cms/actions";
+import { getMediaMap } from "@/lib/cms/media";
 import { FIND_DEALER_HREF } from "@/lib/cms/nav-slots";
+import {
+  DEFAULT_FIND_DEALER_PAGE_SEO,
+  mergePageSeo,
+  mergePagesSeoBag,
+} from "@/lib/cms/page-seo-defaults";
 import { createClient } from "@/lib/supabase/server";
 import type { PageHome, SiteSettings } from "@/lib/cms/types";
 import { DealersEditor } from "@/components/admin/dealers-editor";
+import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { SectionShell } from "@/components/admin/section-shell";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 
-export default async function DealerPage() {
+export default async function DealerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
+  const { section: sectionParam } = await searchParams;
   const supabase = await createClient();
   const [{ data: dealers }, { data: settings }, { data: home }] =
     await Promise.all([
@@ -17,16 +32,27 @@ export default async function DealerPage() {
           "id, name, address, city, region, postal, lat, lng, phone, website, is_published",
         )
         .order("name"),
-      supabase.from("site_settings").select("nav").eq("id", 1).single(),
+      supabase
+        .from("site_settings")
+        .select("nav, pages_seo")
+        .eq("id", 1)
+        .single(),
       supabase.from("page_home").select("ctas").eq("id", 1).single(),
     ]);
 
-  const nav = (settings as SiteSettings | null)?.nav;
+  const site = settings as SiteSettings | null;
+  const nav = site?.nav;
   const ctas = (home as PageHome | null)?.ctas;
+  const pageSeo = mergePageSeo(
+    DEFAULT_FIND_DEALER_PAGE_SEO,
+    mergePagesSeoBag(site?.pages_seo).find_dealer,
+  );
+  const media = await getMediaMap([pageSeo.og_image_media_id]);
 
   return (
     <SectionShell
       title="Find dealer"
+      defaultSectionId={sectionParam}
       sections={[
         {
           id: "visibility",
@@ -80,6 +106,17 @@ export default async function DealerPage() {
           label: "Dealers",
           count: (dealers ?? []).length,
           content: <DealersEditor dealers={dealers ?? []} />,
+        },
+        {
+          id: "seo",
+          label: "SEO",
+          content: (
+            <PageSeoEditor
+              seo={pageSeo}
+              media={media}
+              onSave={saveFindDealerPageSeo}
+            />
+          ),
         },
       ]}
     />

@@ -156,6 +156,24 @@ body {
   background: #c8dff0;
 }
 
+.leaflet-tooltip.install-town-label {
+  background: var(--koda-brand-primary);
+  border: none;
+  border-radius: 4px;
+  color: var(--koda-text-inverse);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  padding: 3px 6px;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.leaflet-tooltip.install-town-label::before {
+  border-top-color: var(--koda-brand-primary);
+}
+
 .leaflet-control-attribution {
   background: rgba(255, 255, 255, 0.85) !important;
   font-size: 11px;
@@ -193,6 +211,52 @@ body {
   animation: kodavent-float-shadow 6s ease-in-out infinite;
 }
 
+/* /installation hero — copy + seam reveal */
+@keyframes install-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes install-hero-seam {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.install-hero-rise {
+  animation: install-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.install-hero-rise-delay-1 {
+  animation-delay: 0.08s;
+}
+
+.install-hero-rise-delay-2 {
+  animation-delay: 0.16s;
+}
+
+.install-hero-rise-delay-3 {
+  animation-delay: 0.24s;
+}
+
+.install-hero-rise-delay-4 {
+  animation-delay: 0.32s;
+}
+
+.install-hero-seam {
+  transform-origin: top center;
+  animation: install-hero-seam 0.7s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kodavent-float,
   .kodavent-float-shadow {
@@ -213,5 +277,10 @@ body {
 
   .quote-check-path {
     stroke-dashoffset: 0;
+  }
+
+  .install-hero-rise,
+  .install-hero-seam {
+    animation: none;
   }
 }

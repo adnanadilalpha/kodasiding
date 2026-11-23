@@ -119,7 +119,7 @@ export function KodaVentInstallationSection({
             <p className="text-xs tracking-[0.16em] text-[#ddddd7]/70 uppercase">
               04 / Installation
             </p>
-            <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight uppercase sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight sm:text-4xl lg:text-5xl">
               {headingLines.length > 1 ? (
                 headingLines.map((line) => (
                   <span key={line} className="block">
@@ -206,7 +206,7 @@ export function KodaVentInstallationSection({
                   {step?.number ?? String(stepIndex + 1).padStart(2, "0")} /{" "}
                   {String(steps.length).padStart(2, "0")}
                 </p>
-                <h3 className="mt-4 font-display text-2xl leading-[1.15] font-bold uppercase sm:text-3xl">
+                <h3 className="mt-4 font-display text-2xl leading-[1.15] font-bold sm:text-3xl">
                   {step?.title}
                 </h3>
               </div>

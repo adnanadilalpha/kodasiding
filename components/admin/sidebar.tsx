@@ -10,6 +10,7 @@ const pages = [
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/home", label: "Home" },
   { href: "/admin/profiles", label: "Profiles" },
+  { href: "/admin/installation", label: "Installation" },
   { href: "/admin/kodavent", label: "KodaVent" },
   { href: "/admin/dealer", label: "Find dealer" },
   { href: "/admin/quotes", label: "Quotes" },

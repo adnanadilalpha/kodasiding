@@ -9,16 +9,19 @@ import {
 } from "@/lib/cms/actions";
 import type {
   HomeWhyKoda,
+  WhyFact,
   WhyFeature,
   WhyFeatureLayout,
 } from "@/lib/cms/types";
+import { DEFAULT_WHY_FACTS } from "@/lib/cms/why-koda-defaults";
 import { MediaField } from "@/components/admin/media-field";
 import { RichTextField } from "@/components/admin/rich-text-field";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, Select } from "@/components/ui/field";
+import { Field, FieldGroup, Select, TextArea, TextInput } from "@/components/ui/field";
 
 const DEFAULT_SLOT_COUNT = 8;
 const MAX_SLOT_COUNT = 24;
+const MAX_FACT_COUNT = 6;
 
 const LAYOUT_OPTIONS: { value: WhyFeatureLayout; label: string }[] = [
   { value: "image-right", label: "Image right (text left)" },
@@ -90,13 +93,19 @@ export function WhyKodaEditor({
   const [features, setFeatures] = useState<FeatureDraft[]>(() =>
     padFeatures(why.features ?? [], media, DEFAULT_SLOT_COUNT),
   );
+  const [facts, setFacts] = useState<WhyFact[]>(() =>
+    why.facts && why.facts.length > 0 ? why.facts : DEFAULT_WHY_FACTS,
+  );
   const imageIdsRef = useRef<(string | null)[]>(
     features.map((f) => f.image_media_id),
   );
   const layoutsRef = useRef<WhyFeatureLayout[]>(
     features.map((f) => f.layout),
   );
-  const serverSignature = JSON.stringify(why.features ?? []);
+  const serverSignature = JSON.stringify({
+    features: why.features ?? [],
+    facts: why.facts ?? [],
+  });
 
   useEffect(() => {
     const next = padFeatures(why.features ?? [], media, DEFAULT_SLOT_COUNT);
@@ -113,9 +122,27 @@ export function WhyKodaEditor({
       return merged;
     });
     imageIdsRef.current = next.map((f) => f.image_media_id);
+    setFacts(why.facts && why.facts.length > 0 ? why.facts : DEFAULT_WHY_FACTS);
     // Re-sync after admin save / server refresh only.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- media paths follow feature ids
   }, [serverSignature]);
+
+  function addFact() {
+    setFacts((prev) => {
+      if (prev.length >= MAX_FACT_COUNT) return prev;
+      return [...prev, { value: "", label: "", body: "" }];
+    });
+  }
+
+  function removeFact(index: number) {
+    setFacts((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateFact(index: number, patch: Partial<WhyFact>) {
+    setFacts((prev) =>
+      prev.map((fact, i) => (i === index ? { ...fact, ...patch } : fact)),
+    );
+  }
 
   function addCard() {
     setFeatures((prev) => {
@@ -185,6 +212,12 @@ export function WhyKodaEditor({
 
   function onSaveText(formData: FormData) {
     formData.set("feature_count", String(features.length));
+    formData.set("fact_count", String(facts.length));
+    facts.forEach((fact, i) => {
+      formData.set(`fact_${i}_value`, fact.value);
+      formData.set(`fact_${i}_label`, fact.label);
+      formData.set(`fact_${i}_body`, fact.body);
+    });
     // Ensure submitted layout fields match the live ref (controlled selects).
     layoutsRef.current.forEach((layout, i) => {
       formData.set(`feature_${i}_layout`, layout);
@@ -198,13 +231,18 @@ export function WhyKodaEditor({
   return (
     <form action={onSaveText} className="flex w-full flex-col gap-5">
       <input type="hidden" name="feature_count" value={features.length} />
+      <input type="hidden" name="fact_count" value={facts.length} />
 
-      <FieldGroup title="Copy">
+      <FieldGroup title="Fact banner">
+        <p className="text-sm text-text-primary/50">
+          Light fact banner — big section title above, balanced figures and
+          readable copy on the measure line below.
+        </p>
         <Field label="Headline">
           <RichTextField
             name="why_headline"
             defaultValue={why.headline}
-            placeholder="Section headline"
+            placeholder="Why Koda Siding?"
             minHeightClassName="min-h-12"
           />
         </Field>
@@ -212,10 +250,74 @@ export function WhyKodaEditor({
           <RichTextField
             name="why_body"
             defaultValue={why.body}
-            placeholder="Optional supporting copy"
-            minHeightClassName="min-h-20"
+            placeholder="Optional supporting line under the headline"
+            minHeightClassName="min-h-16"
           />
         </Field>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <p className="text-sm font-medium text-text-primary">Facts</p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={addFact}
+            disabled={facts.length >= MAX_FACT_COUNT || pending}
+          >
+            Add fact
+          </Button>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          {facts.map((fact, i) => (
+            <div
+              key={`fact-${i}`}
+              className="flex flex-col gap-3 rounded-lg border border-brand-primary/8 bg-bg-secondary/50 p-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-text-primary">
+                  Fact {String(i + 1).padStart(2, "0")}
+                </p>
+                {facts.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={() => removeFact(i)}
+                    disabled={pending}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <Field label="Large figure">
+                <TextInput
+                  name={`fact_${i}_value`}
+                  value={fact.value}
+                  onChange={(e) => updateFact(i, { value: e.target.value })}
+                  placeholder="Class 4"
+                />
+              </Field>
+              <Field label="Label">
+                <TextInput
+                  name={`fact_${i}_label`}
+                  value={fact.label}
+                  onChange={(e) => updateFact(i, { label: e.target.value })}
+                  placeholder="Hail Impact"
+                />
+              </Field>
+              <Field label="Supporting line">
+                <TextArea
+                  name={`fact_${i}_body`}
+                  rows={2}
+                  value={fact.body}
+                  onChange={(e) => updateFact(i, { body: e.target.value })}
+                  placeholder="Short explanation"
+                />
+              </Field>
+            </div>
+          ))}
+        </div>
       </FieldGroup>
 
       <div className="flex w-full flex-col gap-4">

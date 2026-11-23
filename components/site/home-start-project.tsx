@@ -48,7 +48,7 @@ export function HomeStartProject({
     >
       <div className="flex w-full flex-col gap-10 px-page sm:gap-12 lg:gap-16">
         <div className="flex flex-col items-center gap-4 text-center sm:gap-6">
-          <h2 className="font-display text-[1.75rem] font-bold text-text-inverse uppercase sm:text-4xl lg:text-5xl">
+          <h2 className="font-display text-[1.75rem] font-bold text-text-inverse sm:text-4xl lg:text-5xl">
             Ready to Get Started?
           </h2>
           <p className="max-w-85 text-lg leading-[1.4] text-[#ddddd7]">
@@ -132,7 +132,7 @@ function QuoteOnlyCinematic({
           <p className="font-display text-sm tracking-[0.2em] text-accent-warm uppercase">
             Start your project
           </p>
-          <h2 className="font-display text-[1.75rem] leading-[1.15] font-bold text-text-inverse uppercase sm:text-4xl sm:whitespace-nowrap lg:text-[2.75rem] xl:text-5xl">
+          <h2 className="font-display text-[1.75rem] leading-[1.15] font-bold text-text-inverse sm:text-4xl sm:whitespace-nowrap lg:text-[2.75rem] xl:text-5xl">
             {headline}
           </h2>
           <p className="max-w-md text-base leading-[1.45] text-[#ddddd7] lg:text-lg">
@@ -189,7 +189,7 @@ function CtaCard({
       <div className="relative flex h-full min-h-155 flex-col justify-end p-4 sm:p-6">
         <div className="flex flex-col gap-6 rounded-md border border-white/55 bg-[rgba(253,252,248,0.84)] p-7 shadow-md backdrop-blur-sm">
           <div className="flex flex-col gap-4">
-            <h3 className="text-2xl font-bold text-[#1a1c18] uppercase sm:text-3xl">
+            <h3 className="text-2xl font-bold text-[#1a1c18] sm:text-3xl">
               {headline}
             </h3>
             <p className="text-lg leading-[1.4] text-[#5a5848]">{body}</p>

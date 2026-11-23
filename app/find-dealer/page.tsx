@@ -13,16 +13,19 @@ import {
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import {
+  DEFAULT_FIND_DEALER_PAGE_SEO,
+  mergePageSeo,
+} from "@/lib/cms/page-seo-defaults";
+import {
+  applyPageSeoMetadata,
   buildPageMetadata,
   loadSeoContext,
+  resolvePageOgImage,
 } from "@/lib/cms/seo-metadata";
 import type { Dealer } from "@/lib/cms/types";
 
-const DEALER_DESCRIPTION =
-  "Search for a Koda Siding dealer near you by U.S. city or ZIP.";
-
 export async function generateMetadata(): Promise<Metadata> {
-  const { seo, ogImage, showFindDealer } = await loadSeoContext();
+  const { seo, ogImage, showFindDealer, snapshot } = await loadSeoContext();
   if (!showFindDealer) {
     return buildPageMetadata(seo, ogImage, {
       title: "Not found",
@@ -30,10 +33,17 @@ export async function generateMetadata(): Promise<Metadata> {
       noIndex: true,
     });
   }
-  return buildPageMetadata(seo, ogImage, {
-    title: "Find a dealer",
-    description: DEALER_DESCRIPTION,
-    path: "/find-dealer",
+  const pageSeo = mergePageSeo(
+    DEFAULT_FIND_DEALER_PAGE_SEO,
+    snapshot?.settings?.pages_seo?.find_dealer,
+  );
+  const pageOg = resolvePageOgImage(snapshot?.media, pageSeo, ogImage);
+  return applyPageSeoMetadata(seo, pageOg, pageSeo, {
+    fallbackTitle: DEFAULT_FIND_DEALER_PAGE_SEO.title,
+    fallbackDescription: DEFAULT_FIND_DEALER_PAGE_SEO.description,
+    fallbackOgTitle: DEFAULT_FIND_DEALER_PAGE_SEO.og_title,
+    fallbackOgDescription: DEFAULT_FIND_DEALER_PAGE_SEO.og_description,
+    fallbackPath: "/find-dealer",
   });
 }
 

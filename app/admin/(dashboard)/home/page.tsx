@@ -1,16 +1,22 @@
 import {
   saveHomeCtas,
   saveHomeHero,
+  saveHomePageSeo,
 } from "@/lib/cms/actions";
 import { getMediaMap } from "@/lib/cms/media";
 import { LANDING_FALLBACKS, jewelFallback } from "@/lib/cms/landing-fallbacks";
+import {
+  DEFAULT_HOME_PAGE_SEO,
+  mergePageSeo,
+} from "@/lib/cms/page-seo-defaults";
 import { createClient } from "@/lib/supabase/server";
 import type { HomeWhyKoda, PageHome } from "@/lib/cms/types";
 import { HomeProfilesEditor } from "@/components/admin/home-profiles-editor";
+import { InstallHomeTeaserEditor } from "@/components/admin/installation-editor";
 import { MediaField } from "@/components/admin/media-field";
+import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { PartnersEditor } from "@/components/admin/partners-editor";
 import { SectionShell } from "@/components/admin/section-shell";
-import { VideosManualEditor } from "@/components/admin/videos-manual-editor";
 import { WhyKodaEditor } from "@/components/admin/why-koda-editor";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
@@ -35,8 +41,6 @@ export default async function HomeEditorPage({
     { data: settings },
     { data: partners },
     { data: jewels },
-    { data: videos },
-    { data: doc },
   ] = await Promise.all([
     supabase.from("page_home").select("*").eq("id", 1).single(),
     supabase.from("site_settings").select("partners_title, show_partners").eq("id", 1).single(),
@@ -48,25 +52,14 @@ export default async function HomeEditorPage({
       .from("home_profile_jewels")
       .select("id, name, reveal, image_media_id, sort_order, is_published")
       .order("sort_order"),
-    supabase
-      .from("videos")
-      .select(
-        "id, title, orientation, thumbnail_media_id, video_url, sort_order, is_published",
-      )
-      .order("sort_order"),
-    supabase
-      .from("documents")
-      .select("key, title, storage_path, bucket")
-      .eq("key", "installation_manual")
-      .maybeSingle(),
   ]);
 
   const page = home as PageHome;
   const why = page.why_koda as HomeWhyKoda;
   const partnerRows = partners ?? [];
   const jewelRows = jewels ?? [];
-  const videoRows = videos ?? [];
 
+  const pageSeo = mergePageSeo(DEFAULT_HOME_PAGE_SEO, page.seo);
   const media = await getMediaMap([
     page.hero.image_media_id,
     why.image_media_id,
@@ -75,7 +68,7 @@ export default async function HomeEditorPage({
     page.ctas.dealer.image_media_id,
     ...partnerRows.map((p) => p.logo_media_id),
     ...jewelRows.map((j) => j.image_media_id),
-    ...videoRows.map((v) => v.thumbnail_media_id),
+    pageSeo.og_image_media_id,
   ]);
 
   return (
@@ -187,24 +180,15 @@ export default async function HomeEditorPage({
           ),
         },
         {
-          id: "videos",
-          label: "Videos & manual",
+          id: "installation",
+          label: "Installation",
           content: (
-            <VideosManualEditor
-              headline={page.videos_section.headline}
-              body={page.videos_section.body}
-              manualLabel={page.videos_section.manual_label}
-              manualPath={doc?.storage_path ?? ""}
-              videos={videoRows.map((v) => ({
-                ...v,
-                orientation: v.orientation as "horizontal" | "vertical",
-                thumbPath: v.thumbnail_media_id
-                  ? media[v.thumbnail_media_id]?.path
-                  : null,
-                thumbBucket: v.thumbnail_media_id
-                  ? media[v.thumbnail_media_id]?.bucket
-                  : "media",
-              }))}
+            <InstallHomeTeaserEditor
+              servicesHeadline={page.videos_section?.services_headline ?? ""}
+              servicesBody={page.videos_section?.services_body ?? ""}
+              serviceArea={page.videos_section?.service_area ?? ""}
+              servicesCtaLabel={page.videos_section?.services_cta_label ?? ""}
+              diyLinkLabel={page.videos_section?.diy_link_label ?? ""}
             />
           ),
         },
@@ -312,6 +296,18 @@ export default async function HomeEditorPage({
                 <Button type="submit">Save</Button>
               </div>
             </form>
+          ),
+        },
+        {
+          id: "seo",
+          label: "SEO",
+          content: (
+            <PageSeoEditor
+              seo={pageSeo}
+              media={media}
+              onSave={saveHomePageSeo}
+              hint="Overrides the home page title, description, and social preview. Site-wide defaults still live in Settings → SEO."
+            />
           ),
         },
       ]}

@@ -3,8 +3,9 @@ import { HomeHeroSection } from "@/components/site/home-hero";
 import { HomePartnersSection } from "@/components/site/home-partners";
 import { HomeProfilesSection } from "@/components/site/home-profiles";
 import { HomeStartProject } from "@/components/site/home-start-project";
-import { HomeVideosSectionBlock } from "@/components/site/home-videos";
+import { HomeInstallServicesSection } from "@/components/site/home-install-services";
 import { HomeWhyKodaSection } from "@/components/site/home-why-koda";
+import { mergeHomeInstallServices } from "@/lib/cms/installation-defaults";
 import {
   OrganizationJsonLd,
   WebSiteJsonLd,
@@ -20,18 +21,33 @@ import {
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import {
-  buildPageMetadata,
+  DEFAULT_HOME_PAGE_SEO,
+  mergePageSeo,
+} from "@/lib/cms/page-seo-defaults";
+import {
+  applyPageSeoMetadata,
   loadSeoContext,
+  resolvePageOgImage,
 } from "@/lib/cms/seo-metadata";
-import { mediaUrlFromMap, publicMediaUrl } from "@/lib/cms/urls";
+import { mediaUrlFromMap } from "@/lib/cms/urls";
 import { LANDING_FALLBACKS } from "@/lib/cms/landing-fallbacks";
 import type { SiteSnapshotPayload } from "@/lib/cms/types";
 
 const JEWEL_FALLBACKS = LANDING_FALLBACKS.jewels;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { seo, ogImage } = await loadSeoContext();
-  return buildPageMetadata(seo, ogImage, { isHome: true, path: "/" });
+  const { seo, ogImage, snapshot } = await loadSeoContext();
+  const pageSeo = mergePageSeo(DEFAULT_HOME_PAGE_SEO, snapshot?.home?.seo);
+  const pageOg = resolvePageOgImage(snapshot?.media, pageSeo, ogImage);
+  return applyPageSeoMetadata(seo, pageOg, pageSeo, {
+    fallbackTitle: seo.title || DEFAULT_HOME_PAGE_SEO.title,
+    fallbackDescription: seo.description || DEFAULT_HOME_PAGE_SEO.description,
+    fallbackOgTitle: seo.title || DEFAULT_HOME_PAGE_SEO.og_title,
+    fallbackOgDescription:
+      seo.description || DEFAULT_HOME_PAGE_SEO.og_description,
+    fallbackPath: "/",
+    isHome: true,
+  });
 }
 
 export default async function HomePage() {
@@ -57,15 +73,7 @@ export default async function HomePage() {
 }
 
 function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
-  const {
-    settings,
-    home,
-    partners,
-    home_profile_jewels,
-    videos,
-    documents,
-    media,
-  } = snapshot;
+  const { settings, home, partners, home_profile_jewels, media } = snapshot;
 
   const nav = {
     ...settings.nav,
@@ -120,22 +128,7 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
     jewelImages[jewel.id] = fallback;
   });
 
-  const videoThumbs: Record<string, string | null> = {};
-  for (const v of videos) {
-    if (v.thumbnail_media_id) {
-      videoThumbs[v.thumbnail_media_id] = mediaUrlFromMap(
-        media,
-        v.thumbnail_media_id,
-      );
-    }
-  }
-
-  const manual = documents.find(
-    (d) => d.key === home.videos_section.manual_document_key,
-  );
-  const manualUrl = manual
-    ? publicMediaUrl(manual.storage_path, manual.bucket)
-    : null;
+  const installServices = mergeHomeInstallServices(home.videos_section);
 
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
@@ -161,12 +154,7 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
             jewels={home_profile_jewels}
             images={jewelImages}
           />
-          <HomeVideosSectionBlock
-            section={home.videos_section}
-            videos={videos}
-            thumbs={videoThumbs}
-            manualUrl={manualUrl}
-          />
+          <HomeInstallServicesSection services={installServices} />
           <HomeStartProject
             ctas={ctas}
             quoteImage={quoteImage}

@@ -42,7 +42,7 @@ export function HomeHeroSection({
       <div className="relative z-10 flex min-h-138 items-start px-page pt-16 pb-12 sm:min-h-154 sm:items-center sm:pt-24 lg:min-h-dvh lg:pb-16">
         <div className="flex w-full max-w-md flex-col gap-8 pt-12 sm:max-w-84 sm:pt-0 lg:max-w-2xl">
           <div className="flex flex-col gap-4 text-text-inverse">
-            <h1 className="font-display text-[2rem] leading-[1.3] font-bold uppercase sm:text-4xl lg:text-6xl lg:leading-[1.3]">
+            <h1 className="font-display text-[2rem] leading-[1.3] font-bold sm:text-4xl lg:text-6xl lg:leading-[1.3]">
               {hero.headline}
             </h1>
             <p className="text-lg leading-[1.4] lg:text-xl">

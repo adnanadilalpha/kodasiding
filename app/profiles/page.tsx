@@ -13,21 +13,30 @@ import { compareProfiles } from "@/lib/cms/profile-sort";
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import {
-  buildPageMetadata,
+  DEFAULT_PROFILES_PAGE_SEO,
+  mergePageSeo,
+} from "@/lib/cms/page-seo-defaults";
+import {
+  applyPageSeoMetadata,
   loadSeoContext,
+  resolvePageOgImage,
 } from "@/lib/cms/seo-metadata";
 import { mediaUrlFromMap } from "@/lib/cms/urls";
 import type { PageProfiles, Profile } from "@/lib/cms/types";
 
-const PROFILES_DESCRIPTION =
-  "Explore Koda horizontal, vertical, and universal fiberglass siding profiles.";
-
 export async function generateMetadata(): Promise<Metadata> {
-  const { seo, ogImage } = await loadSeoContext();
-  return buildPageMetadata(seo, ogImage, {
-    title: "Profiles",
-    description: PROFILES_DESCRIPTION,
-    path: "/profiles",
+  const { seo, ogImage, snapshot } = await loadSeoContext();
+  const pageSeo = mergePageSeo(
+    DEFAULT_PROFILES_PAGE_SEO,
+    snapshot?.page_profiles?.seo,
+  );
+  const pageOg = resolvePageOgImage(snapshot?.media, pageSeo, ogImage);
+  return applyPageSeoMetadata(seo, pageOg, pageSeo, {
+    fallbackTitle: DEFAULT_PROFILES_PAGE_SEO.title,
+    fallbackDescription: DEFAULT_PROFILES_PAGE_SEO.description,
+    fallbackOgTitle: DEFAULT_PROFILES_PAGE_SEO.og_title,
+    fallbackOgDescription: DEFAULT_PROFILES_PAGE_SEO.og_description,
+    fallbackPath: "/profiles",
   });
 }
 
@@ -43,6 +52,10 @@ const defaultPage: PageProfiles = {
   },
   universal: {
     headline: "Universal profiles",
+    helper: "Hover on profile to learn more",
+  },
+  soffit: {
+    headline: "Soffit and fascia",
     helper: "Hover on profile to learn more",
   },
   quote_cta_label: "Request a quote",
@@ -73,6 +86,7 @@ export default async function ProfilesPage() {
     ...defaultPage,
     ...page_profiles,
     universal: page_profiles?.universal ?? defaultPage.universal,
+    soffit: page_profiles?.soffit ?? defaultPage.soffit,
   };
   const nav = {
     ...settings.nav,
@@ -104,6 +118,9 @@ export default async function ProfilesPage() {
   const universal = withMedia(
     catalog.filter((p) => p.orientation === "universal"),
   );
+  const soffit = withMedia(
+    catalog.filter((p) => p.orientation === "soffit"),
+  );
 
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
@@ -122,6 +139,7 @@ export default async function ProfilesPage() {
             horizontal={horizontal}
             vertical={vertical}
             universal={universal}
+            soffit={soffit}
           />
         </main>
         <SiteFooter footer={footer} logoAlt={nav.logo_alt} />

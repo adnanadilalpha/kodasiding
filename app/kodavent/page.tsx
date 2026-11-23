@@ -20,10 +20,9 @@ import {
 import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import {
-  absoluteUrl,
-  buildPageMetadata,
+  applyPageSeoMetadata,
   loadSeoContext,
-  parseSiteUrl,
+  resolvePageOgImage,
 } from "@/lib/cms/seo-metadata";
 import { mediaUrlFromMap } from "@/lib/cms/urls";
 import type { PageKodaVent } from "@/lib/cms/types";
@@ -68,50 +67,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const { seo, ogImage, snapshot } = await loadSeoContext();
   const page = mergePage(snapshot?.page_kodavent);
   const pageSeo = page.seo;
-  const pageOg =
-    mediaUrlFromMap(snapshot?.media ?? {}, pageSeo.og_image_media_id) ||
-    mediaUrlFromMap(snapshot?.media ?? {}, page.hero.image_media_id) ||
-    ogImage;
-  const path = pageSeo.canonical_path?.trim() || "/kodavent";
-  const description =
-    pageSeo.description?.trim() ||
-    DEFAULT_PAGE_KODAVENT.seo.description ||
-    seo.description;
-  const absoluteTitle =
-    pageSeo.title?.trim() ||
-    "KodaVent | 4-Inch Exhaust Vent Cover | KODA Siding";
-  const ogTitle = pageSeo.og_title?.trim() || absoluteTitle;
-  const ogDescription =
-    pageSeo.og_description?.trim() ||
-    DEFAULT_PAGE_KODAVENT.seo.og_description ||
-    description;
-
-  const base = buildPageMetadata(seo, pageOg, {
-    title: "KodaVent",
-    description,
-    path,
+  const heroOg = mediaUrlFromMap(
+    snapshot?.media ?? {},
+    page.hero.image_media_id,
+  );
+  const pageOg = resolvePageOgImage(
+    snapshot?.media,
+    pageSeo,
+    heroOg,
+    ogImage,
+  );
+  return applyPageSeoMetadata(seo, pageOg, pageSeo, {
+    fallbackTitle: DEFAULT_PAGE_KODAVENT.seo.title,
+    fallbackDescription: DEFAULT_PAGE_KODAVENT.seo.description,
+    fallbackOgTitle: DEFAULT_PAGE_KODAVENT.seo.og_title,
+    fallbackOgDescription: DEFAULT_PAGE_KODAVENT.seo.og_description,
+    fallbackPath: "/kodavent",
   });
-
-  const metadataBase = parseSiteUrl(seo.site_url);
-  const canonical = absoluteUrl(metadataBase, path);
-
-  return {
-    ...base,
-    title: { absolute: absoluteTitle },
-    description,
-    alternates: { canonical },
-    openGraph: {
-      ...base.openGraph,
-      title: ogTitle,
-      description: ogDescription,
-      url: canonical,
-    },
-    twitter: {
-      ...base.twitter,
-      title: ogTitle,
-      description: ogDescription,
-    },
-  };
 }
 
 export default async function KodaVentPage() {

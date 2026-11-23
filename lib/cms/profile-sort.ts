@@ -1,15 +1,21 @@
-/** Extract H1 / V4 / U2 style catalog code from name or slug for stable ordering. */
+/** Extract H1 / V4 / U2 / S1 style catalog code from name or slug for stable ordering. */
 export function profileCatalogCode(nameOrSlug: string): {
-  orientation: "horizontal" | "vertical" | "universal" | null;
+  orientation: "horizontal" | "vertical" | "universal" | "soffit" | null;
   number: number;
 } | null {
-  const match = nameOrSlug.trim().match(/\b([hvu])(\d{1,2})\b/i);
+  const match = nameOrSlug.trim().match(/\b([hvus])(\d{1,2})\b/i);
   if (!match) return null;
   const letter = match[1]!.toLowerCase();
   const number = Number(match[2]);
   if (!Number.isFinite(number)) return null;
   const orientation =
-    letter === "h" ? "horizontal" : letter === "v" ? "vertical" : "universal";
+    letter === "h"
+      ? "horizontal"
+      : letter === "v"
+        ? "vertical"
+        : letter === "s"
+          ? "soffit"
+          : "universal";
   return { orientation, number };
 }
 

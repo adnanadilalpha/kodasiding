@@ -37,7 +37,7 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
           <p className="inline-flex w-fit bg-accent-warm px-2.5 py-1 text-xs font-bold tracking-[0.08em] text-text-primary uppercase">
             Order now
           </p>
-          <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight text-brand-primary uppercase sm:text-4xl lg:text-5xl">
+          <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight text-brand-primary sm:text-4xl lg:text-5xl">
             {cta.heading}
           </h2>
           {cta.description ? (

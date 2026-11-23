@@ -10,6 +10,13 @@ type Props = {
   minHeightClassName?: string;
 };
 
+type FormatState = {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  small: boolean;
+};
+
 function ToolbarButton({
   label,
   active,
@@ -42,6 +49,93 @@ function ToolbarButton({
   );
 }
 
+function selectionInside(editor: HTMLElement) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.commonAncestorContainer)) return null;
+  return { selection, range };
+}
+
+function wrapSelection(tagName: "small") {
+  const editor = document.activeElement as HTMLElement | null;
+  if (!editor?.isContentEditable) return;
+  const ctx = selectionInside(editor);
+  if (!ctx) return;
+  const { selection, range } = ctx;
+
+  const existing = closestTag(range.commonAncestorContainer, tagName);
+  if (existing && editor.contains(existing)) {
+    unwrap(existing);
+  } else if (range.collapsed) {
+    const el = document.createElement(tagName);
+    el.appendChild(document.createTextNode("\u200b"));
+    range.insertNode(el);
+    range.setStart(el.firstChild!, 1);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  } else {
+    const el = document.createElement(tagName);
+    try {
+      range.surroundContents(el);
+    } catch {
+      const fragment = range.extractContents();
+      el.appendChild(fragment);
+      range.insertNode(el);
+    }
+    selection.removeAllRanges();
+    const next = document.createRange();
+    next.selectNodeContents(el);
+    selection.addRange(next);
+  }
+}
+
+function closestTag(node: Node, tagName: string): HTMLElement | null {
+  let current: Node | null = node;
+  while (current && current.nodeType !== Node.ELEMENT_NODE) {
+    current = current.parentNode;
+  }
+  return (current as Element | null)?.closest(tagName) as HTMLElement | null;
+}
+
+function unwrap(el: HTMLElement) {
+  const parent = el.parentNode;
+  if (!parent) return;
+  while (el.firstChild) parent.insertBefore(el.firstChild, el);
+  parent.removeChild(el);
+}
+
+function transformSelectionCase(mode: "upper" | "lower" | "title") {
+  const editor = document.activeElement as HTMLElement | null;
+  if (!editor?.isContentEditable) return;
+  const ctx = selectionInside(editor);
+  if (!ctx) return;
+  const { selection, range } = ctx;
+  if (range.collapsed) return;
+
+  const text = range.toString();
+  if (!text) return;
+
+  let next = text;
+  if (mode === "upper") next = text.toUpperCase();
+  else if (mode === "lower") next = text.toLowerCase();
+  else {
+    next = text.replace(
+      /\w\S*/g,
+      (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    );
+  }
+
+  range.deleteContents();
+  range.insertNode(document.createTextNode(next));
+  selection.removeAllRanges();
+  const after = document.createRange();
+  after.selectNodeContents(editor);
+  after.collapse(false);
+  selection.addRange(after);
+}
+
 export function RichTextField({
   name,
   defaultValue = "",
@@ -52,10 +146,11 @@ export function RichTextField({
   const editorRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
   const [value, setValue] = useState(() => sanitizeRichText(defaultValue));
-  const [active, setActive] = useState({
+  const [active, setActive] = useState<FormatState>({
     bold: false,
     italic: false,
     underline: false,
+    small: false,
   });
 
   useEffect(() => {
@@ -85,10 +180,16 @@ export function RichTextField({
 
   function updateActiveStates() {
     try {
+      const selection = window.getSelection();
+      const node = selection?.anchorNode ?? null;
+      const inSmall = Boolean(
+        node && editorRef.current && closestTag(node, "small"),
+      );
       setActive({
         bold: document.queryCommandState("bold"),
         italic: document.queryCommandState("italic"),
         underline: document.queryCommandState("underline"),
+        small: inSmall,
       });
     } catch {
       // queryCommandState can throw when the selection is outside the editor
@@ -101,11 +202,23 @@ export function RichTextField({
     syncFromEditor();
   }
 
+  function runSmall() {
+    editorRef.current?.focus();
+    wrapSelection("small");
+    syncFromEditor();
+  }
+
+  function runCase(mode: "upper" | "lower" | "title") {
+    editorRef.current?.focus();
+    transformSelectionCase(mode);
+    syncFromEditor();
+  }
+
   const isEmpty = !value.replace(/<br\s*\/?>/gi, "").trim();
 
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-md border border-brand-primary/12 bg-bg-primary">
-      <div className="flex items-center gap-0.5 border-b border-brand-primary/10 bg-bg-secondary/60 px-1.5 py-1">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-brand-primary/10 bg-bg-secondary/60 px-1.5 py-1">
         <ToolbarButton
           label="Bold"
           active={active.bold}
@@ -127,6 +240,38 @@ export function RichTextField({
         >
           <span className="underline">U</span>
         </ToolbarButton>
+        <ToolbarButton
+          label="Smaller text"
+          active={active.small}
+          onMouseDown={runSmall}
+        >
+          <span className="text-[0.7rem] font-semibold">S</span>
+        </ToolbarButton>
+        <span className="mx-1 h-4 w-px bg-brand-primary/15" aria-hidden />
+        <ToolbarButton
+          label="Title Case"
+          onMouseDown={() => runCase("title")}
+        >
+          <span className="text-[0.65rem] font-semibold tracking-tight">
+            Aa
+          </span>
+        </ToolbarButton>
+        <ToolbarButton
+          label="UPPERCASE"
+          onMouseDown={() => runCase("upper")}
+        >
+          <span className="text-[0.65rem] font-semibold tracking-tight">
+            AA
+          </span>
+        </ToolbarButton>
+        <ToolbarButton
+          label="lowercase"
+          onMouseDown={() => runCase("lower")}
+        >
+          <span className="text-[0.65rem] font-semibold tracking-tight">
+            aa
+          </span>
+        </ToolbarButton>
       </div>
 
       <div className="relative">
@@ -144,7 +289,7 @@ export function RichTextField({
           aria-multiline="true"
           contentEditable
           suppressContentEditableWarning
-          className={`w-full px-3 py-2.5 text-base leading-snug text-text-primary outline-none [&_em]:italic [&_strong]:font-bold [&_u]:underline ${minHeightClassName}`}
+          className={`w-full px-3 py-2.5 text-base leading-snug text-text-primary outline-none [&_em]:italic [&_strong]:font-bold [&_u]:underline [&_small]:text-[0.85em] ${minHeightClassName}`}
           onInput={syncFromEditor}
           onKeyUp={updateActiveStates}
           onMouseUp={updateActiveStates}

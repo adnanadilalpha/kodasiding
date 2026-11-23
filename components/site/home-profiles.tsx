@@ -23,7 +23,7 @@ export function HomeProfilesSection({
     >
       <div className="flex w-full flex-col items-center gap-10 px-page lg:gap-12">
         <div className="mx-auto flex w-full flex-col items-center gap-4 text-center text-text-inverse">
-          <h2 className="font-display text-[1.75rem] leading-tight font-bold uppercase sm:text-4xl lg:text-5xl">
+          <h2 className="font-display text-[1.75rem] leading-tight font-bold sm:text-4xl lg:text-5xl">
             {teaser.headline.includes(". ") ? (
               <>
                 {teaser.headline.slice(0, teaser.headline.indexOf(". ") + 1)}

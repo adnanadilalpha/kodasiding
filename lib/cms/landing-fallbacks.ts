@@ -4,6 +4,7 @@ export const LANDING_FALLBACKS = {
   whyKoda: "/landing/why-koda.webp",
   ctaQuote: "/landing/cta-quote.webp",
   ctaDealer: "/landing/cta-dealer.webp",
+  installCrew: "/landing/install-crew.webp",
   jewels: [
     "/landing/jewel-h4.webp",
     "/landing/jewel-h6.webp",

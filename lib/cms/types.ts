@@ -88,6 +88,22 @@ export type SiteSeo = {
   og_image_media_id: string | null;
 };
 
+/** Per-page SEO overrides (CMS tabs on each page). */
+export type PageSeo = {
+  title: string;
+  description: string;
+  og_title: string;
+  og_description: string;
+  og_image_media_id: string | null;
+  canonical_path: string;
+};
+
+/** Extra page SEO stored on site_settings (no dedicated page row). */
+export type PagesSeoBag = {
+  installation?: PageSeo;
+  find_dealer?: PageSeo;
+};
+
 export type GeoAccess = {
   enabled: boolean;
   allowed_countries: string[];
@@ -99,6 +115,8 @@ export type SiteSettings = {
   footer: SiteFooter;
   quote_form: QuoteFormSettings;
   seo: SiteSeo;
+  /** Installation + find-dealer SEO (pages without their own seo column). */
+  pages_seo?: PagesSeoBag;
   /** Public site country allowlist (US+CA default). */
   geo_access?: GeoAccess;
   partners_title: string;
@@ -124,6 +142,16 @@ export type WhyFeature = {
   layout?: WhyFeatureLayout | null;
 };
 
+/** One cell in the Why Koda graphical fact banner. */
+export type WhyFact = {
+  /** Large figure — e.g. "Class 4", "AAMA 625", "141.7" */
+  value: string;
+  /** Short label under the figure — e.g. "Hail Impact" */
+  label: string;
+  /** Optional supporting line */
+  body: string;
+};
+
 export type HomeHero = {
   headline: string;
   subheadline: string;
@@ -135,6 +163,13 @@ export type HomeHero = {
 export type HomeWhyKoda = {
   headline: string;
   body: string;
+  /**
+   * @deprecated Prefer `facts` for the graphical banner.
+   * Kept for older CMS JSON.
+   */
+  highlights?: string;
+  /** Graphical fact banner cells under the Why Koda headline. */
+  facts?: WhyFact[];
   /** @deprecated Per-card images only; kept null for backwards-compatible JSON. */
   image_media_id: string | null;
   features: WhyFeature[];
@@ -147,11 +182,44 @@ export type HomeProfilesTeaser = {
   cta_href: string;
 };
 
-export type HomeVideosSection = {
+/** Homepage local-install services teaser (stored on videos_section JSON). */
+export type HomeInstallServices = {
   headline: string;
   body: string;
+  service_area: string;
+  primary_cta_label: string;
+  diy_cta_label: string;
+  diy_cta_href: string;
+};
+
+/**
+ * DIY /installation page copy + optional homepage services fields.
+ * Lives in page_home.videos_section (JSON) — no new DB column.
+ */
+export type HomeVideosSection = {
+  /** /installation hero headline */
+  headline: string;
+  /** /installation hero body (blank line = new paragraph) */
+  body: string;
+  /** Eyebrow on /installation hero (e.g. Omaha & surrounding areas) */
+  hero_service_label?: string;
+  /** Coverage radius in miles for the /installation map */
+  install_radius_miles?: number;
+  /** Short helper under the coverage map / search */
+  cities_intro?: string;
+  /** Towns on /installation map + search, separated by · */
+  cities?: string;
+  /** /installation hero photo */
+  hero_image_media_id?: string | null;
   manual_label: string;
   manual_document_key: string;
+  /** Homepage services headline (optional; defaults in code) */
+  services_headline?: string;
+  services_body?: string;
+  /** Homepage teaser service-area chip (e.g. Nebraska) */
+  service_area?: string;
+  services_cta_label?: string;
+  diy_link_label?: string;
 };
 
 export type HomeCtaCard = {
@@ -176,6 +244,7 @@ export type PageHome = {
   profiles_teaser: HomeProfilesTeaser;
   videos_section: HomeVideosSection;
   ctas: HomeCtas;
+  seo?: PageSeo;
   updated_at?: string;
 };
 
@@ -209,11 +278,17 @@ export type PageProfiles = {
   horizontal: ProfileSheetCopy;
   vertical: ProfileSheetCopy;
   universal: ProfileSheetCopy;
+  soffit: ProfileSheetCopy;
   quote_cta_label: string;
   manual_cta_label: string;
+  seo?: PageSeo;
 };
 
-export type ProfileOrientation = "horizontal" | "vertical" | "universal";
+export type ProfileOrientation =
+  | "horizontal"
+  | "vertical"
+  | "universal"
+  | "soffit";
 
 export type Profile = {
   id: string;
@@ -366,14 +441,7 @@ export type KodaVentCta = {
   visible: boolean;
 };
 
-export type KodaVentSeo = {
-  title: string;
-  description: string;
-  og_title: string;
-  og_description: string;
-  og_image_media_id: string | null;
-  canonical_path: string;
-};
+export type KodaVentSeo = PageSeo;
 
 export type PageKodaVent = {
   id: number;

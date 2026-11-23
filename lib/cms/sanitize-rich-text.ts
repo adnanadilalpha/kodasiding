@@ -4,6 +4,7 @@ const ALLOWED_TAGS = new Set([
   "i",
   "em",
   "u",
+  "small",
   "br",
   "p",
   "div",
@@ -90,6 +91,7 @@ function cleanNode(node: Node): string {
   if (tag === "b" || tag === "strong") return `<strong>${inner}</strong>`;
   if (tag === "i" || tag === "em") return `<em>${inner}</em>`;
   if (tag === "u") return `<u>${inner}</u>`;
+  if (tag === "small") return `<small>${inner}</small>`;
   if (tag === "p" || tag === "div") {
     // Keep paragraph breaks as line breaks for compact Why Koda bodies.
     return inner ? `${inner}<br>` : "";
@@ -120,12 +122,14 @@ function sanitizeRichTextString(html: string): string {
     .replace(/<\s*\/\s*em\s*>/gi, "</em>")
     .replace(/<\s*u\b[^>]*>/gi, "<u>")
     .replace(/<\s*\/\s*u\s*>/gi, "</u>")
+    .replace(/<\s*small\b[^>]*>/gi, "<small>")
+    .replace(/<\s*\/\s*small\s*>/gi, "</small>")
     .replace(/<\s*br\s*\/?\s*>/gi, "<br>")
     .replace(/<\s*\/?\s*p\b[^>]*>/gi, "<br>")
     .replace(/<\s*\/?\s*div\b[^>]*>/gi, "<br>");
 
   // Drop any remaining tags.
-  out = out.replace(/<(?!\/?(?:strong|em|u|br)\b)[^>]+>/gi, "");
+  out = out.replace(/<(?!\/?(?:strong|em|u|small|br)\b)[^>]+>/gi, "");
 
   // Collapse noisy break runs from pasted HTML.
   out = out.replace(/(?:<br>\s*){3,}/gi, "<br><br>");
@@ -133,7 +137,7 @@ function sanitizeRichTextString(html: string): string {
 
   // Escape bare & / < / > outside allowed tags (after decode step).
   out = out
-    .split(/(<\/?(?:strong|em|u|br)\b[^>]*>)/gi)
+    .split(/(<\/?(?:strong|em|u|small|br)\b[^>]*>)/gi)
     .map((part, i) =>
       i % 2 === 1
         ? part

@@ -155,7 +155,7 @@ function ProfileDetailModal({
           <div className="flex min-w-0 flex-col gap-8 self-start">
             <h2
               id={titleId}
-              className="font-display pr-10 text-2xl font-bold whitespace-nowrap text-brand-primary uppercase sm:text-[28px]"
+              className="font-display pr-10 text-2xl font-bold whitespace-nowrap text-brand-primary sm:text-[28px]"
             >
               {profile.name}
             </h2>
@@ -273,7 +273,7 @@ function ProfileSheet({
   return (
     <section className="flex w-full flex-col items-center gap-8 lg:gap-12">
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <h2 className="font-display text-2xl font-bold text-text-primary uppercase sm:text-[30px] sm:leading-9.75">
+        <h2 className="font-display text-2xl font-bold text-text-primary sm:text-[30px] sm:leading-9.75">
           {headline}
         </h2>
         {helper ? (
@@ -303,11 +303,13 @@ export function ProfilesCatalog({
   horizontal,
   vertical,
   universal,
+  soffit,
 }: {
   page: PageProfiles;
   horizontal: ProfileTileData[];
   vertical: ProfileTileData[];
   universal: ProfileTileData[];
+  soffit: ProfileTileData[];
 }) {
   const { openQuote } = useQuote();
   const [selected, setSelected] = useState<ProfileTileData | null>(null);
@@ -316,12 +318,12 @@ export function ProfilesCatalog({
   return (
     <div className="flex flex-col gap-16 px-page pt-28 pb-16 sm:pt-36 sm:pb-20 lg:gap-24 lg:pt-41 lg:pb-24">
       <header className="flex w-full flex-col gap-3">
-        <h1 className="font-display text-3xl font-bold tracking-wide text-brand-primary uppercase sm:text-4xl lg:text-5xl">
+        <h1 className="font-display text-3xl font-bold tracking-wide text-brand-primary sm:text-4xl lg:text-5xl">
           Profiles
         </h1>
         <p className="max-w-2xl text-base text-text-primary/70 sm:text-lg">
-          Explore Koda horizontal, vertical, and universal fiberglass siding
-          profiles.
+          Explore Koda horizontal, vertical, universal, and soffit and fascia
+          fiberglass siding profiles.
         </p>
       </header>
 
@@ -344,12 +346,18 @@ export function ProfilesCatalog({
         profiles={universal}
         onLearnMore={setSelected}
       />
+      <ProfileSheet
+        headline={page.soffit?.headline || "Soffit and fascia"}
+        helper={page.soffit?.helper || "Open a profile to learn more"}
+        profiles={soffit}
+        onLearnMore={setSelected}
+      />
 
       <div className="flex flex-wrap items-center justify-center gap-4">
         <button
           type="button"
           onClick={openQuote}
-          className="rounded-md border border-transparent bg-accent-warm px-8 py-3 font-display text-sm tracking-[0.04em] text-text-primary uppercase"
+          className="rounded-md border border-transparent bg-accent-warm px-8 py-3 font-display text-sm tracking-[0.04em] text-text-primary"
         >
           {quoteLabel}
         </button>
