@@ -4,28 +4,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import L from "leaflet";
 import {
   Circle,
-  CircleMarker,
   MapContainer,
   TileLayer,
   useMap,
   ZoomControl,
 } from "react-leaflet";
-import {
-  installRadiusMeters,
-  OMAHA_CENTER,
-  type InstallTownPoint,
-} from "@/lib/cms/install-service-geo";
+import { installRadiusMeters, OMAHA_CENTER } from "@/lib/cms/install-service-geo";
 import "leaflet/dist/leaflet.css";
 
-function FitServiceArea({
-  points,
-  selected,
-  radiusMiles,
-}: {
-  points: InstallTownPoint[];
-  selected: InstallTownPoint | null;
-  radiusMiles: number;
-}) {
+function FitServiceArea({ radiusMiles }: { radiusMiles: number }) {
   const map = useMap();
   const didFit = useRef(false);
 
@@ -38,20 +25,12 @@ function FitServiceArea({
       }
     });
     return () => cancelAnimationFrame(frame);
-  }, [map, points.length, radiusMiles]);
+  }, [map, radiusMiles]);
 
   useEffect(() => {
     try {
       if (!map.getContainer()) return;
     } catch {
-      return;
-    }
-
-    if (selected) {
-      map.flyTo([selected.lat, selected.lng], Math.max(map.getZoom(), 10), {
-        animate: true,
-        duration: 0.4,
-      });
       return;
     }
 
@@ -64,9 +43,6 @@ function FitServiceArea({
       [lat - latDelta, lng - lngDelta],
       [lat + latDelta, lng + lngDelta],
     );
-    for (const point of points) {
-      bounds.extend([point.lat, point.lng]);
-    }
 
     map.fitBounds(bounds, {
       padding: [28, 28],
@@ -75,7 +51,7 @@ function FitServiceArea({
       duration: 0.4,
     });
     didFit.current = true;
-  }, [map, points, selected, radiusMiles]);
+  }, [map, radiusMiles]);
 
   return null;
 }
@@ -89,14 +65,8 @@ function MapLoading() {
 }
 
 export function InstallServiceAreaMap({
-  points,
-  selectedName,
-  onSelectTown,
   radiusMiles = 60,
 }: {
-  points: InstallTownPoint[];
-  selectedName: string | null;
-  onSelectTown: (name: string) => void;
   radiusMiles?: number;
 }) {
   const mapId = useId();
@@ -139,10 +109,6 @@ export function InstallServiceAreaMap({
     };
   }, []);
 
-  const selected =
-    points.find(
-      (p) => p.name.toLowerCase() === (selectedName ?? "").toLowerCase(),
-    ) ?? null;
   const meters = installRadiusMeters(radiusMiles);
 
   return (
@@ -179,32 +145,7 @@ export function InstallServiceAreaMap({
               fillOpacity: 0.14,
             }}
           />
-          {points.map((point) => {
-            const active =
-              selectedName != null &&
-              point.name.toLowerCase() === selectedName.toLowerCase();
-            return (
-              <CircleMarker
-                key={point.name}
-                center={[point.lat, point.lng]}
-                radius={active ? 8 : 6}
-                pathOptions={{
-                  color: active ? "#182e22" : "#264835",
-                  weight: 2,
-                  fillColor: active ? "#c2d46a" : "#f7f5ec",
-                  fillOpacity: 1,
-                }}
-                eventHandlers={{
-                  click: () => onSelectTown(point.name),
-                }}
-              />
-            );
-          })}
-          <FitServiceArea
-            points={points}
-            selected={selected}
-            radiusMiles={radiusMiles}
-          />
+          <FitServiceArea radiusMiles={radiusMiles} />
         </MapContainer>
       )}
       <p className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-bg-primary/92 px-2 py-1 text-[0.65rem] font-bold tracking-[0.08em] text-brand-primary uppercase">

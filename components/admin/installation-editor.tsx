@@ -56,8 +56,11 @@ export function InstallHeroEditor({
   heroImageId,
   heroImagePath,
   diyLinkLabel,
+  servicesCtaLabel,
   eyebrowPrefix,
   heroImageAlt,
+  installRadiusMiles,
+  cities,
 }: {
   headline: string;
   body: string;
@@ -65,14 +68,16 @@ export function InstallHeroEditor({
   heroImageId: string | null;
   heroImagePath: string | null;
   diyLinkLabel?: string;
+  servicesCtaLabel?: string;
   eyebrowPrefix?: string;
   heroImageAlt?: string;
+  installRadiusMiles: number;
+  cities: string;
 }) {
   const { pending, onSave } = useInstallSave();
 
   function onSaveHero(formData: FormData) {
-    formData.set("install_section", "hero");
-    // DIY link lives on the home local-install section (secondary CTA).
+    formData.set("install_section", "home");
     formData.set(
       "diy_link_label",
       String(formData.get("diy_link_label") ?? diyLinkLabel ?? ""),
@@ -84,7 +89,7 @@ export function InstallHeroEditor({
     <form action={onSaveHero} className="flex w-full flex-col gap-5">
       <div className="flex w-full flex-col gap-5">
         <div className="flex min-w-0 flex-col gap-5">
-          <FieldGroup title="Copy">
+          <FieldGroup title="Installation">
             <Field label="Eyebrow prefix">
               <RichTextField
                 name="eyebrow_prefix"
@@ -95,7 +100,7 @@ export function InstallHeroEditor({
                 minHeightClassName="min-h-12"
               />
             </Field>
-            <Field label="Eyebrow">
+            <Field label="Service area">
               <RichTextField
                 name="hero_service_label"
                 defaultValue={
@@ -115,7 +120,7 @@ export function InstallHeroEditor({
                 minHeightClassName="min-h-12"
               />
             </Field>
-            <Field label="Body (blank line = new paragraph)">
+            <Field label="Body">
               <RichTextField
                 name="videos_body"
                 defaultValue={body || DEFAULT_INSTALLATION_PAGE.body}
@@ -123,141 +128,80 @@ export function InstallHeroEditor({
                 minHeightClassName="min-h-28"
               />
             </Field>
-            <Field label="DIY link label">
-              <RichTextField
-                name="diy_link_label"
-                defaultValue={
-                  diyLinkLabel || DEFAULT_HOME_INSTALL_SERVICES.diy_cta_label
-                }
-                placeholder="Install it yourself"
-                minHeightClassName="min-h-12"
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Field label="Install it yourself button">
+                <RichTextField
+                  name="diy_link_label"
+                  defaultValue={
+                    diyLinkLabel || DEFAULT_HOME_INSTALL_SERVICES.diy_cta_label
+                  }
+                  placeholder="Install it yourself"
+                  minHeightClassName="min-h-12"
+                />
+              </Field>
+              <Field label="Request quote button">
+                <RichTextField
+                  name="services_cta_label"
+                  defaultValue={
+                    servicesCtaLabel ||
+                    DEFAULT_INSTALLATION_PAGE.services_cta_label ||
+                    ""
+                  }
+                  placeholder="Request install quote"
+                  minHeightClassName="min-h-12"
+                />
+              </Field>
+            </div>
+            <p className="text-xs text-text-primary/45">
+              These two buttons sit side by side under the body. The install
+              link always goes to /installation.
+            </p>
+            <Field label="Map radius (miles)">
+              <TextInput
+                name="install_radius_miles"
+                type="number"
+                min={5}
+                max={200}
+                defaultValue={String(
+                  installRadiusMiles ||
+                    DEFAULT_INSTALLATION_PAGE.install_radius_miles ||
+                    60,
+                )}
+                placeholder="60"
               />
             </Field>
-          </FieldGroup>
-        </div>
-        <FieldGroup title="Media" className="min-w-0">
-          <Field label="Hero image alt text">
-            <TextInput
-              name="hero_image_alt"
-              defaultValue={
-                heroImageAlt || DEFAULT_INSTALLATION_PAGE.hero_image_alt || ""
-              }
-              placeholder="Koda Siding crew installing fiberglass siding"
-            />
-          </Field>
-          <MediaField
-            name="hero_image_media_id"
-            label="Hero / crew photo"
-            compact
-            initialId={heroImageId}
-            initialPath={heroImagePath}
-            fallbackSrc={LANDING_FALLBACKS.installCrew}
-          />
-        </FieldGroup>
-      </div>
-      <SaveButton pending={pending} />
-    </form>
-  );
-}
-
-export function InstallCoverageEditor({
-  installRadiusMiles,
-  citiesIntro,
-  cities,
-  coverageHeading,
-  townSearchPlaceholder,
-  servicesCtaLabel,
-}: {
-  installRadiusMiles: number;
-  citiesIntro: string;
-  cities: string;
-  coverageHeading?: string;
-  townSearchPlaceholder?: string;
-  servicesCtaLabel?: string;
-}) {
-  const { pending, onSave } = useInstallSave();
-
-  return (
-    <form action={onSave} className="flex w-full flex-col gap-5">
-      <input type="hidden" name="install_section" value="coverage" />
-      <FieldGroup title="Coverage map">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Field label="Coverage heading">
-            <RichTextField
-              name="coverage_heading"
-              defaultValue={
-                coverageHeading || DEFAULT_INSTALLATION_PAGE.coverage_heading || ""
-              }
-              placeholder="Do we install near you?"
-              minHeightClassName="min-h-12"
-            />
-          </Field>
-          <Field label="Town search placeholder">
-            <RichTextField
-              name="town_search_placeholder"
-              defaultValue={
-                townSearchPlaceholder ||
-                DEFAULT_INSTALLATION_PAGE.town_search_placeholder ||
-                ""
-              }
-              placeholder="Type a town, or tap a pin…"
-              minHeightClassName="min-h-12"
-            />
-          </Field>
-          <Field label="Quote button label">
-            <RichTextField
-              name="services_cta_label"
-              defaultValue={
-                servicesCtaLabel ||
-                DEFAULT_INSTALLATION_PAGE.services_cta_label ||
-                ""
-              }
-              placeholder="Request install quote"
-              minHeightClassName="min-h-12"
-            />
-          </Field>
-          <Field label="Radius (miles)">
-            <TextInput
-              name="install_radius_miles"
-              type="number"
-              min={5}
-              max={200}
-              defaultValue={String(
-                installRadiusMiles ||
-                  DEFAULT_INSTALLATION_PAGE.install_radius_miles ||
-                  60,
-              )}
-              placeholder="60"
-            />
-          </Field>
-          <div className="lg:col-span-2">
-            <Field label="Helper text">
-              <RichTextField
-                name="cities_intro"
-                defaultValue={
-                  citiesIntro || DEFAULT_INSTALLATION_PAGE.cities_intro || ""
-                }
-                placeholder="Green circle = where Koda crews install…"
-                minHeightClassName="min-h-24"
-              />
-            </Field>
-          </div>
-          <div className="lg:col-span-2">
-            <Field label="Towns (separate with · )">
+            <Field label="Towns under the map">
               <TextArea
                 name="cities"
-                rows={3}
+                rows={4}
                 defaultValue={cities || DEFAULT_INSTALLATION_PAGE.cities || ""}
                 placeholder="Omaha · Elkhorn · Millard · Bellevue…"
               />
             </Field>
-            <p className="mt-1.5 text-xs text-text-primary/45">
-              Known metro towns get map pins automatically. Other names still
-              work in the town search.
+            <p className="text-xs text-text-primary/45">
+              Separate towns with a middle dot. They are listed under the map
+              in this order.
             </p>
-          </div>
+            <Field label="Photo description">
+              <TextInput
+                name="hero_image_alt"
+                defaultValue={
+                  heroImageAlt || DEFAULT_INSTALLATION_PAGE.hero_image_alt || ""
+                }
+                placeholder="Koda Siding crew installing fiberglass siding"
+              />
+            </Field>
+            <MediaField
+              name="hero_image_media_id"
+              label="Background photo"
+              compact
+              initialId={heroImageId}
+              initialPath={heroImagePath}
+              fallbackSrc={LANDING_FALLBACKS.installCrew}
+            />
+          </FieldGroup>
         </div>
-      </FieldGroup>
+      </div>
       <SaveButton pending={pending} />
     </form>
   );

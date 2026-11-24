@@ -12,10 +12,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { HomeWhyKoda, PageHome } from "@/lib/cms/types";
 import { HomeProfilesEditor } from "@/components/admin/home-profiles-editor";
-import {
-  InstallCoverageEditor,
-  InstallHeroEditor,
-} from "@/components/admin/installation-editor";
+import { InstallHeroEditor } from "@/components/admin/installation-editor";
 import { MediaField } from "@/components/admin/media-field";
 import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { PartnersEditor } from "@/components/admin/partners-editor";
@@ -191,40 +188,27 @@ export default async function HomeEditorPage({
           id: "installation",
           label: "Installation",
           content: (
-            <div className="flex w-full flex-col gap-8">
-              <p className="text-sm text-text-primary/50">
-                Homeowners who want Koda crews to install. DIY guide is under
-                Installation in the sidebar.
-              </p>
-              <InstallHeroEditor
-                headline={installSection?.headline ?? ""}
-                body={installSection?.body ?? ""}
-                heroServiceLabel={installSection?.hero_service_label ?? ""}
-                heroImageId={installSection?.hero_image_media_id ?? null}
-                heroImagePath={
-                  installSection?.hero_image_media_id
-                    ? (media[installSection.hero_image_media_id]?.path ?? null)
-                    : null
-                }
-                diyLinkLabel={installSection?.diy_link_label ?? ""}
-                eyebrowPrefix={installSection?.eyebrow_prefix ?? ""}
-                heroImageAlt={installSection?.hero_image_alt ?? ""}
-              />
-              <InstallCoverageEditor
-                installRadiusMiles={
-                  typeof installSection?.install_radius_miles === "number"
-                    ? installSection.install_radius_miles
-                    : 60
-                }
-                citiesIntro={installSection?.cities_intro ?? ""}
-                cities={installSection?.cities ?? ""}
-                coverageHeading={installSection?.coverage_heading ?? ""}
-                townSearchPlaceholder={
-                  installSection?.town_search_placeholder ?? ""
-                }
-                servicesCtaLabel={installSection?.services_cta_label ?? ""}
-              />
-            </div>
+            <InstallHeroEditor
+              headline={installSection?.headline ?? ""}
+              body={installSection?.body ?? ""}
+              heroServiceLabel={installSection?.hero_service_label ?? ""}
+              heroImageId={installSection?.hero_image_media_id ?? null}
+              heroImagePath={
+                installSection?.hero_image_media_id
+                  ? (media[installSection.hero_image_media_id]?.path ?? null)
+                  : null
+              }
+              diyLinkLabel={installSection?.diy_link_label ?? ""}
+              servicesCtaLabel={installSection?.services_cta_label ?? ""}
+              eyebrowPrefix={installSection?.eyebrow_prefix ?? ""}
+              heroImageAlt={installSection?.hero_image_alt ?? ""}
+              installRadiusMiles={
+                typeof installSection?.install_radius_miles === "number"
+                  ? installSection.install_radius_miles
+                  : 60
+              }
+              cities={installSection?.cities ?? ""}
+            />
           ),
         },
         {

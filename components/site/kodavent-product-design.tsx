@@ -35,21 +35,21 @@ export function KodaVentProductDesignSection({
   section,
   imageUrl,
   imageAlt,
+  badgeLabel,
   caption,
+  figureTitle,
 }: {
   section: KodaVentProductDesign;
   imageUrl: string | null;
   imageAlt: string;
+  badgeLabel?: string;
   caption?: string;
+  figureTitle?: string;
 }) {
   if (!section.visible) return null;
 
   const eyebrow =
     section.eyebrow?.trim() || DEFAULT_PAGE_KODAVENT.product_design.eyebrow;
-  const figureCaption =
-    caption?.trim() ||
-    section.image_caption?.trim() ||
-    DEFAULT_PAGE_KODAVENT.product_design.image_caption;
 
   const benefits = (section.annotations ?? []).filter(
     (item) => item.visible !== false && (item.title?.trim() || item.description?.trim()),
@@ -78,20 +78,40 @@ export function KodaVentProductDesignSection({
         </header>
 
         <div className="grid items-start gap-12 lg:grid-cols-12 lg:gap-12">
-          <figure className="lg:col-span-5 lg:sticky lg:top-28">
-            <div className="relative aspect-square w-full">
+          <figure className="relative mb-8 lg:col-span-5 lg:sticky lg:top-28">
+            <div
+              aria-hidden
+              className="absolute inset-0 translate-x-4 translate-y-4 bg-brand-primary sm:translate-x-6 sm:translate-y-6"
+            />
+            <div className="relative aspect-square overflow-hidden bg-bg-secondary">
               {imageUrl ? (
                 <Media
                   src={imageUrl}
                   alt={imageAlt}
                   sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="object-contain drop-shadow-2xl"
+                  className="object-cover object-center"
                 />
               ) : null}
+              {badgeLabel ? (
+                <span className="absolute top-4 right-4 bg-accent-warm px-2.5 py-1 text-xs font-bold tracking-[0.08em] text-text-primary">
+                  <RichText html={badgeLabel} as="span" />
+                </span>
+              ) : null}
             </div>
-            <figcaption className="mt-4 text-xs tracking-[0.14em] text-text-inverse/45">
-              <RichText html={figureCaption} as="span" />
-            </figcaption>
+            {caption || figureTitle ? (
+              <figcaption className="absolute -bottom-6 -left-3 bg-bg-primary px-5 py-4 shadow-xl shadow-brand-primary/20 sm:-left-6">
+                {caption ? (
+                  <span className="block text-xs tracking-[0.14em] text-text-secondary">
+                    <RichText html={caption} as="span" />
+                  </span>
+                ) : null}
+                {figureTitle ? (
+                  <span className="mt-1 block font-display text-lg font-bold tracking-tight text-brand-primary">
+                    <RichText html={figureTitle} as="span" />
+                  </span>
+                ) : null}
+              </figcaption>
+            ) : null}
           </figure>
 
           <ol className="flex flex-col gap-10 lg:col-span-7 lg:gap-12">

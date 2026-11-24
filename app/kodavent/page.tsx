@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { KodaVentCtaSection } from "@/components/site/kodavent-cta";
 import { KodaVentHeroSection } from "@/components/site/kodavent-hero";
-import { KodaVentInstalledSection } from "@/components/site/kodavent-installed";
 import { KodaVentInstallationSection } from "@/components/site/kodavent-installation";
 import { KodaVentProductDesignSection } from "@/components/site/kodavent-product-design";
 import {
@@ -215,26 +214,30 @@ export default async function KodaVentPage() {
           />
           <KodaVentProductDesignSection
             section={designSection}
-            imageUrl={packagingImage}
-            imageAlt={
-              designSection.image_alt ||
-              heroSection.image_alt ||
-              "KodaVent retail packaging"
-            }
-            caption={designSection.image_caption}
-          />
-          <KodaVentInstalledSection
-            section={installedSection}
             imageUrl={installedImage}
+            imageAlt={
+              installedSection.image_alt ||
+              "KodaVent installed on finished siding"
+            }
+            badgeLabel={installedSection.badge_label}
+            caption={installedSection.caption}
+            figureTitle={installedSection.figure_title}
           />
           <KodaVentInstallationSection
             section={page.installation}
             media={media}
             documents={documents}
           />
-          <KodaVentCtaSection cta={ctaSection} />
+          <KodaVentCtaSection
+            cta={ctaSection}
+            imageUrl={packagingImage}
+            imageAlt={
+              designSection.image_alt || "KodaVent retail packaging"
+            }
+            imageCaption={designSection.image_caption}
+          />
         </main>
-        <SiteFooter footer={footer} logoAlt={nav.logo_alt} />
+        <SiteFooter footer={footer} logoAlt={nav.logo_alt} tone="dark" />
       </div>
     </QuoteProvider>
   );

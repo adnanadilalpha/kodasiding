@@ -261,49 +261,46 @@ export function resolveInstallRadiusMiles(
   return Math.min(200, Math.max(5, Math.round(n)));
 }
 
-/** Prefer CMS copy unless it is still the old “Installation Manual” stub. */
-function installationHeroHeadline(raw: string | undefined) {
-  const value = raw?.trim() ?? "";
-  if (!value) return DEFAULT_INSTALLATION_PAGE.headline;
-  if (/^installation manual$/i.test(value)) {
-    return DEFAULT_INSTALLATION_PAGE.headline;
-  }
-  return value;
-}
-
-function installationHeroBody(raw: string | undefined) {
-  const value = raw?.trim() ?? "";
-  if (!value) return DEFAULT_INSTALLATION_PAGE.body;
-  if (/view our installation manual/i.test(value)) {
-    return DEFAULT_INSTALLATION_PAGE.body;
-  }
-  return value;
+function cmsText(value: string | null | undefined, fallback = "") {
+  const trimmed = value?.trim() ?? "";
+  return trimmed || fallback;
 }
 
 export function mergeInstallationPage(
   section: HomeVideosSection | null | undefined,
 ): HomeVideosSection {
   const s = section ?? DEFAULT_INSTALLATION_PAGE;
+  const d = DEFAULT_INSTALLATION_PAGE;
   return {
-    headline: installationHeroHeadline(s.headline),
-    body: installationHeroBody(s.body),
-    hero_service_label:
-      s.hero_service_label?.trim() ||
-      DEFAULT_INSTALLATION_PAGE.hero_service_label,
+    ...d,
+    ...s,
+    headline: cmsText(s.headline, d.headline),
+    body: cmsText(s.body, d.body),
+    hero_service_label: cmsText(s.hero_service_label, d.hero_service_label),
+    eyebrow_prefix: cmsText(s.eyebrow_prefix, d.eyebrow_prefix),
+    hero_image_alt: cmsText(s.hero_image_alt, d.hero_image_alt),
     install_radius_miles: resolveInstallRadiusMiles(s.install_radius_miles),
-    cities_intro:
-      s.cities_intro?.trim() || DEFAULT_INSTALLATION_PAGE.cities_intro,
-    cities: s.cities?.trim() || DEFAULT_INSTALLATION_PAGE.cities,
+    cities_intro: cmsText(s.cities_intro, d.cities_intro),
+    cities: cmsText(s.cities, d.cities),
     hero_image_media_id: s.hero_image_media_id ?? null,
-    manual_label:
-      s.manual_label?.trim() || DEFAULT_INSTALLATION_PAGE.manual_label,
-    manual_document_key:
-      s.manual_document_key?.trim() ||
-      DEFAULT_INSTALLATION_PAGE.manual_document_key,
-    services_headline: s.services_headline,
-    services_body: s.services_body,
-    service_area: s.service_area,
-    services_cta_label: s.services_cta_label,
-    diy_link_label: s.diy_link_label,
+    manual_label: cmsText(s.manual_label, d.manual_label),
+    manual_document_key: cmsText(s.manual_document_key, d.manual_document_key),
+    services_cta_label: cmsText(s.services_cta_label, d.services_cta_label),
+    diy_link_label: cmsText(s.diy_link_label, d.diy_link_label),
+    diy_eyebrow: cmsText(s.diy_eyebrow, d.diy_eyebrow),
+    diy_headline: cmsText(s.diy_headline, d.diy_headline),
+    diy_body: cmsText(s.diy_body, d.diy_body),
+    videos_eyebrow: cmsText(s.videos_eyebrow, d.videos_eyebrow),
+    videos_heading: cmsText(s.videos_heading, d.videos_heading),
+    local_crews_eyebrow: cmsText(s.local_crews_eyebrow, d.local_crews_eyebrow),
+    local_crews_heading: cmsText(s.local_crews_heading, d.local_crews_heading),
+    local_crews_link_label: cmsText(
+      s.local_crews_link_label,
+      d.local_crews_link_label,
+    ),
+    local_crews_cta_label: cmsText(
+      s.local_crews_cta_label,
+      d.local_crews_cta_label,
+    ),
   };
 }

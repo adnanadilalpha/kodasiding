@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import type { HomeVideosSection } from "@/lib/cms/types";
-import { resolveInstallTownPoints } from "@/lib/cms/install-service-geo";
 import { DEFAULT_INSTALLATION_PAGE } from "@/lib/cms/installation-defaults";
 import { useQuote } from "@/components/site/quote-provider";
 import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
@@ -53,7 +52,6 @@ export function HomeInstallServicesSection({
   const { openQuote } = useQuote();
   const paragraphs = splitParagraphs(section.body);
   const cities = splitCities(section.cities ?? "");
-  const townPoints = resolveInstallTownPoints(cities);
   const serviceArea =
     section.hero_service_label?.trim() || "Omaha & surrounding areas";
   const radiusMiles =
@@ -106,10 +104,14 @@ export function HomeInstallServicesSection({
             </h2>
           </header>
 
-          {paragraphs[0] ? (
-            <p className="mt-5 text-sm leading-relaxed text-text-inverse/80 sm:text-base lg:text-lg">
-              <RichText html={paragraphs[0]} as="span" />
-            </p>
+          {paragraphs.length > 0 ? (
+            <div className="mt-5 flex flex-col gap-3 text-sm leading-relaxed text-text-inverse/80 sm:text-base lg:text-lg">
+              {paragraphs.map((paragraph) => (
+                <p key={paragraph.slice(0, 48)}>
+                  <RichText html={paragraph} as="span" />
+                </p>
+              ))}
+            </div>
           ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3 sm:mt-7">
@@ -143,14 +145,7 @@ export function HomeInstallServicesSection({
 
         {cities.length > 0 ? (
           <aside className="install-hero-rise install-hero-rise-delay-2 mt-8 w-full max-w-md self-end overflow-hidden bg-bg-primary/95 backdrop-blur-md lg:absolute lg:right-page lg:bottom-8 lg:mt-0 lg:max-w-105">
-            {townPoints.length > 0 ? (
-              <InstallServiceAreaMap
-                points={townPoints}
-                selectedName={null}
-                onSelectTown={() => {}}
-                radiusMiles={radiusMiles}
-              />
-            ) : null}
+            <InstallServiceAreaMap radiusMiles={radiusMiles} />
 
             <div className="border-l-4 border-accent-warm p-3.5 text-brand-primary sm:p-4">
               <p className="text-[0.65rem] font-bold tracking-[0.14em] text-brand-primary/50">

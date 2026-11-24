@@ -163,9 +163,11 @@ export function KodaVentHeroEditor({
 
 export function KodaVentProductDesignEditor({
   section,
+  installed,
   media,
 }: {
   section: PageKodaVent["product_design"];
+  installed: PageKodaVent["installed"];
   media: Record<string, MediaAsset>;
 }) {
   const router = useRouter();
@@ -173,7 +175,9 @@ export function KodaVentProductDesignEditor({
   const [annotations, setAnnotations] = useState<KodaVentAnnotation[]>(
     section.annotations ?? [],
   );
-  const image = section.image_media_id ? media[section.image_media_id] : null;
+  const wallImage = installed.image_media_id
+    ? media[installed.image_media_id]
+    : null;
 
   function move(index: number, dir: -1 | 1) {
     setAnnotations((prev) => {
@@ -219,27 +223,41 @@ export function KodaVentProductDesignEditor({
             minHeightClassName="min-h-24"
           />
         </Field>
-        <Field label="Image caption">
+        <Field label="Photo badge">
           <RichTextField
-            name="image_caption"
-            defaultValue={section.image_caption}
+            name="badge_label"
+            defaultValue={installed.badge_label}
             minHeightClassName="min-h-12"
           />
         </Field>
-        <Field label="Image alt text">
-          <TextInput name="image_alt" defaultValue={section.image_alt} />
+        <Field label="Photo caption">
+          <RichTextField
+            name="caption"
+            defaultValue={installed.caption}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Photo title">
+          <RichTextField
+            name="figure_title"
+            defaultValue={installed.figure_title}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Photo description">
+          <TextInput name="wall_image_alt" defaultValue={installed.image_alt} />
         </Field>
         <MediaField
-          name="image_media_id"
-          label="Packaging / box image"
-          initialId={section.image_media_id}
-          initialPath={image?.path}
-          initialBucket={image?.bucket ?? "media"}
+          name="wall_image_media_id"
+          label="Wall photo"
+          initialId={installed.image_media_id}
+          initialPath={wallImage?.path}
+          initialBucket={wallImage?.bucket ?? "media"}
           aspect="square"
         />
         <LockedHint>
-          Packaging image appears on the left of Why KodaVent. Benefit reasons
-          below become 01 / 02 / 03 on the public page.
+          This photo sits beside the benefit reasons. The product box is edited
+          under Order now.
         </LockedHint>
       </FieldGroup>
 
@@ -925,12 +943,23 @@ export function KodaVentInstallationEditor({
   );
 }
 
-export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
+export function KodaVentCtaEditor({
+  cta,
+  packaging,
+  media,
+}: {
+  cta: PageKodaVent["cta"];
+  packaging: PageKodaVent["product_design"];
+  media: Record<string, MediaAsset>;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [retailers, setRetailers] = useState<KodaVentRetailerLink[]>(
     cta.retailers ?? [],
   );
+  const boxImage = packaging.image_media_id
+    ? media[packaging.image_media_id]
+    : null;
 
   return (
     <form
@@ -995,6 +1024,24 @@ export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
             for Amazon and other stores.
           </LockedHint>
         </Field>
+        <Field label="Box caption">
+          <RichTextField
+            name="image_caption"
+            defaultValue={packaging.image_caption}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Box description">
+          <TextInput name="image_alt" defaultValue={packaging.image_alt} />
+        </Field>
+        <MediaField
+          name="image_media_id"
+          label="Product box"
+          initialId={packaging.image_media_id}
+          initialPath={boxImage?.path}
+          initialBucket={boxImage?.bucket ?? "media"}
+          aspect="square"
+        />
       </FieldGroup>
 
       <FieldGroup title="Retailer links">

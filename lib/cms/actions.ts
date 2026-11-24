@@ -373,7 +373,7 @@ export async function saveHomeVideosSection(formData: FormData) {
       ) || "installation_manual",
   };
 
-  if (section === "hero" || section === "all") {
+  if (section === "hero" || section === "home" || section === "all") {
     const nextImageId = String(
       formData.get("hero_image_media_id") ?? "",
     ).trim();
@@ -392,25 +392,18 @@ export async function saveHomeVideosSection(formData: FormData) {
         formData.get("hero_image_alt") ?? "",
       );
     }
+    if (formData.has("services_cta_label")) {
+      videos_section.services_cta_label = richField(formData, "services_cta_label");
+    }
   }
 
-  if (section === "coverage" || section === "all") {
+  if (section === "coverage" || section === "home" || section === "all") {
     const radiusRaw = Number(formData.get("install_radius_miles") ?? 60);
     videos_section.install_radius_miles =
       Number.isFinite(radiusRaw) && radiusRaw > 0
         ? Math.min(200, Math.max(5, Math.round(radiusRaw)))
         : 60;
-    videos_section.cities_intro = richField(formData, "cities_intro");
     videos_section.cities = String(formData.get("cities") ?? "");
-    if (formData.has("coverage_heading")) {
-      videos_section.coverage_heading = richField(formData, "coverage_heading");
-    }
-    if (formData.has("town_search_placeholder")) {
-      videos_section.town_search_placeholder = richField(formData, "town_search_placeholder");
-    }
-    if (formData.has("services_cta_label")) {
-      videos_section.services_cta_label = richField(formData, "services_cta_label");
-    }
   }
 
   if (section === "manual" || section === "all") {
@@ -453,7 +446,7 @@ export async function saveHomeVideosSection(formData: FormData) {
     .eq("id", 1);
   if (error) throw new Error(error.message);
 
-  if (section === "hero" || section === "all") {
+  if (section === "hero" || section === "home" || section === "all") {
     await deleteOrphanedMediaAssets(
       releasedMediaIds(
         [
@@ -1392,26 +1385,40 @@ export async function saveKodaVentHero(formData: FormData) {
 export async function saveKodaVentProductDesign(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
+  const prevDesign = previous?.product_design;
+  const prevInstalled = previous?.installed;
   const product_design = {
     eyebrow: richField(formData, "eyebrow"),
     heading: richField(formData, "heading"),
     description: richField(formData, "description"),
-    image_media_id: emptyToNull(formData.get("image_media_id")),
-    image_alt: String(formData.get("image_alt") ?? ""),
-    image_caption: richField(formData, "image_caption"),
+    image_media_id: prevDesign?.image_media_id ?? null,
+    image_alt: prevDesign?.image_alt ?? "",
+    image_caption: prevDesign?.image_caption ?? "",
+    exploded_image_media_id: prevDesign?.exploded_image_media_id ?? null,
+    exploded_image_alt: prevDesign?.exploded_image_alt ?? "",
     annotations: parseAnnotationsJson(String(formData.get("annotations_json") ?? "[]")),
     visible: formFlag(formData, "visible"),
+  };
+  const wallImageId = emptyToNull(formData.get("wall_image_media_id"));
+  const installed = {
+    ...(prevInstalled ?? {}),
+    image_media_id: wallImageId,
+    image_alt: String(formData.get("wall_image_alt") ?? prevInstalled?.image_alt ?? ""),
+    badge_label: richField(formData, "badge_label"),
+    caption: richField(formData, "caption"),
+    figure_title: richField(formData, "figure_title"),
+    visible: true,
   };
   const supabase = await createClient();
   const { error } = await supabase
     .from("page_kodavent")
-    .update({ product_design, updated_at: new Date().toISOString() })
+    .update({ product_design, installed, updated_at: new Date().toISOString() })
     .eq("id", 1);
   if (error) throw new Error(error.message);
   await deleteOrphanedMediaAssets(
     releasedMediaIds(
-      [previous?.product_design?.image_media_id],
-      [product_design.image_media_id],
+      [prevInstalled?.image_media_id],
+      [installed.image_media_id],
     ),
   );
   await afterPublicChange(admin.user_id, "/admin/kodavent");
@@ -1480,6 +1487,7 @@ export async function saveKodaVentInstallation(formData: FormData) {
 
 export async function saveKodaVentCta(formData: FormData) {
   const admin = await requireAdmin();
+  const previous = await loadKodaVentDraft();
   let retailers: Array<{
     id: string;
     label: string;
@@ -1512,12 +1520,25 @@ export async function saveKodaVentCta(formData: FormData) {
     retailers,
     visible: formFlag(formData, "visible"),
   };
+  const prevDesign = previous?.product_design;
+  const product_design = {
+    ...(prevDesign ?? {}),
+    image_media_id: emptyToNull(formData.get("image_media_id")),
+    image_alt: String(formData.get("image_alt") ?? prevDesign?.image_alt ?? ""),
+    image_caption: richField(formData, "image_caption"),
+  };
   const supabase = await createClient();
   const { error } = await supabase
     .from("page_kodavent")
-    .update({ cta, updated_at: new Date().toISOString() })
+    .update({ cta, product_design, updated_at: new Date().toISOString() })
     .eq("id", 1);
   if (error) throw new Error(error.message);
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds(
+      [prevDesign?.image_media_id],
+      [product_design.image_media_id],
+    ),
+  );
   await afterPublicChange(admin.user_id, "/admin/kodavent");
 }
 

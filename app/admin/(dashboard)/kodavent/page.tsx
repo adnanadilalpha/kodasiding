@@ -6,7 +6,6 @@ import { SectionShell } from "@/components/admin/section-shell";
 import {
   KodaVentCtaEditor,
   KodaVentHeroEditor,
-  KodaVentInstalledEditor,
   KodaVentInstallationEditor,
   KodaVentProductDesignEditor,
   KodaVentSeoEditor,
@@ -80,15 +79,9 @@ export default async function KodaVentAdminPage({
           content: (
             <KodaVentProductDesignEditor
               section={page.product_design}
+              installed={page.installed}
               media={media}
             />
-          ),
-        },
-        {
-          id: "installed",
-          label: "See it installed",
-          content: (
-            <KodaVentInstalledEditor section={page.installed} media={media} />
           ),
         },
         {
@@ -105,7 +98,13 @@ export default async function KodaVentAdminPage({
         {
           id: "cta",
           label: "Order now",
-          content: <KodaVentCtaEditor cta={page.cta} />,
+          content: (
+            <KodaVentCtaEditor
+              cta={page.cta}
+              packaging={page.product_design}
+              media={media}
+            />
+          ),
         },
         {
           id: "seo",
