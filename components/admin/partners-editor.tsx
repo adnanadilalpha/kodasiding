@@ -12,8 +12,9 @@ import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
-import { Field, TextInput } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 export type PartnerItem = {
   id: string;
@@ -112,10 +113,11 @@ export function PartnersEditor({
           </span>
         </label>
         <Field label="Section title">
-          <TextInput
+          <RichTextField
             name="partners_title"
             defaultValue={title}
             placeholder="Trusted partners & distributors"
+            minHeightClassName="min-h-12"
           />
         </Field>
 

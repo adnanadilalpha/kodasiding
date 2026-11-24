@@ -5,6 +5,9 @@ import type { KodaVentCta, KodaVentRetailerLink } from "@/lib/cms/types";
 import { useQuote } from "@/components/site/quote-provider";
 import { safeHref } from "@/lib/cms/safe-href";
 import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
+import { DEFAULT_PAGE_KODAVENT } from "@/lib/cms/kodavent-defaults";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 function isQuoteHref(href: string) {
   const value = href.trim().toLowerCase();
@@ -18,6 +21,12 @@ function isExternal(href: string) {
 export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
   const { openQuote } = useQuote();
   if (!cta.visible) return null;
+
+  const eyebrow = cta.eyebrow?.trim() || DEFAULT_PAGE_KODAVENT.cta.eyebrow;
+  const guidesLabel =
+    cta.guides_link_label?.trim() || DEFAULT_PAGE_KODAVENT.cta.guides_link_label;
+  const comingSoonLabel =
+    cta.coming_soon_label?.trim() || DEFAULT_PAGE_KODAVENT.cta.coming_soon_label;
 
   const retailers = (cta.retailers ?? []).filter((r) => r.visible);
   const hasRetailers = retailers.length > 0;
@@ -34,15 +43,15 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
     >
       <div className="grid items-center gap-10 px-page lg:grid-cols-12 lg:gap-8">
         <div className="lg:col-span-7">
-          <p className="inline-flex w-fit bg-accent-warm px-2.5 py-1 text-xs font-bold tracking-[0.08em] text-text-primary uppercase">
-            Order now
+          <p className="inline-flex w-fit bg-accent-warm px-2.5 py-1 text-xs font-bold tracking-[0.08em] text-text-primary">
+            <RichText html={eyebrow} as="span" />
           </p>
           <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight text-brand-primary sm:text-4xl lg:text-5xl">
-            {cta.heading}
+            <RichText html={cta.heading} as="span" />
           </h2>
           {cta.description ? (
             <p className="mt-5 max-w-xl text-base leading-normal text-text-primary/75 lg:text-lg">
-              {cta.description}
+              <RichText html={cta.description} as="span" />
             </p>
           ) : null}
           <p className="mt-4 text-sm text-text-secondary">
@@ -50,7 +59,7 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
               href="#installation"
               className="underline decoration-from-font underline-offset-4 transition hover:text-brand-primary"
             >
-              Review installation guides
+              <RichText html={guidesLabel} as="span" />
             </Link>
           </p>
         </div>
@@ -59,7 +68,11 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
           {hasRetailers ? (
             <ul className="flex w-full flex-col gap-3 sm:max-w-sm">
               {retailers.map((retailer) => (
-                <RetailerButton key={retailer.id} retailer={retailer} />
+                <RetailerButton
+                  key={retailer.id}
+                  retailer={retailer}
+                  comingSoonLabel={comingSoonLabel}
+                />
               ))}
             </ul>
           ) : null}
@@ -69,14 +82,14 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
                 type="button"
                 onClick={() => {
                   void trackAnalyticsEvent("cta_click", {
-                    label: cta.cta_label,
+                    label: plainTextFromRich(cta.cta_label),
                     metadata: { placement: "kodavent-final-cta" },
                   });
                   openQuote();
                 }}
                 className={`${secondaryClass} focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none`}
               >
-                {cta.cta_label}
+                <RichText html={cta.cta_label} as="span" />
               </button>
             ) : (
               <Link
@@ -86,13 +99,13 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
                   : {})}
                 onClick={() =>
                   void trackAnalyticsEvent("cta_click", {
-                    label: cta.cta_label,
+                    label: plainTextFromRich(cta.cta_label),
                     metadata: { placement: "kodavent-final-cta" },
                   })
                 }
                 className={secondaryClass}
               >
-                {cta.cta_label}
+                <RichText html={cta.cta_label} as="span" />
               </Link>
             )
           ) : null}
@@ -102,15 +115,25 @@ export function KodaVentCtaSection({ cta }: { cta: KodaVentCta }) {
   );
 }
 
-function RetailerButton({ retailer }: { retailer: KodaVentRetailerLink }) {
+function RetailerButton({
+  retailer,
+  comingSoonLabel,
+}: {
+  retailer: KodaVentRetailerLink;
+  comingSoonLabel: string;
+}) {
   const ready = Boolean(retailer.href?.trim());
 
   if (!ready) {
     return (
       <li>
         <span className="flex w-full items-center justify-between gap-4 rounded-md border border-brand-primary/15 bg-bg-primary px-6 py-3.5 text-base text-text-secondary">
-          <span>{retailer.label}</span>
-          <span className="text-xs tracking-[0.12em] uppercase">Link coming soon</span>
+          <span>
+            <RichText html={retailer.label} as="span" />
+          </span>
+          <span className="text-xs tracking-[0.12em]">
+            <RichText html={comingSoonLabel} as="span" />
+          </span>
         </span>
       </li>
     );
@@ -128,7 +151,7 @@ function RetailerButton({ retailer }: { retailer: KodaVentRetailerLink }) {
           : {})}
         onClick={() =>
           void trackAnalyticsEvent("cta_click", {
-            label: retailer.label,
+            label: plainTextFromRich(retailer.label),
             metadata: {
               placement: "kodavent-order-retailer",
               retailer: retailer.id,
@@ -137,7 +160,9 @@ function RetailerButton({ retailer }: { retailer: KodaVentRetailerLink }) {
         }
         className="flex w-full items-center justify-between gap-4 rounded-md bg-brand-primary px-6 py-3.5 text-base text-text-inverse transition hover:bg-brand-primary-active focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none"
       >
-        <span>{retailer.label}</span>
+        <span>
+          <RichText html={retailer.label} as="span" />
+        </span>
         <span aria-hidden className="text-accent-warm">
           →
         </span>

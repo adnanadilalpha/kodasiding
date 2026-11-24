@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
-import type { Dealer } from "@/lib/cms/types";
+import type { Dealer, FindDealerPageCopy } from "@/lib/cms/types";
+import { DEFAULT_FIND_DEALER_PAGE_COPY } from "@/lib/cms/page-seo-defaults";
 import {
   QUICK_SEARCH,
   US_MAP_CENTER,
@@ -16,6 +17,8 @@ import {
   type GeoPoint,
 } from "@/lib/cms/dealer-geo";
 import { DealerCallModal } from "@/components/site/dealer-call-modal";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 const DealerLeafletMap = dynamic(
   () =>
@@ -34,7 +37,25 @@ function formatCityLine(dealer: Dealer) {
   return place ? `${place} ${dealer.postal}` : dealer.postal;
 }
 
-export function FindDealer({ dealers }: { dealers: Dealer[] }) {
+export function FindDealer({
+  dealers,
+  copy: copyProp,
+}: {
+  dealers: Dealer[];
+  copy: FindDealerPageCopy;
+}) {
+  const d = DEFAULT_FIND_DEALER_PAGE_COPY;
+  const copy: FindDealerPageCopy = {
+    search_placeholder:
+      copyProp?.search_placeholder?.trim() || d.search_placeholder,
+    search_button_label:
+      copyProp?.search_button_label?.trim() || d.search_button_label,
+    quick_search_label:
+      copyProp?.quick_search_label?.trim() || d.quick_search_label,
+    call_label: copyProp?.call_label?.trim() || d.call_label,
+    directions_label: copyProp?.directions_label?.trim() || d.directions_label,
+    empty_results: copyProp?.empty_results?.trim() || d.empty_results,
+  };
   const [query, setQuery] = useState("");
   const [label, setLabel] = useState("");
   const [results, setResults] = useState<DealerWithDistance[]>([]);
@@ -75,7 +96,7 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
     setDetailOpen(nextResults.length > 0);
     setError(
       nextResults.length === 0
-        ? "No dealers near that location yet."
+        ? copy.empty_results
         : null,
     );
   }
@@ -258,17 +279,21 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
               type="search"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search U.S. city or ZIP"
-              aria-label="Search U.S. city or ZIP"
+              placeholder={plainTextFromRich(copy.search_placeholder)}
+              aria-label={plainTextFromRich(copy.search_placeholder)}
               autoComplete="off"
               className="min-w-0 flex-1 bg-transparent py-2 text-base text-text-primary outline-none placeholder:text-[#8a8d86]"
             />
             <button
               type="submit"
               disabled={pending || !query.trim()}
-              className="shrink-0 rounded-md bg-brand-primary px-8 py-3 font-display text-sm tracking-[0.04em] text-text-inverse uppercase transition hover:bg-brand-primary-active disabled:opacity-50"
+              className="shrink-0 rounded-md bg-brand-primary px-8 py-3 font-display text-sm tracking-[0.04em] text-text-inverse transition hover:bg-brand-primary-active disabled:opacity-50"
             >
-              {pending ? "…" : "Search"}
+              {pending ? (
+                "…"
+              ) : (
+                <RichText html={copy.search_button_label} as="span" />
+              )}
             </button>
           </form>
         </div>
@@ -276,7 +301,7 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
         {error && !hasResults ? (
           <div className="pointer-events-none absolute inset-x-0 top-28 z-20 flex justify-center px-4">
             <p className="rounded-md border border-[#d8d5cc] bg-[rgba(253,252,248,0.95)] px-4 py-2 text-sm text-[#6b6858] shadow-sm">
-              {error}
+              <RichText html={error} as="span" />
             </p>
           </div>
         ) : null}
@@ -285,7 +310,7 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
           <div className="absolute inset-x-0 bottom-0 z-20 bg-[rgba(88,116,106,0.25)] backdrop-blur-[2px]">
             <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 px-4 py-8">
               <p className="text-base leading-none font-medium text-text-primary">
-                Quick Search
+                <RichText html={copy.quick_search_label} as="span" />
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {QUICK_SEARCH.map((place) => (
@@ -344,18 +369,18 @@ export function FindDealer({ dealers }: { dealers: Dealer[] }) {
                         },
                       );
                     }}
-                    className="inline-flex h-11.5 items-center justify-center rounded-md bg-brand-primary px-8 font-display text-sm tracking-[0.04em] text-text-inverse uppercase transition hover:bg-brand-primary-active"
+                    className="inline-flex h-11.5 items-center justify-center rounded-md bg-brand-primary px-8 font-display text-sm tracking-[0.04em] text-text-inverse transition hover:bg-brand-primary-active"
                   >
-                    Call
+                    <RichText html={copy.call_label} as="span" />
                   </button>
                 ) : null}
                 <a
                   href={directionsUrl(selected)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-11.5 items-center justify-center rounded-md border border-border-strong bg-bg-primary px-8 font-display text-sm tracking-[0.04em] text-brand-primary uppercase transition hover:bg-bg-secondary"
+                  className="inline-flex h-11.5 items-center justify-center rounded-md border border-border-strong bg-bg-primary px-8 font-display text-sm tracking-[0.04em] text-brand-primary transition hover:bg-bg-secondary"
                 >
-                  Directions
+                  <RichText html={copy.directions_label} as="span" />
                 </a>
               </div>
             </div>

@@ -10,6 +10,12 @@ import type {
 } from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { mediaUrlFromMap, publicMediaUrl } from "@/lib/cms/urls";
+import {
+  DEFAULT_KODAVENT_METHODS,
+  DEFAULT_PAGE_KODAVENT,
+} from "@/lib/cms/kodavent-defaults";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 export function KodaVentInstallationSection({
   section,
@@ -86,7 +92,10 @@ export function KodaVentInstallationSection({
   const progress =
     steps.length <= 1 ? 100 : (stepIndex / (steps.length - 1)) * 100;
 
-  const headingLines = section.heading
+  const headingHasMarkup = /<[a-z][\s\S]*>/i.test(section.heading);
+  const headingLines = headingHasMarkup
+    ? []
+    : section.heading
     .split(/(?<=\.)\s+/)
     .map((line) => line.trim())
     .filter(Boolean);
@@ -116,8 +125,14 @@ export function KodaVentInstallationSection({
       <div className="flex flex-col gap-12 px-page lg:gap-16">
         <header className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-8">
           <div className="lg:col-span-7">
-            <p className="text-xs tracking-[0.16em] text-[#ddddd7]/70 uppercase">
-              04 / Installation
+            <p className="text-xs tracking-[0.16em] text-[#ddddd7]/70">
+              <RichText
+                html={
+                  section.eyebrow?.trim() ||
+                  DEFAULT_PAGE_KODAVENT.installation.eyebrow
+                }
+                as="span"
+              />
             </p>
             <h2 className="mt-4 font-display text-[1.85rem] leading-[1.08] font-bold tracking-tight sm:text-4xl lg:text-5xl">
               {headingLines.length > 1 ? (
@@ -127,13 +142,13 @@ export function KodaVentInstallationSection({
                   </span>
                 ))
               ) : (
-                section.heading
+                <RichText html={section.heading} as="span" />
               )}
             </h2>
           </div>
           {section.description ? (
             <p className="max-w-md text-base leading-normal text-[#ddddd7] lg:col-span-5 lg:justify-self-end lg:text-lg">
-              {section.description}
+              <RichText html={section.description} as="span" />
             </p>
           ) : null}
         </header>
@@ -161,13 +176,13 @@ export function KodaVentInstallationSection({
                   aria-controls={`${tabsId}-panel`}
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setMethodId(method.id)}
-                  className={`relative pb-4 font-display text-xs tracking-[0.14em] uppercase transition focus-visible:outline-none sm:text-sm ${
+                  className={`relative pb-4 font-display text-xs tracking-[0.14em] transition focus-visible:outline-none sm:text-sm ${
                     selected
                       ? "text-text-inverse"
                       : "text-text-inverse/45 hover:text-text-inverse/75"
                   }`}
                 >
-                  {method.tab_label}
+                  <RichText html={method.tab_label} as="span" />
                   <span
                     className={`absolute inset-x-0 -bottom-px h-px transition ${
                       selected ? "bg-accent-warm" : "bg-transparent"
@@ -179,6 +194,12 @@ export function KodaVentInstallationSection({
             })}
           </div>
 
+          {activeMethod.intro?.trim() ? (
+            <p className="mt-6 max-w-3xl text-sm leading-normal text-[#ddddd7]/75 lg:mt-8 lg:text-base">
+              <RichText html={activeMethod.intro} as="span" />
+            </p>
+          ) : null}
+
           <div
             role="tabpanel"
             id={`${tabsId}-panel`}
@@ -189,7 +210,10 @@ export function KodaVentInstallationSection({
               {stepImage ? (
                 <StepIllustration
                   src={stepImage}
-                  alt={step?.image_alt || step?.title || "Installation step"}
+                  alt={
+                    plainTextFromRich(step?.image_alt || step?.title) ||
+                    "Installation step"
+                  }
                   priority={stepIndex === 0}
                 />
               ) : (
@@ -207,13 +231,13 @@ export function KodaVentInstallationSection({
                   {String(steps.length).padStart(2, "0")}
                 </p>
                 <h3 className="mt-4 font-display text-2xl leading-[1.15] font-bold sm:text-3xl">
-                  {step?.title}
+                  <RichText html={step?.title} as="span" />
                 </h3>
               </div>
 
               {step?.description ? (
                 <p className="flex-1 text-base leading-normal text-[#ddddd7]">
-                  {step.description}
+                  <RichText html={step.description} as="span" />
                 </p>
               ) : (
                 <div className="flex-1" />
@@ -256,7 +280,7 @@ export function KodaVentInstallationSection({
                   <li key={s.id}>
                     <button
                       type="button"
-                      aria-label={`Go to step ${s.number || i + 1}: ${s.title}`}
+                      aria-label={`Go to step ${s.number || i + 1}: ${plainTextFromRich(s.title)}`}
                       aria-current={selected ? "step" : undefined}
                       onClick={() => setStepIndex(i)}
                       className={`min-w-9 px-2 py-1.5 font-display text-xs tracking-widest uppercase transition focus-visible:ring-2 focus-visible:ring-accent-warm focus-visible:outline-none ${
@@ -333,9 +357,12 @@ function MethodDownloads({
         id: method.id,
         href,
         label:
-          method.id === "retrofit"
+          method.pdf_link_label?.trim() ||
+          DEFAULT_KODAVENT_METHODS.find((m) => m.id === method.id)
+            ?.pdf_link_label ||
+          (method.id === "retrofit"
             ? "Download Retrofit Guide"
-            : "Download New Construction Guide",
+            : "Download New Construction Guide"),
       };
     })
     .filter(Boolean) as Array<{ id: string; href: string; label: string }>;
@@ -356,7 +383,7 @@ function MethodDownloads({
             className="inline-block size-3.5 border border-current"
             aria-hidden
           />
-          {link.label}
+          <RichText html={link.label} as="span" />
         </a>
       ))}
     </div>

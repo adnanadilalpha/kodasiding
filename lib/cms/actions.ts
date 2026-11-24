@@ -16,7 +16,10 @@ import {
 import { isSocialIconId } from "@/lib/cms/social-icons";
 import { externalHref } from "@/lib/cms/safe-href";
 import { syncPublicSite } from "@/lib/cms/sync-public";
-import { sanitizeRichText } from "@/lib/cms/sanitize-rich-text";
+import {
+  plainTextFromRich,
+  sanitizeRichText,
+} from "@/lib/cms/sanitize-rich-text";
 import type {
   KodaVentAnnotation,
   KodaVentInstallMethod,
@@ -54,9 +57,9 @@ export async function saveHomeHero(formData: FormData) {
     .maybeSingle();
   const prevHero = previous?.hero as { image_media_id?: string | null } | null;
   const hero = {
-    headline: String(formData.get("hero_headline") ?? ""),
-    subheadline: String(formData.get("hero_subheadline") ?? ""),
-    cta_label: String(formData.get("hero_cta_label") ?? ""),
+    headline: richField(formData, "hero_headline"),
+    subheadline: richField(formData, "hero_subheadline"),
+    cta_label: richField(formData, "hero_cta_label"),
     // Internal routes are fixed in code — not editable in CMS.
     cta_href: PROFILES_HREF,
     image_media_id: emptyToNull(formData.get("hero_image_media_id")),
@@ -75,7 +78,7 @@ export async function saveHomePartnersTitle(formData: FormData) {
   const { error } = await supabase
     .from("site_settings")
     .update({
-      partners_title: String(formData.get("partners_title") ?? ""),
+      partners_title: richField(formData, "partners_title"),
       show_partners: formData.get("show_partners") === "on",
     })
     .eq("id", 1);
@@ -296,8 +299,8 @@ export async function saveHomeWhyKoda(formData: FormData) {
   );
   const facts = Array.from({ length: factCount }, (_, i) => ({
     value: String(formData.get(`fact_${i}_value`) ?? "").trim(),
-    label: String(formData.get(`fact_${i}_label`) ?? "").trim(),
-    body: String(formData.get(`fact_${i}_body`) ?? "").trim(),
+    label: sanitizeRichText(String(formData.get(`fact_${i}_label`) ?? "")),
+    body: sanitizeRichText(String(formData.get(`fact_${i}_body`) ?? "")),
   })).filter((fact) => fact.value || fact.label || fact.body);
   const why_koda = {
     headline: sanitizeRichText(String(formData.get("why_headline") ?? "")),
@@ -328,9 +331,9 @@ export async function saveHomeProfilesTeaser(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
   const profiles_teaser = {
-    headline: String(formData.get("profiles_headline") ?? ""),
-    body: String(formData.get("profiles_body") ?? ""),
-    cta_label: String(formData.get("profiles_cta_label") ?? ""),
+    headline: richField(formData, "profiles_headline"),
+    body: richField(formData, "profiles_body"),
+    cta_label: richField(formData, "profiles_cta_label"),
     // Internal routes are fixed in code — not editable in CMS.
     cta_href: PROFILES_HREF,
   };
@@ -374,12 +377,21 @@ export async function saveHomeVideosSection(formData: FormData) {
     const nextImageId = String(
       formData.get("hero_image_media_id") ?? "",
     ).trim();
-    videos_section.headline = String(formData.get("videos_headline") ?? "");
-    videos_section.body = String(formData.get("videos_body") ?? "");
-    videos_section.hero_service_label = String(
-      formData.get("hero_service_label") ?? "",
-    );
+    videos_section.headline = richField(formData, "videos_headline");
+    videos_section.body = richField(formData, "videos_body");
+    videos_section.hero_service_label = richField(formData, "hero_service_label");
     videos_section.hero_image_media_id = nextImageId || null;
+    if (formData.has("diy_link_label")) {
+      videos_section.diy_link_label = richField(formData, "diy_link_label");
+    }
+    if (formData.has("eyebrow_prefix")) {
+      videos_section.eyebrow_prefix = richField(formData, "eyebrow_prefix");
+    }
+    if (formData.has("hero_image_alt")) {
+      videos_section.hero_image_alt = String(
+        formData.get("hero_image_alt") ?? "",
+      );
+    }
   }
 
   if (section === "coverage" || section === "all") {
@@ -388,28 +400,46 @@ export async function saveHomeVideosSection(formData: FormData) {
       Number.isFinite(radiusRaw) && radiusRaw > 0
         ? Math.min(200, Math.max(5, Math.round(radiusRaw)))
         : 60;
-    videos_section.cities_intro = String(formData.get("cities_intro") ?? "");
+    videos_section.cities_intro = richField(formData, "cities_intro");
     videos_section.cities = String(formData.get("cities") ?? "");
+    if (formData.has("coverage_heading")) {
+      videos_section.coverage_heading = richField(formData, "coverage_heading");
+    }
+    if (formData.has("town_search_placeholder")) {
+      videos_section.town_search_placeholder = richField(formData, "town_search_placeholder");
+    }
+    if (formData.has("services_cta_label")) {
+      videos_section.services_cta_label = richField(formData, "services_cta_label");
+    }
   }
 
   if (section === "manual" || section === "all") {
-    videos_section.manual_label = String(formData.get("manual_label") ?? "");
+    videos_section.manual_label = richField(formData, "manual_label");
+  }
+
+  if (section === "diy" || section === "all") {
+    videos_section.diy_eyebrow = richField(formData, "diy_eyebrow");
+    videos_section.diy_headline = richField(formData, "diy_headline");
+    videos_section.diy_body = richField(formData, "diy_body");
+    videos_section.videos_eyebrow = richField(formData, "videos_eyebrow");
+    videos_section.videos_heading = richField(formData, "videos_heading");
+    videos_section.local_crews_eyebrow = richField(formData, "local_crews_eyebrow");
+    videos_section.local_crews_heading = richField(formData, "local_crews_heading");
+    videos_section.local_crews_link_label = richField(formData, "local_crews_link_label");
+    videos_section.local_crews_cta_label = richField(formData, "local_crews_cta_label");
+    if (formData.has("manual_label")) {
+      videos_section.manual_label = richField(formData, "manual_label");
+    }
   }
 
   if (section === "home-teaser" || section === "all") {
-    videos_section.services_headline = String(
-      formData.get("services_headline") ?? "",
+    videos_section.services_headline = richField(formData, "services_headline");
+    videos_section.services_body = richField(formData, "services_body");
+    videos_section.service_area = sanitizeRichText(
+      String(formData.get("service_area") ?? "Nebraska"),
     );
-    videos_section.services_body = String(formData.get("services_body") ?? "");
-    videos_section.service_area = String(
-      formData.get("service_area") ?? "Nebraska",
-    );
-    videos_section.services_cta_label = String(
-      formData.get("services_cta_label") ?? "",
-    );
-    videos_section.diy_link_label = String(
-      formData.get("diy_link_label") ?? "",
-    );
+    videos_section.services_cta_label = richField(formData, "services_cta_label");
+    videos_section.diy_link_label = richField(formData, "diy_link_label");
   }
 
   const nextHeroId =
@@ -451,17 +481,20 @@ export async function saveHomeCtas(formData: FormData) {
     dealer?: { image_media_id?: string | null };
   } | null;
   const ctas = {
+    section_heading: richField(formData, "section_heading"),
+    section_description: richField(formData, "section_description"),
+    quote_only_eyebrow: richField(formData, "quote_only_eyebrow"),
     show_dealer: formData.get("show_dealer") === "on",
     quote: {
-      headline: String(formData.get("quote_headline") ?? ""),
-      body: String(formData.get("quote_body") ?? ""),
-      cta_label: String(formData.get("quote_cta_label") ?? ""),
+      headline: richField(formData, "quote_headline"),
+      body: richField(formData, "quote_body"),
+      cta_label: richField(formData, "quote_cta_label"),
       image_media_id: emptyToNull(formData.get("quote_image_media_id")),
     },
     dealer: {
-      headline: String(formData.get("dealer_headline") ?? ""),
-      body: String(formData.get("dealer_body") ?? ""),
-      cta_label: String(formData.get("dealer_cta_label") ?? ""),
+      headline: richField(formData, "dealer_headline"),
+      body: richField(formData, "dealer_body"),
+      cta_label: richField(formData, "dealer_cta_label"),
       // Internal routes are fixed in code — not editable in CMS.
       cta_href: FIND_DEALER_HREF,
       image_media_id: emptyToNull(formData.get("dealer_image_media_id")),
@@ -635,7 +668,17 @@ export async function saveQuoteFormSettings(input: QuoteFormSettings) {
   }
 
   const { normalizeQuoteFormSettings } = await import("@/lib/cms/quote-form");
-  const quote_form = normalizeQuoteFormSettings(input);
+  const normalized = normalizeQuoteFormSettings(input);
+  const quote_form: QuoteFormSettings = {
+    ...normalized,
+    title: sanitizeRichText(normalized.title),
+    submit_label: sanitizeRichText(normalized.submit_label),
+    upload_label: sanitizeRichText(normalized.upload_label),
+    fields: normalized.fields.map((field) => ({
+      ...field,
+      label: sanitizeRichText(field.label),
+    })),
+  };
 
   if (!quote_form.fields.some((f) => f.kind === "full_name")) {
     return { error: "Full name field is required." };
@@ -717,8 +760,8 @@ export async function saveProfilesSection(formData: FormData) {
   const supabase = await createClient();
   const sheet = String(formData.get("sheet") ?? "horizontal");
   const payload = {
-    headline: String(formData.get("headline") ?? ""),
-    helper: String(formData.get("helper") ?? ""),
+    headline: richField(formData, "headline"),
+    helper: richField(formData, "helper"),
   };
   const patch: Record<string, unknown> =
     sheet === "vertical"
@@ -730,7 +773,16 @@ export async function saveProfilesSection(formData: FormData) {
           : { horizontal: payload };
 
   if (formData.has("quote_cta_label")) {
-    patch.quote_cta_label = String(formData.get("quote_cta_label") ?? "");
+    patch.quote_cta_label = richField(formData, "quote_cta_label");
+  }
+  if (formData.has("page_title")) {
+    patch.page_title = richField(formData, "page_title");
+  }
+  if (formData.has("page_intro")) {
+    patch.page_intro = richField(formData, "page_intro");
+  }
+  if (formData.has("learn_more_label")) {
+    patch.learn_more_label = richField(formData, "learn_more_label");
   }
 
   const { error } = await supabase
@@ -745,9 +797,11 @@ export async function upsertHomeProfileJewel(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
+  const jewelName = richField(formData, "name");
+  if (!plainTextFromRich(jewelName)) throw new Error("Name is required");
   const row = {
-    name: String(formData.get("name") ?? ""),
-    reveal: String(formData.get("reveal") ?? ""),
+    name: jewelName,
+    reveal: richField(formData, "reveal"),
     image_media_id: emptyToNull(formData.get("image_media_id")),
     sort_order: Number(formData.get("sort_order") ?? 0),
     is_published: formData.get("is_published") === "on",
@@ -800,18 +854,19 @@ export async function upsertProfile(formData: FormData) {
   const admin = await requireAdmin();
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
-  const name = String(formData.get("name") ?? "");
+  const name = richField(formData, "name");
+  if (!plainTextFromRich(name)) throw new Error("Name is required");
   const slug =
     String(formData.get("slug") ?? "") ||
-    name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    plainTextFromRich(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   const row = {
     name,
     slug,
-    reveal: String(formData.get("reveal") ?? ""),
+    reveal: richField(formData, "reveal"),
     orientation: String(formData.get("orientation") ?? "horizontal"),
-    description: String(formData.get("description") ?? ""),
-    hover_copy: String(formData.get("hover_copy") ?? ""),
+    description: richField(formData, "description"),
+    hover_copy: richField(formData, "hover_copy"),
     exposure: String(formData.get("exposure") ?? ""),
     face_width: String(formData.get("face_width") ?? ""),
     depth: String(formData.get("depth") ?? ""),
@@ -1222,6 +1277,11 @@ export async function deleteAdminAccount(formData: FormData) {
   revalidatePath("/admin/admins");
 }
 
+/** Marketing copy from a form field: allow only safe rich-text markup. */
+function richField(formData: FormData, key: string) {
+  return sanitizeRichText(String(formData.get(key) ?? ""));
+}
+
 function emptyToNull(value: FormDataEntryValue | null) {
   const s = String(value ?? "").trim();
   return s === "" ? null : s;
@@ -1239,8 +1299,8 @@ function parseAnnotationsJson(raw: string): KodaVentAnnotation[] {
       .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
       .map((item, index) => ({
         id: String(item.id ?? `ann-${index + 1}`),
-        title: String(item.title ?? ""),
-        description: String(item.description ?? ""),
+        title: sanitizeRichText(String(item.title ?? "")),
+        description: sanitizeRichText(String(item.description ?? "")),
         x: Number.isFinite(Number(item.x)) ? Number(item.x) : 50,
         y: Number.isFinite(Number(item.y)) ? Number(item.y) : 50,
         visible: item.visible !== false,
@@ -1263,8 +1323,8 @@ function parseMethodsJson(raw: string): KodaVentInstallMethod[] {
           .map((s, stepIndex) => ({
             id: String(s.id ?? `step-${methodIndex + 1}-${stepIndex + 1}`),
             number: String(s.number ?? String(stepIndex + 1).padStart(2, "0")),
-            title: String(s.title ?? ""),
-            description: String(s.description ?? ""),
+            title: sanitizeRichText(String(s.title ?? "")),
+            description: sanitizeRichText(String(s.description ?? "")),
             image_media_id: emptyToNull(
               (s.image_media_id as FormDataEntryValue | null) ?? null,
             ),
@@ -1273,10 +1333,11 @@ function parseMethodsJson(raw: string): KodaVentInstallMethod[] {
           }));
         return {
           id: String(item.id ?? `method-${methodIndex + 1}`),
-          tab_label: String(item.tab_label ?? ""),
-          heading: String(item.heading ?? ""),
-          intro: String(item.intro ?? ""),
+          tab_label: sanitizeRichText(String(item.tab_label ?? "")),
+          heading: sanitizeRichText(String(item.heading ?? "")),
+          intro: sanitizeRichText(String(item.intro ?? "")),
           pdf_document_key: String(item.pdf_document_key ?? ""),
+          pdf_link_label: sanitizeRichText(String(item.pdf_link_label ?? "")),
           steps,
           visible: item.visible !== false,
         };
@@ -1301,15 +1362,15 @@ export async function saveKodaVentHero(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
   const hero = {
-    eyebrow: String(formData.get("eyebrow") ?? ""),
-    heading: String(formData.get("heading") ?? ""),
-    supporting_headline: String(formData.get("supporting_headline") ?? ""),
-    description: String(formData.get("description") ?? ""),
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    supporting_headline: richField(formData, "supporting_headline"),
+    description: richField(formData, "description"),
     image_media_id: emptyToNull(formData.get("image_media_id")),
     image_alt: String(formData.get("image_alt") ?? ""),
-    primary_cta_label: String(formData.get("primary_cta_label") ?? ""),
+    primary_cta_label: richField(formData, "primary_cta_label"),
     primary_cta_href: String(formData.get("primary_cta_href") ?? "#installation"),
-    secondary_cta_label: String(formData.get("secondary_cta_label") ?? ""),
+    secondary_cta_label: richField(formData, "secondary_cta_label"),
     secondary_cta_href: String(formData.get("secondary_cta_href") ?? "#product-design"),
     visible: formFlag(formData, "visible"),
   };
@@ -1332,10 +1393,12 @@ export async function saveKodaVentProductDesign(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
   const product_design = {
-    heading: String(formData.get("heading") ?? ""),
-    description: String(formData.get("description") ?? ""),
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    description: richField(formData, "description"),
     image_media_id: emptyToNull(formData.get("image_media_id")),
     image_alt: String(formData.get("image_alt") ?? ""),
+    image_caption: richField(formData, "image_caption"),
     annotations: parseAnnotationsJson(String(formData.get("annotations_json") ?? "[]")),
     visible: formFlag(formData, "visible"),
   };
@@ -1358,14 +1421,21 @@ export async function saveKodaVentInstalled(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
   const image_media_id = emptyToNull(formData.get("image_media_id"));
+  const traits = String(formData.get("traits") ?? "")
+    .split(/\n+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
   const installed = {
-    heading: String(formData.get("heading") ?? ""),
-    description: String(formData.get("description") ?? ""),
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    description: richField(formData, "description"),
     image_media_id,
     image_alt: String(formData.get("image_alt") ?? ""),
-    caption: String(formData.get("caption") ?? ""),
-    // Require an image before the section can go live.
-    visible: formFlag(formData, "visible") && Boolean(image_media_id),
+    badge_label: richField(formData, "badge_label"),
+    caption: richField(formData, "caption"),
+    figure_title: richField(formData, "figure_title"),
+    traits,
+    visible: formFlag(formData, "visible"),
   };
   const supabase = await createClient();
   const { error } = await supabase
@@ -1386,8 +1456,9 @@ export async function saveKodaVentInstallation(formData: FormData) {
   const admin = await requireAdmin();
   const previous = await loadKodaVentDraft();
   const installation = {
-    heading: String(formData.get("heading") ?? ""),
-    description: String(formData.get("description") ?? ""),
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    description: richField(formData, "description"),
     methods: parseMethodsJson(String(formData.get("methods_json") ?? "[]")),
     visible: formFlag(formData, "visible"),
   };
@@ -1422,7 +1493,7 @@ export async function saveKodaVentCta(formData: FormData) {
         .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === "object")
         .map((r, index) => ({
           id: String(r.id ?? `retailer-${index + 1}`),
-          label: String(r.label ?? ""),
+          label: sanitizeRichText(String(r.label ?? "")),
           href: String(r.href ?? ""),
           visible: r.visible !== false,
         }));
@@ -1431,9 +1502,12 @@ export async function saveKodaVentCta(formData: FormData) {
     retailers = [];
   }
   const cta = {
-    heading: String(formData.get("heading") ?? ""),
-    description: String(formData.get("description") ?? ""),
-    cta_label: String(formData.get("cta_label") ?? ""),
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    description: richField(formData, "description"),
+    guides_link_label: richField(formData, "guides_link_label"),
+    coming_soon_label: richField(formData, "coming_soon_label"),
+    cta_label: richField(formData, "cta_label"),
     cta_href: String(formData.get("cta_href") ?? "#quote"),
     retailers,
     visible: formFlag(formData, "visible"),
@@ -1555,6 +1629,32 @@ export async function saveFindDealerPageSeo(formData: FormData) {
   await deleteOrphanedMediaAssets(
     releasedMediaIds([prevSeo?.og_image_media_id], [seo.og_image_media_id]),
   );
+  await afterPublicChange(admin.user_id, "/admin/dealer");
+}
+
+export async function saveFindDealerPageCopy(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("pages_seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevBag = (previous?.pages_seo ?? {}) as Record<string, unknown>;
+  const find_dealer_copy = {
+    search_placeholder: richField(formData, "search_placeholder"),
+    search_button_label: richField(formData, "search_button_label"),
+    quick_search_label: richField(formData, "quick_search_label"),
+    call_label: richField(formData, "call_label"),
+    directions_label: richField(formData, "directions_label"),
+    empty_results: richField(formData, "empty_results"),
+  };
+  const pages_seo = { ...prevBag, find_dealer_copy };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ pages_seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
   await afterPublicChange(admin.user_id, "/admin/dealer");
 }
 

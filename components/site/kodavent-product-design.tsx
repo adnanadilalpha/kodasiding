@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { KodaVentProductDesign } from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
+import { DEFAULT_PAGE_KODAVENT } from "@/lib/cms/kodavent-defaults";
+import { RichText } from "@/components/site/rich-text";
 
 function Media({
   src,
@@ -29,34 +31,6 @@ function Media({
   );
 }
 
-/** Benefit labels used when CMS annotations still hold old feature titles. */
-const BENEFIT_COPY = [
-  {
-    id: "ann-flange",
-    title: "Built for water detailing",
-    problem: "Exterior penetrations need careful water management.",
-    design: "Mounting flange with a documented flashing sequence",
-    benefit:
-      "Supports a clearly defined install with silicone and overlapping flashing tape — the same logic used at a window opening.",
-  },
-  {
-    id: "ann-seal",
-    title: "A cleaner exterior detail",
-    problem: "Many exhaust covers look bulky or out of place on the wall.",
-    design: "Simple square cover",
-    benefit:
-      "A quieter wall detail that sits flush with the siding — easy to understand without technical knowledge.",
-  },
-  {
-    id: "ann-retrofit",
-    title: "New construction or retrofit",
-    problem: "New walls and finished walls need different approaches.",
-    design: "Removable mounting flanges",
-    benefit:
-      "One product with two documented configurations — keep the flange for new construction, or score it off for retrofit.",
-  },
-] as const;
-
 export function KodaVentProductDesignSection({
   section,
   imageUrl,
@@ -66,27 +40,20 @@ export function KodaVentProductDesignSection({
   section: KodaVentProductDesign;
   imageUrl: string | null;
   imageAlt: string;
-  caption: string;
+  caption?: string;
 }) {
   if (!section.visible) return null;
 
-  const benefits = BENEFIT_COPY.map((benefit) => {
-    const fromCms = (section.annotations ?? []).find((a) => a.id === benefit.id);
-    const useCms =
-      fromCms?.visible !== false &&
-      fromCms?.title &&
-      !/mounting flange|sealing detail|retrofit configuration/i.test(
-        fromCms.title,
-      );
-    return {
-      ...benefit,
-      title: useCms ? fromCms!.title : benefit.title,
-      // Prefer structured benefit copy over old feature blurbs.
-      body: useCms && fromCms!.description.length > 80
-        ? fromCms!.description
-        : null,
-    };
-  });
+  const eyebrow =
+    section.eyebrow?.trim() || DEFAULT_PAGE_KODAVENT.product_design.eyebrow;
+  const figureCaption =
+    caption?.trim() ||
+    section.image_caption?.trim() ||
+    DEFAULT_PAGE_KODAVENT.product_design.image_caption;
+
+  const benefits = (section.annotations ?? []).filter(
+    (item) => item.visible !== false && (item.title?.trim() || item.description?.trim()),
+  );
 
   return (
     <section
@@ -96,16 +63,16 @@ export function KodaVentProductDesignSection({
       <div className="flex flex-col gap-14 px-page lg:gap-20">
         <header className="grid gap-6 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
-            <p className="text-xs tracking-[0.16em] text-text-inverse/55 uppercase">
-              Why KodaVent
+            <p className="text-xs tracking-[0.16em] text-text-inverse/55">
+              <RichText html={eyebrow} as="span" />
             </p>
             <h2 className="mt-4 font-display text-3xl leading-[1.08] font-bold tracking-tight text-text-inverse sm:text-4xl lg:text-5xl">
-              {section.heading}
+              <RichText html={section.heading} as="span" />
             </h2>
           </div>
           {section.description ? (
             <p className="max-w-md self-end text-base leading-normal text-text-inverse/75 lg:col-span-5 lg:text-lg">
-              {section.description}
+              <RichText html={section.description} as="span" />
             </p>
           ) : null}
         </header>
@@ -122,8 +89,8 @@ export function KodaVentProductDesignSection({
                 />
               ) : null}
             </div>
-            <figcaption className="mt-4 text-xs tracking-[0.14em] text-text-inverse/45 uppercase">
-              {caption}
+            <figcaption className="mt-4 text-xs tracking-[0.14em] text-text-inverse/45">
+              <RichText html={figureCaption} as="span" />
             </figcaption>
           </figure>
 
@@ -136,23 +103,16 @@ export function KodaVentProductDesignSection({
                 <p className="font-display text-xs tracking-[0.16em] text-accent-warm uppercase">
                   {String(index + 1).padStart(2, "0")}
                 </p>
-                <h3 className="mt-3 font-display text-xl font-bold tracking-tight text-text-inverse sm:text-2xl">
-                  {benefit.title}
-                </h3>
-                {benefit.body ? (
+                {benefit.title ? (
+                  <h3 className="mt-3 font-display text-xl font-bold tracking-tight text-text-inverse sm:text-2xl">
+                    <RichText html={benefit.title} as="span" />
+                  </h3>
+                ) : null}
+                {benefit.description ? (
                   <p className="mt-4 max-w-xl text-base leading-normal text-text-inverse/75">
-                    {benefit.body}
+                    <RichText html={benefit.description} as="span" />
                   </p>
-                ) : (
-                  <div className="mt-4 flex max-w-xl flex-col gap-3 text-base leading-normal">
-                    <p className="text-text-inverse/55">{benefit.problem}</p>
-                    <p className="text-text-inverse">
-                      <span className="text-accent-warm">Design: </span>
-                      {benefit.design}
-                    </p>
-                    <p className="text-text-inverse/85">{benefit.benefit}</p>
-                  </div>
-                )}
+                ) : null}
               </li>
             ))}
           </ol>

@@ -283,13 +283,13 @@ function WhyFactBanner({
 
               <div className="flex flex-col items-center gap-2.5">
                 {fact.label ? (
-                  <p className="font-display text-sm font-bold tracking-widest text-text-primary uppercase sm:text-base">
-                    {fact.label}
+                  <p className="font-display text-sm font-bold tracking-widest text-text-primary sm:text-base">
+                    <RichText html={fact.label} as="span" />
                   </p>
                 ) : null}
                 {fact.body ? (
                   <p className="max-w-58 text-base leading-relaxed text-text-primary/65 lg:text-lg">
-                    {fact.body}
+                    <RichText html={fact.body} as="span" />
                   </p>
                 ) : null}
               </div>

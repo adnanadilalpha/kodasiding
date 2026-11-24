@@ -13,9 +13,11 @@ import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
+import { Field, FieldGroup, TextInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PROFILES_HREF } from "@/lib/cms/nav-slots";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 type Teaser = {
   headline: string;
@@ -92,27 +94,29 @@ export function HomeProfilesEditor({
         <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-start">
           <FieldGroup title="Copy" className="min-w-0 w-full flex-1">
             <Field label="Headline">
-              <TextInput
+              <RichTextField
                 name="profiles_headline"
                 defaultValue={teaser.headline}
                 placeholder="One System. Multiple Profiles."
+                minHeightClassName="min-h-12"
               />
             </Field>
             <Field label="Body">
-              <TextArea
+              <RichTextField
                 name="profiles_body"
-                rows={3}
                 defaultValue={teaser.body}
                 placeholder="Engineered fiberglass geometry double lap, lap, shiplap, and vertical from a single material system."
+                minHeightClassName="min-h-24"
               />
             </Field>
           </FieldGroup>
           <FieldGroup title="Call to action" className="min-w-0 w-full flex-1">
             <Field label="Label">
-              <TextInput
+              <RichTextField
                 name="profiles_cta_label"
                 defaultValue={teaser.cta_label}
                 placeholder="Explore Profiles"
+                minHeightClassName="min-h-12"
               />
             </Field>
             <div className="min-w-0">
@@ -165,7 +169,7 @@ export function HomeProfilesEditor({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={src}
-                          alt={jewel.name}
+                          alt={plainTextFromRich(jewel.name)}
                           width={160}
                           height={96}
                           className="max-h-20 w-auto object-contain"
@@ -173,7 +177,7 @@ export function HomeProfilesEditor({
                       ) : (
                         <Image
                           src={src}
-                          alt={jewel.name}
+                          alt={plainTextFromRich(jewel.name)}
                           width={160}
                           height={96}
                           loading="eager"
@@ -189,10 +193,10 @@ export function HomeProfilesEditor({
                   <div className="flex flex-1 flex-col gap-2 px-3 py-3">
                     <div>
                       <p className="font-display text-sm font-semibold text-brand-primary">
-                        {jewel.name}
+                        {plainTextFromRich(jewel.name)}
                       </p>
                       <p className="mt-0.5 text-sm text-text-primary/45">
-                        {jewel.reveal || "No reveal"}
+                        {plainTextFromRich(jewel.reveal) || "No reveal"}
                       </p>
                     </div>
                     <div className="mt-auto flex items-center gap-3">
@@ -289,18 +293,19 @@ function JewelForm({
     <>
       <FieldGroup title="Jewel" columns={2}>
         <Field label="Name">
-          <TextInput
+          <RichTextField
             name="name"
-            required
             defaultValue={jewel?.name}
             placeholder="Double Lap"
+            minHeightClassName="min-h-12"
           />
         </Field>
         <Field label="Reveal">
-          <TextInput
+          <RichTextField
             name="reveal"
             defaultValue={jewel?.reveal}
             placeholder='3″ / course'
+            minHeightClassName="min-h-12"
           />
         </Field>
         <Field label="Sort">

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import L from "leaflet";
 import {
   Circle,
   CircleMarker,
   MapContainer,
   TileLayer,
-  Tooltip,
   useMap,
   ZoomControl,
 } from "react-leaflet";
@@ -81,6 +80,14 @@ function FitServiceArea({
   return null;
 }
 
+function MapLoading() {
+  return (
+    <div className="flex size-full items-center justify-center text-xs font-medium tracking-wide text-brand-primary/50 uppercase">
+      Loading map…
+    </div>
+  );
+}
+
 export function InstallServiceAreaMap({
   points,
   selectedName,
@@ -92,9 +99,44 @@ export function InstallServiceAreaMap({
   onSelectTown: (name: string) => void;
   radiusMiles?: number;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const mapId = useId();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  // Wait until the shell has a real size, then mount Leaflet once.
+  // Cleanup resets ready so React Strict Mode remounts don't hit a dead pane.
   useEffect(() => {
-    setMounted(true);
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    let cancelled = false;
+    let frame = 0;
+
+    const tryReady = () => {
+      if (cancelled) return;
+      if (shell.clientWidth > 0 && shell.clientHeight > 0) {
+        setReady(true);
+        return;
+      }
+      frame = requestAnimationFrame(tryReady);
+    };
+
+    frame = requestAnimationFrame(tryReady);
+
+    const ro = new ResizeObserver(() => {
+      if (cancelled) return;
+      if (shell.clientWidth > 0 && shell.clientHeight > 0) {
+        setReady(true);
+      }
+    });
+    ro.observe(shell);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      setReady(false);
+    };
   }, []);
 
   const selected =
@@ -103,80 +145,69 @@ export function InstallServiceAreaMap({
     ) ?? null;
   const meters = installRadiusMeters(radiusMiles);
 
-  if (!mounted) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center bg-[#c8dff0] text-xs font-medium tracking-wide text-brand-primary/50 uppercase sm:h-72 lg:h-80">
-        Loading map…
-      </div>
-    );
-  }
-
   return (
-    <div className="relative h-64 w-full overflow-hidden bg-[#c8dff0] sm:h-72 lg:h-80 [&_.leaflet-control-attribution]:text-[9px] [&_.leaflet-control-zoom]:border-none [&_.leaflet-control-zoom_a]:rounded-md [&_.leaflet-control-zoom_a]:border-brand-primary/15">
-      <MapContainer
-        key={`install-map-${radiusMiles}-${points.length}`}
-        center={[OMAHA_CENTER.lat, OMAHA_CENTER.lng]}
-        zoom={8}
-        className="size-full"
-        scrollWheelZoom
-        dragging
-        doubleClickZoom
-        touchZoom
-        zoomControl={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <ZoomControl position="topright" />
-        <Circle
+    <div
+      ref={shellRef}
+      className="relative h-64 w-full overflow-hidden bg-[#c8dff0] sm:h-72 lg:h-80 [&_.leaflet-control-attribution]:text-[9px] [&_.leaflet-control-zoom]:border-none [&_.leaflet-control-zoom_a]:rounded-md [&_.leaflet-control-zoom_a]:border-brand-primary/15"
+    >
+      {!ready ? (
+        <MapLoading />
+      ) : (
+        <MapContainer
+          key={`${mapId}-${radiusMiles}`}
           center={[OMAHA_CENTER.lat, OMAHA_CENTER.lng]}
-          radius={meters}
-          pathOptions={{
-            color: "#c2d46a",
-            weight: 2,
-            fillColor: "#264835",
-            fillOpacity: 0.14,
-          }}
-        />
-        {points.map((point) => {
-          const active =
-            selectedName != null &&
-            point.name.toLowerCase() === selectedName.toLowerCase();
-          return (
-            <CircleMarker
-              key={point.name}
-              center={[point.lat, point.lng]}
-              radius={active ? 8 : 6}
-              pathOptions={{
-                color: active ? "#182e22" : "#264835",
-                weight: 2,
-                fillColor: active ? "#c2d46a" : "#f7f5ec",
-                fillOpacity: 1,
-              }}
-              eventHandlers={{
-                click: () => onSelectTown(point.name),
-              }}
-            >
-              <Tooltip
-                direction="top"
-                offset={[0, -8]}
-                opacity={1}
-                permanent
-                className="install-town-label"
-              >
-                {point.name}
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
-        <FitServiceArea
-          points={points}
-          selected={selected}
-          radiusMiles={radiusMiles}
-        />
-      </MapContainer>
-      <p className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-bg-primary/92 px-2 py-1 text-[0.65rem] font-bold tracking-[0.08em] text-brand-primary uppercase">
+          zoom={8}
+          className="size-full"
+          scrollWheelZoom
+          dragging
+          doubleClickZoom
+          touchZoom
+          zoomControl={false}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <ZoomControl position="topright" />
+          <Circle
+            center={[OMAHA_CENTER.lat, OMAHA_CENTER.lng]}
+            radius={meters}
+            pathOptions={{
+              color: "#c2d46a",
+              weight: 2,
+              fillColor: "#264835",
+              fillOpacity: 0.14,
+            }}
+          />
+          {points.map((point) => {
+            const active =
+              selectedName != null &&
+              point.name.toLowerCase() === selectedName.toLowerCase();
+            return (
+              <CircleMarker
+                key={point.name}
+                center={[point.lat, point.lng]}
+                radius={active ? 8 : 6}
+                pathOptions={{
+                  color: active ? "#182e22" : "#264835",
+                  weight: 2,
+                  fillColor: active ? "#c2d46a" : "#f7f5ec",
+                  fillOpacity: 1,
+                }}
+                eventHandlers={{
+                  click: () => onSelectTown(point.name),
+                }}
+              />
+            );
+          })}
+          <FitServiceArea
+            points={points}
+            selected={selected}
+            radiusMiles={radiusMiles}
+          />
+        </MapContainer>
+      )}
+      <p className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-md bg-bg-primary/92 px-2 py-1 text-[0.65rem] font-bold tracking-[0.08em] text-brand-primary uppercase">
         {radiusMiles} mi install radius · scroll to zoom
       </p>
     </div>

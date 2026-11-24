@@ -6,6 +6,13 @@ import type { PageProfiles, Profile } from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
 import { useQuote } from "@/components/site/quote-provider";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+
+const DEFAULT_PAGE_TITLE = "Profiles";
+const DEFAULT_PAGE_INTRO =
+  "Explore Koda horizontal, vertical, universal, and soffit and fascia fiberglass siding profiles.";
+const DEFAULT_LEARN_MORE_LABEL = "Learn more";
 
 type ProfileTileData = Profile & {
   imageUrl: string | null;
@@ -157,7 +164,7 @@ function ProfileDetailModal({
               id={titleId}
               className="font-display pr-10 text-2xl font-bold whitespace-nowrap text-brand-primary sm:text-[28px]"
             >
-              {profile.name}
+              <RichText html={profile.name} as="span" />
             </h2>
 
             {hasSpecs ? (
@@ -170,7 +177,7 @@ function ProfileDetailModal({
 
             {description ? (
               <p className="text-base leading-relaxed text-text-secondary lg:max-w-prose">
-                {description}
+                <RichText html={description} as="span" />
               </p>
             ) : null}
           </div>
@@ -180,7 +187,7 @@ function ProfileDetailModal({
               <div className="relative h-52 w-full sm:h-64 lg:h-72">
                 <ProfileMedia
                   src={profile.diagramUrl}
-                  alt={`${profile.name} cross-section diagram`}
+                  alt={`${plainTextFromRich(profile.name)} cross-section diagram`}
                   sizes="(max-width: 1024px) 90vw, 40vw"
                   className="object-contain object-center"
                 />
@@ -196,10 +203,12 @@ function ProfileDetailModal({
 function ProfileTile({
   profile,
   onLearnMore,
+  learnMoreLabel,
   priority = false,
 }: {
   profile: ProfileTileData;
   onLearnMore: () => void;
+  learnMoreLabel: string;
   priority?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -216,7 +225,7 @@ function ProfileTile({
           {profile.imageUrl ? (
             <ProfileMedia
               src={profile.imageUrl}
-              alt={profile.name}
+              alt={plainTextFromRich(profile.name)}
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 360px"
               quality={95}
               priority={priority}
@@ -236,19 +245,23 @@ function ProfileTile({
             className={`absolute inset-0 z-10 flex items-center justify-center transition duration-200 lg:bg-brand-primary-active/55 ${
               hovered ? "lg:opacity-100" : "lg:opacity-0"
             }`}
-            aria-label={`Learn more about ${profile.name}`}
+            aria-label={`Learn more about ${plainTextFromRich(profile.name)}`}
           >
             {/* Label only on desktop hover; mobile/tablet tap opens modal directly */}
             <span className="hidden rounded-md bg-accent-warm px-5 py-2.5 text-sm text-text-primary lg:inline-flex">
-              Learn more
+              <RichText html={learnMoreLabel} as="span" />
             </span>
           </button>
         ) : null}
       </div>
 
-      <h3 className="text-sm font-bold text-text-primary">{profile.name}</h3>
+      <h3 className="text-sm font-bold text-text-primary">
+        <RichText html={profile.name} as="span" />
+      </h3>
       {profile.description?.trim() ? (
-        <p className="sr-only">{profile.description.trim()}</p>
+        <p className="sr-only">
+          <RichText html={profile.description} as="span" />
+        </p>
       ) : null}
     </article>
   );
@@ -259,12 +272,14 @@ function ProfileSheet({
   helper,
   profiles,
   onLearnMore,
+  learnMoreLabel,
   priorityCount = 0,
 }: {
   headline: string;
   helper: string;
   profiles: ProfileTileData[];
   onLearnMore: (profile: ProfileTileData) => void;
+  learnMoreLabel: string;
   /** First N tiles are above-the-fold — eager-load for LCP. */
   priorityCount?: number;
 }) {
@@ -274,11 +289,11 @@ function ProfileSheet({
     <section className="flex w-full flex-col items-center gap-8 lg:gap-12">
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="font-display text-2xl font-bold text-text-primary sm:text-[30px] sm:leading-9.75">
-          {headline}
+          <RichText html={headline} as="span" />
         </h2>
         {helper ? (
           <p className="text-sm leading-tight text-[#6b6858] sm:text-right">
-            {helper}
+            <RichText html={helper} as="span" />
           </p>
         ) : null}
       </div>
@@ -289,6 +304,7 @@ function ProfileSheet({
             <ProfileTile
               profile={profile}
               onLearnMore={() => onLearnMore(profile)}
+              learnMoreLabel={learnMoreLabel}
               priority={index < priorityCount}
             />
           </li>
@@ -314,16 +330,19 @@ export function ProfilesCatalog({
   const { openQuote } = useQuote();
   const [selected, setSelected] = useState<ProfileTileData | null>(null);
   const quoteLabel = page.quote_cta_label || "Request a quote";
+  const pageTitle = page.page_title?.trim() || DEFAULT_PAGE_TITLE;
+  const pageIntro = page.page_intro?.trim() || DEFAULT_PAGE_INTRO;
+  const learnMoreLabel =
+    page.learn_more_label?.trim() || DEFAULT_LEARN_MORE_LABEL;
 
   return (
     <div className="flex flex-col gap-16 px-page pt-28 pb-16 sm:pt-36 sm:pb-20 lg:gap-24 lg:pt-41 lg:pb-24">
       <header className="flex w-full flex-col gap-3">
         <h1 className="font-display text-3xl font-bold tracking-wide text-brand-primary sm:text-4xl lg:text-5xl">
-          Profiles
+          <RichText html={pageTitle} as="span" />
         </h1>
         <p className="max-w-2xl text-base text-text-primary/70 sm:text-lg">
-          Explore Koda horizontal, vertical, universal, and soffit and fascia
-          fiberglass siding profiles.
+          <RichText html={pageIntro} as="span" />
         </p>
       </header>
 
@@ -332,6 +351,7 @@ export function ProfilesCatalog({
         helper={page.horizontal.helper || "Open a profile to learn more"}
         profiles={horizontal}
         onLearnMore={setSelected}
+        learnMoreLabel={learnMoreLabel}
         priorityCount={5}
       />
       <ProfileSheet
@@ -339,18 +359,21 @@ export function ProfilesCatalog({
         helper={page.vertical.helper || "Open a profile to learn more"}
         profiles={vertical}
         onLearnMore={setSelected}
+        learnMoreLabel={learnMoreLabel}
       />
       <ProfileSheet
         headline={page.universal?.headline || "Universal profiles"}
         helper={page.universal?.helper || "Open a profile to learn more"}
         profiles={universal}
         onLearnMore={setSelected}
+        learnMoreLabel={learnMoreLabel}
       />
       <ProfileSheet
         headline={page.soffit?.headline || "Soffit and fascia"}
         helper={page.soffit?.helper || "Open a profile to learn more"}
         profiles={soffit}
         onLearnMore={setSelected}
+        learnMoreLabel={learnMoreLabel}
       />
 
       <div className="flex flex-wrap items-center justify-center gap-4">
@@ -359,7 +382,7 @@ export function ProfilesCatalog({
           onClick={openQuote}
           className="rounded-md border border-transparent bg-accent-warm px-8 py-3 font-display text-sm tracking-[0.04em] text-text-primary"
         >
-          {quoteLabel}
+          <RichText html={quoteLabel} as="span" />
         </button>
       </div>
 

@@ -25,6 +25,8 @@ import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
 import { createClient } from "@/lib/supabase/client";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 function VisibilityToggle({
   name = "visible",
@@ -79,44 +81,43 @@ export function KodaVentHeroEditor({
       className="flex w-full flex-col gap-5"
     >
       <VisibilityToggle defaultChecked={hero.visible !== false} />
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="flex flex-col gap-5">
         <FieldGroup title="Copy">
           <Field label="Eyebrow">
-            <TextInput name="eyebrow" defaultValue={hero.eyebrow} />
+            <RichTextField
+              name="eyebrow"
+              defaultValue={hero.eyebrow}
+              minHeightClassName="min-h-12"
+            />
           </Field>
           <Field label="Main heading">
-            <TextInput name="heading" defaultValue={hero.heading} />
+            <RichTextField
+              name="heading"
+              defaultValue={hero.heading}
+              minHeightClassName="min-h-12"
+            />
           </Field>
           <Field label="Supporting headline">
-            <TextInput
+            <RichTextField
               name="supporting_headline"
               defaultValue={hero.supporting_headline}
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Description">
-            <TextArea
+            <RichTextField
               name="description"
-              rows={4}
               defaultValue={hero.description}
+              minHeightClassName="min-h-24"
             />
           </Field>
         </FieldGroup>
-        <FieldGroup title="Image & CTAs">
-          <MediaField
-            name="image_media_id"
-            label="Hero image"
-            initialId={hero.image_media_id}
-            initialPath={image?.path}
-            initialBucket={image?.bucket ?? "media"}
-            aspect="square"
-          />
-          <Field label="Image alt text">
-            <TextInput name="image_alt" defaultValue={hero.image_alt} />
-          </Field>
+        <FieldGroup title="Calls to action">
           <Field label="Primary CTA label">
-            <TextInput
+            <RichTextField
               name="primary_cta_label"
               defaultValue={hero.primary_cta_label}
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Primary CTA destination">
@@ -126,9 +127,10 @@ export function KodaVentHeroEditor({
             />
           </Field>
           <Field label="Secondary CTA label">
-            <TextInput
+            <RichTextField
               name="secondary_cta_label"
               defaultValue={hero.secondary_cta_label}
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Secondary CTA destination">
@@ -137,6 +139,17 @@ export function KodaVentHeroEditor({
               defaultValue={hero.secondary_cta_href}
             />
           </Field>
+          <Field label="Image alt text">
+            <TextInput name="image_alt" defaultValue={hero.image_alt} />
+          </Field>
+          <MediaField
+            name="image_media_id"
+            label="Hero image"
+            initialId={hero.image_media_id}
+            initialPath={image?.path}
+            initialBucket={image?.bucket ?? "media"}
+            aspect="square"
+          />
         </FieldGroup>
       </div>
       <div className="pt-1">
@@ -185,15 +198,36 @@ export function KodaVentProductDesignEditor({
     >
       <VisibilityToggle defaultChecked={section.visible !== false} />
       <FieldGroup title="Section copy">
+        <Field label="Eyebrow">
+          <RichTextField
+            name="eyebrow"
+            defaultValue={section.eyebrow}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
         <Field label="Heading">
-          <TextInput name="heading" defaultValue={section.heading} />
+          <RichTextField
+            name="heading"
+            defaultValue={section.heading}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Description">
-          <TextArea
+          <RichTextField
             name="description"
-            rows={3}
             defaultValue={section.description}
+            minHeightClassName="min-h-24"
           />
+        </Field>
+        <Field label="Image caption">
+          <RichTextField
+            name="image_caption"
+            defaultValue={section.image_caption}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Image alt text">
+          <TextInput name="image_alt" defaultValue={section.image_alt} />
         </Field>
         <MediaField
           name="image_media_id"
@@ -203,16 +237,13 @@ export function KodaVentProductDesignEditor({
           initialBucket={image?.bucket ?? "media"}
           aspect="square"
         />
-        <Field label="Image alt text">
-          <TextInput name="image_alt" defaultValue={section.image_alt} />
-        </Field>
         <LockedHint>
-          Public page currently uses the packaged box + exploded product assets.
-          Keep this copy simple — no annotation pins on the live page.
+          Packaging image appears on the left of Why KodaVent. Benefit reasons
+          below become 01 / 02 / 03 on the public page.
         </LockedHint>
       </FieldGroup>
 
-      <FieldGroup title="Annotations (optional / unused on public page)">
+      <FieldGroup title="Benefit reasons">
         <div className="flex flex-col gap-4">
           {annotations.map((annotation, index) => (
             <div
@@ -221,7 +252,7 @@ export function KodaVentProductDesignEditor({
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium text-brand-primary">
-                  Annotation {index + 1}
+                  Reason {String(index + 1).padStart(2, "0")}
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -256,15 +287,16 @@ export function KodaVentProductDesignEditor({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Title">
-                  <TextInput
+                  <RichTextField
                     value={annotation.title}
-                    onChange={(e) =>
+                    onValueChange={(html) =>
                       setAnnotations((prev) =>
                         prev.map((a, i) =>
-                          i === index ? { ...a, title: e.target.value } : a,
+                          i === index ? { ...a, title: html } : a,
                         ),
                       )
                     }
+                    minHeightClassName="min-h-12"
                   />
                 </Field>
                 <label className="flex items-end gap-2 pb-2 text-sm">
@@ -285,18 +317,18 @@ export function KodaVentProductDesignEditor({
                   Visible
                 </label>
                 <Field label="Description">
-                  <TextArea
-                    rows={2}
+                  <RichTextField
                     value={annotation.description}
-                    onChange={(e) =>
+                    onValueChange={(html) =>
                       setAnnotations((prev) =>
                         prev.map((a, i) =>
                           i === index
-                            ? { ...a, description: e.target.value }
+                            ? { ...a, description: html }
                             : a,
                         ),
                       )
                     }
+                    minHeightClassName="min-h-24"
                   />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
@@ -382,7 +414,6 @@ export function KodaVentInstalledEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const image = section.image_media_id ? media[section.image_media_id] : null;
-  const missingImage = !section.image_media_id;
 
   return (
     <form
@@ -394,26 +425,60 @@ export function KodaVentInstalledEditor({
       }}
       className="flex w-full flex-col gap-5"
     >
-      {missingImage ? (
-        <p className="rounded-md bg-accent-warm/30 px-3 py-2 text-sm text-text-primary">
-          Upload an installation photograph before publishing this section. The
-          public page stays hidden until an image is present.
-        </p>
-      ) : null}
-      <VisibilityToggle
-        defaultChecked={section.visible === true}
-        label="Show section (requires image)"
-      />
-      <FieldGroup title="Installed appearance">
+      <VisibilityToggle defaultChecked={section.visible !== false} />
+      <FieldGroup title="See it installed">
+        <Field label="Eyebrow">
+          <RichTextField
+            name="eyebrow"
+            defaultValue={section.eyebrow}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
         <Field label="Heading">
-          <TextInput name="heading" defaultValue={section.heading} />
+          <RichTextField
+            name="heading"
+            defaultValue={section.heading}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Description">
-          <TextArea
+          <RichTextField
             name="description"
-            rows={3}
             defaultValue={section.description}
+            minHeightClassName="min-h-24"
           />
+        </Field>
+        <Field label="Photo badge">
+          <RichTextField
+            name="badge_label"
+            defaultValue={section.badge_label}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Caption">
+          <RichTextField
+            name="caption"
+            defaultValue={section.caption}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Figure title">
+          <RichTextField
+            name="figure_title"
+            defaultValue={section.figure_title}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Traits (one per line)">
+          <TextArea
+            name="traits"
+            rows={4}
+            defaultValue={(section.traits ?? []).join("\n")}
+            placeholder={"Quiet\nSquare\nScaled to the siding"}
+          />
+        </Field>
+        <Field label="Image alt text">
+          <TextInput name="image_alt" defaultValue={section.image_alt} />
         </Field>
         <MediaField
           name="image_media_id"
@@ -423,12 +488,6 @@ export function KodaVentInstalledEditor({
           initialBucket={image?.bucket ?? "media"}
           aspect="wide"
         />
-        <Field label="Image alt text">
-          <TextInput name="image_alt" defaultValue={section.image_alt} />
-        </Field>
-        <Field label="Caption (optional)">
-          <TextInput name="caption" defaultValue={section.caption} />
-        </Field>
       </FieldGroup>
       <div className="pt-1">
         <Button type="submit" disabled={pending}>
@@ -616,14 +675,25 @@ export function KodaVentInstallationEditor({
     >
       <VisibilityToggle defaultChecked={section.visible !== false} />
       <FieldGroup title="Section copy">
+        <Field label="Eyebrow">
+          <RichTextField
+            name="eyebrow"
+            defaultValue={section.eyebrow}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
         <Field label="Heading">
-          <TextInput name="heading" defaultValue={section.heading} />
+          <RichTextField
+            name="heading"
+            defaultValue={section.heading}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Description">
-          <TextArea
+          <RichTextField
             name="description"
-            rows={2}
             defaultValue={section.description}
+            minHeightClassName="min-h-24"
           />
         </Field>
       </FieldGroup>
@@ -640,38 +710,40 @@ export function KodaVentInstallationEditor({
                 : "bg-bg-secondary text-brand-primary"
             }`}
           >
-            {method.tab_label || method.id}
+            {plainTextFromRich(method.tab_label) || method.id}
           </button>
         ))}
       </div>
 
       {activeMethod ? (
-        <FieldGroup title={activeMethod.tab_label || "Method"}>
+        <FieldGroup title={plainTextFromRich(activeMethod.tab_label) || "Method"}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Tab label">
-              <TextInput
+              <RichTextField
                 value={activeMethod.tab_label}
-                onChange={(e) =>
-                  updateMethod(activeMethod.id, { tab_label: e.target.value })
+                onValueChange={(html) =>
+                  updateMethod(activeMethod.id, { tab_label: html })
                 }
+                minHeightClassName="min-h-12"
               />
             </Field>
             <Field label="Method heading">
-              <TextInput
+              <RichTextField
                 value={activeMethod.heading}
-                onChange={(e) =>
-                  updateMethod(activeMethod.id, { heading: e.target.value })
+                onValueChange={(html) =>
+                  updateMethod(activeMethod.id, { heading: html })
                 }
+                minHeightClassName="min-h-12"
               />
             </Field>
           </div>
           <Field label="Introduction">
-            <TextArea
-              rows={3}
+            <RichTextField
               value={activeMethod.intro}
-              onChange={(e) =>
-                updateMethod(activeMethod.id, { intro: e.target.value })
+              onValueChange={(html) =>
+                updateMethod(activeMethod.id, { intro: html })
               }
+              minHeightClassName="min-h-24"
             />
           </Field>
           <label className="flex items-center gap-2 text-sm">
@@ -685,6 +757,17 @@ export function KodaVentInstallationEditor({
             />
             Method visible
           </label>
+          <Field label="PDF link label">
+            <RichTextField
+              value={activeMethod.pdf_link_label ?? ""}
+              onValueChange={(html) =>
+                updateMethod(activeMethod.id, {
+                  pdf_link_label: html,
+                })
+              }
+              minHeightClassName="min-h-12"
+            />
+          </Field>
           <Field label="Downloadable PDF">
             <PdfUploadField
               docKey={activeMethod.pdf_document_key}
@@ -767,13 +850,14 @@ export function KodaVentInstallationEditor({
                       Visible
                     </label>
                     <Field label="Title">
-                      <TextInput
+                      <RichTextField
                         value={step.title}
-                        onChange={(e) =>
+                        onValueChange={(html) =>
                           updateStep(activeMethod.id, index, {
-                            title: e.target.value,
+                            title: html,
                           })
                         }
+                        minHeightClassName="min-h-12"
                       />
                     </Field>
                     <Field label="Illustration alt text">
@@ -788,14 +872,14 @@ export function KodaVentInstallationEditor({
                     </Field>
                     <div className="sm:col-span-2">
                       <Field label="Description">
-                        <TextArea
-                          rows={3}
+                        <RichTextField
                           value={step.description}
-                          onChange={(e) =>
+                          onValueChange={(html) =>
                             updateStep(activeMethod.id, index, {
-                              description: e.target.value,
+                              description: html,
                             })
                           }
+                          minHeightClassName="min-h-24"
                         />
                       </Field>
                     </div>
@@ -861,14 +945,48 @@ export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
     >
       <VisibilityToggle defaultChecked={cta.visible !== false} />
       <FieldGroup title="Order Now">
+        <Field label="Eyebrow">
+          <RichTextField
+            name="eyebrow"
+            defaultValue={cta.eyebrow}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
         <Field label="Heading">
-          <TextInput name="heading" defaultValue={cta.heading} />
+          <RichTextField
+            name="heading"
+            defaultValue={cta.heading}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Description">
-          <TextArea name="description" rows={3} defaultValue={cta.description} />
+          <RichTextField
+            name="description"
+            defaultValue={cta.description}
+            minHeightClassName="min-h-24"
+          />
+        </Field>
+        <Field label="Installation guides link label">
+          <RichTextField
+            name="guides_link_label"
+            defaultValue={cta.guides_link_label}
+            minHeightClassName="min-h-12"
+          />
+          <LockedHint>Link target is fixed to #installation.</LockedHint>
+        </Field>
+        <Field label="Retailer “coming soon” label">
+          <RichTextField
+            name="coming_soon_label"
+            defaultValue={cta.coming_soon_label}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Fallback CTA label">
-          <TextInput name="cta_label" defaultValue={cta.cta_label} />
+          <RichTextField
+            name="cta_label"
+            defaultValue={cta.cta_label}
+            minHeightClassName="min-h-12"
+          />
         </Field>
         <Field label="Fallback CTA destination">
           <TextInput name="cta_href" defaultValue={cta.cta_href} />
@@ -903,15 +1021,16 @@ export function KodaVentCtaEditor({ cta }: { cta: PageKodaVent["cta"] }) {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Label">
-                  <TextInput
+                  <RichTextField
                     value={retailer.label}
-                    onChange={(e) =>
+                    onValueChange={(html) =>
                       setRetailers((prev) =>
                         prev.map((r, i) =>
-                          i === index ? { ...r, label: e.target.value } : r,
+                          i === index ? { ...r, label: html } : r,
                         ),
                       )
                     }
+                    minHeightClassName="min-h-12"
                   />
                 </Field>
                 <Field label="URL (blank = Coming soon)">

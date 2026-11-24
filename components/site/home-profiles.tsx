@@ -4,6 +4,8 @@ import type { HomeProfileJewel, HomeProfilesTeaser } from "@/lib/cms/types";
 import { isSvgMedia } from "@/lib/cms/is-svg-media";
 import { PROFILES_HREF, normalizeLinkHref } from "@/lib/cms/nav-slots";
 import { safeHref } from "@/lib/cms/safe-href";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 export function HomeProfilesSection({
   teaser,
@@ -24,18 +26,19 @@ export function HomeProfilesSection({
       <div className="flex w-full flex-col items-center gap-10 px-page lg:gap-12">
         <div className="mx-auto flex w-full flex-col items-center gap-4 text-center text-text-inverse">
           <h2 className="font-display text-[1.75rem] leading-tight font-bold sm:text-4xl lg:text-5xl">
-            {teaser.headline.includes(". ") ? (
+            {/<[a-z][\s\S]*>/i.test(teaser.headline) ||
+            !teaser.headline.includes(". ") ? (
+              <RichText html={teaser.headline} as="span" />
+            ) : (
               <>
                 {teaser.headline.slice(0, teaser.headline.indexOf(". ") + 1)}
                 <br />
                 {teaser.headline.slice(teaser.headline.indexOf(". ") + 2)}
               </>
-            ) : (
-              teaser.headline
             )}
           </h2>
           <p className="max-w-3xl text-base leading-[1.4] text-[#ddddd7] lg:text-lg">
-            {teaser.body}
+            <RichText html={teaser.body} as="span" />
           </p>
         </div>
 
@@ -55,13 +58,13 @@ export function HomeProfilesSection({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={src}
-                      alt={jewel.name}
+                      alt={plainTextFromRich(jewel.name)}
                       className="absolute inset-0 size-full object-contain"
                     />
                   ) : (
                     <Image
                       src={src}
-                      alt={jewel.name}
+                      alt={plainTextFromRich(jewel.name)}
                       fill
                       quality={95}
                       sizes="(max-width: 1024px) 45vw, 304px"
@@ -70,9 +73,11 @@ export function HomeProfilesSection({
                   )}
                 </div>
                 <div className="flex flex-col gap-1 text-text-inverse">
-                  <p className="text-base font-bold lg:text-xl">{jewel.name}</p>
+                  <p className="text-base font-bold lg:text-xl">
+                    <RichText html={jewel.name} as="span" />
+                  </p>
                   <p className="text-xs text-[#ddddd7] lg:text-sm">
-                    {jewel.reveal}
+                    <RichText html={jewel.reveal} as="span" />
                   </p>
                 </div>
               </li>
@@ -84,7 +89,7 @@ export function HomeProfilesSection({
           href={ctaHref}
           className="inline-flex items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
         >
-          {teaser.cta_label}
+          <RichText html={teaser.cta_label} as="span" />
         </Link>
       </div>
     </section>

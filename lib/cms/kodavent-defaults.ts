@@ -53,11 +53,13 @@ export const DEFAULT_KODAVENT_HERO: KodaVentHero = {
 };
 
 export const DEFAULT_KODAVENT_PRODUCT_DESIGN: KodaVentProductDesign = {
+  eyebrow: "Why KodaVent",
   heading: "It's more than a vent cover.",
   description:
     "Three reasons builders and homeowners choose a cover designed for water detailing, a cleaner wall, and either new construction or retrofit.",
   image_media_id: null,
   image_alt: "KodaVent product components",
+  image_caption: "The packaging",
   exploded_image_media_id: null,
   exploded_image_alt: "KodaVent exploded view showing flap and mounting plate",
   annotations: [
@@ -87,12 +89,16 @@ export const DEFAULT_KODAVENT_PRODUCT_DESIGN: KodaVentProductDesign = {
 };
 
 export const DEFAULT_KODAVENT_INSTALLED: KodaVentInstalled = {
-  heading: "A small detail. A cleaner finish.",
+  eyebrow: "See it installed",
+  heading: "Designed for the finished wall.",
   description:
-    "See how the cover reads on the wall — quiet, square, and scaled to the siding.",
+    "A considered exterior detail for new construction and retrofit installations.",
   image_media_id: null,
-  image_alt: "KodaVent installed on exterior lap siding",
-  caption: "KODAVENT / INSTALLED",
+  image_alt: "KodaVent finished product detail",
+  badge_label: "On the wall",
+  caption: "KODAVENT / INSTALLED APPLICATION",
+  figure_title: '4" Exhaust vent cover',
+  traits: ["Quiet", "Square", "Scaled to the siding"],
   visible: true,
 };
 
@@ -242,6 +248,7 @@ export const DEFAULT_KODAVENT_METHODS: KodaVentInstallMethod[] = [
     intro:
       "Follow the new construction installation instructions when installing on a wall that does not have exterior cladding materials installed.",
     pdf_document_key: "kodavent_new_construction",
+    pdf_link_label: "Download New Construction Guide",
     steps: NEW_CONSTRUCTION_STEPS,
     visible: true,
   },
@@ -252,12 +259,14 @@ export const DEFAULT_KODAVENT_METHODS: KodaVentInstallMethod[] = [
     intro:
       "Follow the retrofit installation instructions when replacing an existing exhaust vent or installing on a wall with exterior cladding currently installed.",
     pdf_document_key: "kodavent_retrofit",
+    pdf_link_label: "Download Retrofit Guide",
     steps: RETROFIT_STEPS,
     visible: true,
   },
 ];
 
 export const DEFAULT_KODAVENT_INSTALLATION: KodaVentInstallation = {
+  eyebrow: "04 / Installation",
   heading: "Two ways to install. One considered design.",
   description:
     "Follow the documented steps for new construction or retrofit — then download the full guides.",
@@ -266,9 +275,12 @@ export const DEFAULT_KODAVENT_INSTALLATION: KodaVentInstallation = {
 };
 
 export const DEFAULT_KODAVENT_CTA: KodaVentCta = {
+  eyebrow: "Order now",
   heading: "Order KodaVent",
   description:
     "Buy KodaVent from the retailers below. Ordering for a larger project? Request a quote from the KODA team.",
+  guides_link_label: "Review installation guides",
+  coming_soon_label: "Link coming soon",
   cta_label: "Request a quote",
   cta_href: "#quote",
   retailers: [

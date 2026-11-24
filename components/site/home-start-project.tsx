@@ -6,6 +6,13 @@ import type { HomeCtas } from "@/lib/cms/types";
 import { safeHref } from "@/lib/cms/safe-href";
 import { useQuote } from "@/components/site/quote-provider";
 import { trackAnalyticsEvent } from "@/lib/analytics/track-client";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+
+const DEFAULT_SECTION_HEADING = "Ready to Get Started?";
+const DEFAULT_SECTION_DESCRIPTION =
+  "Choose the path that best matches your project.";
+const DEFAULT_QUOTE_ONLY_EYEBROW = "Start your project";
 
 export function HomeStartProject({
   ctas,
@@ -18,10 +25,16 @@ export function HomeStartProject({
 }) {
   const { openQuote } = useQuote();
   const showDealer = ctas.show_dealer === true;
+  const sectionHeading =
+    ctas.section_heading?.trim() || DEFAULT_SECTION_HEADING;
+  const sectionDescription =
+    ctas.section_description?.trim() || DEFAULT_SECTION_DESCRIPTION;
+  const quoteOnlyEyebrow =
+    ctas.quote_only_eyebrow?.trim() || DEFAULT_QUOTE_ONLY_EYEBROW;
 
   function trackCta(label: string, placement: string) {
     void trackAnalyticsEvent("cta_click", {
-      label,
+      label: plainTextFromRich(label),
       metadata: { placement },
     });
   }
@@ -29,6 +42,7 @@ export function HomeStartProject({
   if (!showDealer) {
     return (
       <QuoteOnlyCinematic
+        eyebrow={quoteOnlyEyebrow}
         headline={ctas.quote.headline}
         body={ctas.quote.body}
         ctaLabel={ctas.quote.cta_label}
@@ -49,10 +63,10 @@ export function HomeStartProject({
       <div className="flex w-full flex-col gap-10 px-page sm:gap-12 lg:gap-16">
         <div className="flex flex-col items-center gap-4 text-center sm:gap-6">
           <h2 className="font-display text-[1.75rem] font-bold text-text-inverse sm:text-4xl lg:text-5xl">
-            Ready to Get Started?
+            <RichText html={sectionHeading} as="span" />
           </h2>
           <p className="max-w-85 text-lg leading-[1.4] text-[#ddddd7]">
-            Choose the path that best matches your project.
+            <RichText html={sectionDescription} as="span" />
           </p>
         </div>
 
@@ -99,12 +113,14 @@ export function HomeStartProject({
  * Editorial split: product image left + copy panel right.
  */
 function QuoteOnlyCinematic({
+  eyebrow,
   headline,
   body,
   ctaLabel,
   image,
   onCta,
 }: {
+  eyebrow: string;
   headline: string;
   body: string;
   ctaLabel: string;
@@ -119,7 +135,7 @@ function QuoteOnlyCinematic({
       <div className="relative order-1 min-h-72 overflow-hidden sm:min-h-80 lg:order-0 lg:min-h-full">
         <Image
           src={image}
-          alt={headline}
+          alt={plainTextFromRich(headline)}
           fill
           quality={95}
           sizes="(max-width: 1024px) 100vw, 45vw"
@@ -129,14 +145,14 @@ function QuoteOnlyCinematic({
 
       <div className="relative z-10 order-2 flex min-w-0 flex-col justify-center gap-6 px-page py-12 sm:gap-8 sm:py-16 lg:order-0 lg:py-24">
         <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
-          <p className="font-display text-sm tracking-[0.2em] text-accent-warm uppercase">
-            Start your project
+          <p className="font-display text-sm tracking-[0.2em] text-accent-warm">
+            <RichText html={eyebrow} as="span" />
           </p>
           <h2 className="font-display text-[1.75rem] leading-[1.15] font-bold text-text-inverse sm:text-4xl sm:whitespace-nowrap lg:text-[2.75rem] xl:text-5xl">
-            {headline}
+            <RichText html={headline} as="span" />
           </h2>
           <p className="max-w-md text-base leading-[1.45] text-[#ddddd7] lg:text-lg">
-            {body}
+            <RichText html={body} as="span" />
           </p>
         </div>
         <button
@@ -144,7 +160,7 @@ function QuoteOnlyCinematic({
           onClick={onCta}
           className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary transition hover:opacity-90"
         >
-          {ctaLabel} →
+          <RichText html={ctaLabel} as="span" /> →
         </button>
       </div>
     </section>
@@ -178,7 +194,7 @@ function CtaCard({
       <div className="absolute inset-0">
         <Image
           src={image}
-          alt={headline}
+          alt={plainTextFromRich(headline)}
           fill
           quality={95}
           sizes="(max-width: 1024px) 100vw, 40vw"
@@ -190,9 +206,11 @@ function CtaCard({
         <div className="flex flex-col gap-6 rounded-md border border-white/55 bg-[rgba(253,252,248,0.84)] p-7 shadow-md backdrop-blur-sm">
           <div className="flex flex-col gap-4">
             <h3 className="text-2xl font-bold text-[#1a1c18] sm:text-3xl">
-              {headline}
+              <RichText html={headline} as="span" />
             </h3>
-            <p className="text-lg leading-[1.4] text-[#5a5848]">{body}</p>
+            <p className="text-lg leading-[1.4] text-[#5a5848]">
+              <RichText html={body} as="span" />
+            </p>
           </div>
           {href ? (
             <Link
@@ -200,11 +218,11 @@ function CtaCard({
               onClick={onCta}
               className={buttonClass}
             >
-              {ctaLabel} →
+              <RichText html={ctaLabel} as="span" /> →
             </Link>
           ) : (
             <button type="button" onClick={onCta} className={buttonClass}>
-              {ctaLabel} →
+              <RichText html={ctaLabel} as="span" /> →
             </button>
           )}
         </div>

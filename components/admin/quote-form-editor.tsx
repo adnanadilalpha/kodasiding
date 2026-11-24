@@ -24,6 +24,8 @@ import type {
 } from "@/lib/cms/types";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, Select, TextInput } from "@/components/ui/field";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 const FIELD_META_LABEL: Record<string, string> = {
   full_name: "Full Name",
@@ -202,6 +204,8 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [dragId, setDragId] = useState<string | null>(null);
+  /** Row is draggable only while the grip is pressed, so rich text can be selected. */
+  const [dragArmedId, setDragArmedId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
   const missing = missingCoreKinds(values.fields);
@@ -302,31 +306,34 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
       <FieldGroup title="Modal" columns={2}>
         <div className="sm:col-span-2">
           <Field label="Title">
-            <TextInput
+            <RichTextField
               value={values.title}
-              onChange={(e) =>
-                setValues((c) => ({ ...c, title: e.target.value }))
+              onValueChange={(html) =>
+                setValues((c) => ({ ...c, title: html }))
               }
               placeholder="Request a quote"
+              minHeightClassName="min-h-12"
             />
           </Field>
         </div>
         <Field label="Submit button">
-          <TextInput
+          <RichTextField
             value={values.submit_label}
-            onChange={(e) =>
-              setValues((c) => ({ ...c, submit_label: e.target.value }))
+            onValueChange={(html) =>
+              setValues((c) => ({ ...c, submit_label: html }))
             }
             placeholder="Submit Request"
+            minHeightClassName="min-h-12"
           />
         </Field>
         <Field label="Upload button">
-          <TextInput
+          <RichTextField
             value={values.upload_label}
-            onChange={(e) =>
-              setValues((c) => ({ ...c, upload_label: e.target.value }))
+            onValueChange={(html) =>
+              setValues((c) => ({ ...c, upload_label: html }))
             }
             placeholder="Upload file here"
+            minHeightClassName="min-h-12"
           />
         </Field>
       </FieldGroup>
@@ -344,9 +351,10 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
           return (
             <div
               key={field.id}
-              draggable
+              draggable={dragArmedId === field.id}
               onDragStart={() => setDragId(field.id)}
               onDragEnd={() => {
+                setDragArmedId(null);
                 setDragId(null);
                 setOverId(null);
               }}
@@ -376,8 +384,10 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
               <div className="flex min-w-0 flex-1 items-end gap-2">
                 <button
                   type="button"
+                  onMouseDown={() => setDragArmedId(field.id)}
+                  onMouseUp={() => setDragArmedId(null)}
                   className="mb-2.5 cursor-grab text-text-primary/35 active:cursor-grabbing"
-                  aria-label={`Drag ${field.label}`}
+                  aria-label={`Drag ${plainTextFromRich(field.label)}`}
                   tabIndex={-1}
                 >
                   <IconGripVertical size={18} stroke={1.5} />
@@ -395,14 +405,15 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
                         field.kind.replaceAll("_", " ")
                       }
                     >
-                      <TextInput
+                      <RichTextField
                         value={field.label}
-                        onChange={(e) =>
-                          updateField(field.id, { label: e.target.value })
+                        onValueChange={(html) =>
+                          updateField(field.id, { label: html })
                         }
                         placeholder={
                           FIELD_META_LABEL[field.kind] ?? "Field label"
                         }
+                        minHeightClassName="min-h-12"
                       />
                     </Field>
                   )}
@@ -450,7 +461,7 @@ export function QuoteFormEditor({ initial }: { initial: QuoteFormSettings }) {
                     type="button"
                     onClick={() => removeField(field.id)}
                     className="rounded-md p-1.5 text-text-primary/40 transition hover:bg-red-50 hover:text-[#ff383c] sm:mb-2.5"
-                    aria-label={`Remove ${field.label}`}
+                    aria-label={`Remove ${plainTextFromRich(field.label)}`}
                   >
                     <IconTrash size={16} stroke={1.5} />
                   </button>

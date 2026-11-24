@@ -17,7 +17,7 @@ import { DEFAULT_WHY_FACTS } from "@/lib/cms/why-koda-defaults";
 import { MediaField } from "@/components/admin/media-field";
 import { RichTextField } from "@/components/admin/rich-text-field";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, Select, TextArea, TextInput } from "@/components/ui/field";
+import { Field, FieldGroup, Select, TextInput } from "@/components/ui/field";
 
 const DEFAULT_SLOT_COUNT = 8;
 const MAX_SLOT_COUNT = 24;
@@ -299,20 +299,21 @@ export function WhyKodaEditor({
                 />
               </Field>
               <Field label="Label">
-                <TextInput
+                <RichTextField
                   name={`fact_${i}_label`}
                   value={fact.label}
-                  onChange={(e) => updateFact(i, { label: e.target.value })}
+                  onValueChange={(html) => updateFact(i, { label: html })}
                   placeholder="Hail Impact"
+                  minHeightClassName="min-h-12"
                 />
               </Field>
               <Field label="Supporting line">
-                <TextArea
+                <RichTextField
                   name={`fact_${i}_body`}
-                  rows={2}
                   value={fact.body}
-                  onChange={(e) => updateFact(i, { body: e.target.value })}
+                  onValueChange={(html) => updateFact(i, { body: html })}
                   placeholder="Short explanation"
+                  minHeightClassName="min-h-24"
                 />
               </Field>
             </div>
@@ -346,7 +347,7 @@ export function WhyKodaEditor({
           {features.map((feature, i) => (
             <div
               key={feature.key}
-              className="grid w-full gap-4 rounded-lg border border-brand-primary/8 bg-bg-secondary/50 p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]"
+              className="flex w-full flex-col gap-4 rounded-lg border border-brand-primary/8 bg-bg-secondary/50 p-4"
             >
               <div className="flex min-w-0 flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">

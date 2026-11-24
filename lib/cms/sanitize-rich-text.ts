@@ -13,13 +13,17 @@ const ALLOWED_TAGS = new Set([
 
 /** True when the string has visible text after stripping tags. */
 export function richTextHasContent(html: string | null | undefined) {
-  return Boolean(
-    String(html ?? "")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/\s+/g, " ")
-      .trim(),
-  );
+  return Boolean(plainTextFromRich(html));
+}
+
+/** Visible text for alt attributes, analytics, and placeholders. */
+export function plainTextFromRich(html: string | null | undefined) {
+  return decodeBasicEntities(String(html ?? ""))
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -51,9 +55,9 @@ export function sanitizeRichText(html: string | null | undefined): string {
   const raw = decodeBasicEntities(String(html ?? "")).trim();
   if (!raw) return "";
 
-  // Plain text (legacy CMS content) — escape and keep.
+  // Plain text (legacy CMS content) — escape and keep line breaks.
   if (!/<[a-z][\s\S]*>/i.test(raw)) {
-    return escapeText(raw);
+    return escapeText(raw).replace(/\r\n|\r|\n/g, "<br>");
   }
 
   // Server / edge-safe path without DOM.

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Partner } from "@/lib/cms/types";
+import { RichText } from "@/components/site/rich-text";
 
 export function HomePartnersSection({
   title,
@@ -18,7 +19,7 @@ export function HomePartnersSection({
     <section className="border-y border-brand-primary/13 bg-bg-primary py-12 lg:py-10">
       <div className="flex flex-col items-center gap-6 lg:gap-8">
         <h2 className="px-page text-center text-xl font-bold text-brand-primary/80 sm:text-2xl lg:text-3xl">
-          {title}
+          <RichText html={title} as="span" />
         </h2>
         <div className="relative w-full overflow-hidden">
           <div className="partners-marquee flex w-max items-center gap-16 px-10">

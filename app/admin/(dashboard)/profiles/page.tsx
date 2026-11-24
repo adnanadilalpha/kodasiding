@@ -130,6 +130,9 @@ export default async function ProfilesPage({
               profiles={soffitProfiles}
               showCtas
               quoteCtaLabel={pageProfiles?.quote_cta_label ?? "Request a quote"}
+              pageTitle={pageProfiles?.page_title || undefined}
+              pageIntro={pageProfiles?.page_intro || undefined}
+              learnMoreLabel={pageProfiles?.learn_more_label || undefined}
             />
           ),
         },

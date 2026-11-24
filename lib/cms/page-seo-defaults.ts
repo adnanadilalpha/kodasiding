@@ -1,4 +1,17 @@
-import type { PageSeo, PagesSeoBag } from "@/lib/cms/types";
+import type {
+  FindDealerPageCopy,
+  PageSeo,
+  PagesSeoBag,
+} from "@/lib/cms/types";
+
+export const DEFAULT_FIND_DEALER_PAGE_COPY: FindDealerPageCopy = {
+  search_placeholder: "Search U.S. city or ZIP",
+  search_button_label: "Search",
+  quick_search_label: "Quick Search",
+  call_label: "Call",
+  directions_label: "Directions",
+  empty_results: "No dealers near that location yet.",
+};
 
 export const DEFAULT_HOME_PAGE_SEO: PageSeo = {
   title: "Koda Siding | Engineered Fiberglass Siding",
@@ -23,12 +36,12 @@ export const DEFAULT_PROFILES_PAGE_SEO: PageSeo = {
 };
 
 export const DEFAULT_INSTALLATION_PAGE_SEO: PageSeo = {
-  title: "Installation | Koda Siding",
+  title: "Install it yourself | Koda Siding",
   description:
-    "Siding installation in Omaha and surrounding areas — Koda crews, full replacement, and the online installation manual.",
-  og_title: "Siding Installation | Koda Siding",
+    "DIY installation guide for Koda fiberglass siding — full manual, profiles, and install videos.",
+  og_title: "Install it yourself | Koda Siding",
   og_description:
-    "Local Koda crews install fiberglass siding in Omaha and surrounding areas — or download the DIY manual.",
+    "Follow the full Koda installation manual — components, profiles, and step-by-step details.",
   og_image_media_id: null,
   canonical_path: "/installation",
 };
@@ -57,6 +70,15 @@ export function mergePageSeo(
   };
 }
 
+export function mergeFindDealerPageCopy(
+  raw?: Partial<FindDealerPageCopy> | null,
+): FindDealerPageCopy {
+  return {
+    ...DEFAULT_FIND_DEALER_PAGE_COPY,
+    ...raw,
+  };
+}
+
 export function mergePagesSeoBag(
   raw?: PagesSeoBag | null,
 ): PagesSeoBag {
@@ -66,6 +88,7 @@ export function mergePagesSeoBag(
       raw?.installation,
     ),
     find_dealer: mergePageSeo(DEFAULT_FIND_DEALER_PAGE_SEO, raw?.find_dealer),
+    find_dealer_copy: mergeFindDealerPageCopy(raw?.find_dealer_copy),
   };
 }
 

@@ -9,8 +9,7 @@ import {
 import type { PageHome, SiteSettings } from "@/lib/cms/types";
 import { SectionShell } from "@/components/admin/section-shell";
 import {
-  InstallCoverageEditor,
-  InstallHeroEditor,
+  InstallDiyEditor,
   InstallManualEditor,
 } from "@/components/admin/installation-editor";
 import { PageSeoEditor } from "@/components/admin/page-seo-editor";
@@ -52,7 +51,6 @@ export default async function InstallationAdminPage({
   const videoRows = videos ?? [];
   const media = await getMediaMap([
     ...videoRows.map((v) => v.thumbnail_media_id),
-    section?.hero_image_media_id ?? null,
     pageSeo.og_image_media_id,
   ]);
 
@@ -73,45 +71,35 @@ export default async function InstallationAdminPage({
       defaultSectionId={sectionParam}
       sections={[
         {
-          id: "hero",
-          label: "Hero",
+          id: "diy",
+          label: "DIY page",
           content: (
-            <InstallHeroEditor
-              headline={section?.headline ?? ""}
-              body={section?.body ?? ""}
-              heroServiceLabel={section?.hero_service_label ?? ""}
-              heroImageId={section?.hero_image_media_id ?? null}
-              heroImagePath={
-                section?.hero_image_media_id
-                  ? (media[section.hero_image_media_id]?.path ?? null)
-                  : null
-              }
-            />
-          ),
-        },
-        {
-          id: "coverage",
-          label: "Coverage",
-          content: (
-            <InstallCoverageEditor
-              installRadiusMiles={
-                typeof section?.install_radius_miles === "number"
-                  ? section.install_radius_miles
-                  : 60
-              }
-              citiesIntro={section?.cities_intro ?? ""}
-              cities={section?.cities ?? ""}
-            />
+            <div className="flex w-full flex-col gap-3">
+              <p className="text-sm text-text-primary/50">
+                Headings and labels on{" "}
+                <span className="font-medium text-text-primary">
+                  /installation
+                </span>
+                .
+              </p>
+              <InstallDiyEditor section={section} />
+            </div>
           ),
         },
         {
           id: "manual",
           label: "Manual",
           content: (
-            <InstallManualEditor
-              manualLabel={section?.manual_label ?? ""}
-              manualPath={doc?.storage_path ?? ""}
-            />
+            <div className="flex w-full flex-col gap-3">
+              <p className="text-sm text-text-primary/50">
+                DIY page only — for homeowners installing Koda themselves.
+                Local crew install lives under Home → Installation.
+              </p>
+              <InstallManualEditor
+                manualLabel={section?.manual_label ?? ""}
+                manualPath={doc?.storage_path ?? ""}
+              />
+            </div>
           ),
         },
         {
@@ -125,7 +113,7 @@ export default async function InstallationAdminPage({
                 <span className="font-medium text-text-primary">
                   /installation
                 </span>
-                . Unpublished videos stay hidden on the site.
+                .
               </p>
               <VideoEditorList addVariant="accent" videos={videoList} />
             </div>

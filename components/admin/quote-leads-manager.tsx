@@ -38,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 type MenuId = "filters";
 
@@ -1197,7 +1198,7 @@ function LeadDetailModal({
               {custom.map((field) => (
                 <li key={field.id}>
                   <span className="font-medium text-text-primary/75">
-                    {field.label}:
+                    {plainTextFromRich(field.label)}:
                   </span>{" "}
                   {field.value}
                 </li>

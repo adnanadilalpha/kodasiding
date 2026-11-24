@@ -26,7 +26,16 @@ function mergeKodaVentPage(row: PageKodaVent | null | undefined): PageKodaVent {
       annotations:
         row.product_design?.annotations ?? base.product_design.annotations,
     },
-    installed: { ...base.installed, ...row.installed },
+    installed: {
+      ...base.installed,
+      ...row.installed,
+      eyebrow: row.installed?.eyebrow || base.installed.eyebrow,
+      badge_label: row.installed?.badge_label || base.installed.badge_label,
+      figure_title: row.installed?.figure_title || base.installed.figure_title,
+      traits: row.installed?.traits?.length
+        ? row.installed.traits
+        : base.installed.traits,
+    },
     installation: {
       ...base.installation,
       ...row.installation,

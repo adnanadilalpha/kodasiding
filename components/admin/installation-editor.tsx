@@ -12,6 +12,9 @@ import {
   DEFAULT_INSTALLATION_PAGE,
 } from "@/lib/cms/installation-defaults";
 import { LANDING_FALLBACKS } from "@/lib/cms/landing-fallbacks";
+import type { HomeVideosSection } from "@/lib/cms/types";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 const MANUAL_KEY = "installation_manual";
 
@@ -52,23 +55,48 @@ export function InstallHeroEditor({
   heroServiceLabel,
   heroImageId,
   heroImagePath,
+  diyLinkLabel,
+  eyebrowPrefix,
+  heroImageAlt,
 }: {
   headline: string;
   body: string;
   heroServiceLabel: string;
   heroImageId: string | null;
   heroImagePath: string | null;
+  diyLinkLabel?: string;
+  eyebrowPrefix?: string;
+  heroImageAlt?: string;
 }) {
   const { pending, onSave } = useInstallSave();
 
+  function onSaveHero(formData: FormData) {
+    formData.set("install_section", "hero");
+    // DIY link lives on the home local-install section (secondary CTA).
+    formData.set(
+      "diy_link_label",
+      String(formData.get("diy_link_label") ?? diyLinkLabel ?? ""),
+    );
+    onSave(formData);
+  }
+
   return (
-    <form action={onSave} className="flex w-full flex-col gap-5">
-      <input type="hidden" name="install_section" value="hero" />
-      <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-stretch">
+    <form action={onSaveHero} className="flex w-full flex-col gap-5">
+      <div className="flex w-full flex-col gap-5">
         <div className="flex min-w-0 flex-col gap-5">
           <FieldGroup title="Copy">
+            <Field label="Eyebrow prefix">
+              <RichTextField
+                name="eyebrow_prefix"
+                defaultValue={
+                  eyebrowPrefix || DEFAULT_INSTALLATION_PAGE.eyebrow_prefix || ""
+                }
+                placeholder="Local install"
+                minHeightClassName="min-h-12"
+              />
+            </Field>
             <Field label="Eyebrow">
-              <TextInput
+              <RichTextField
                 name="hero_service_label"
                 defaultValue={
                   heroServiceLabel ||
@@ -76,26 +104,47 @@ export function InstallHeroEditor({
                   ""
                 }
                 placeholder="Omaha & surrounding areas"
+                minHeightClassName="min-h-12"
               />
             </Field>
             <Field label="Headline">
-              <TextInput
+              <RichTextField
                 name="videos_headline"
                 defaultValue={headline || DEFAULT_INSTALLATION_PAGE.headline}
                 placeholder="Siding Installation in Omaha and Surrounding Areas"
+                minHeightClassName="min-h-12"
               />
             </Field>
             <Field label="Body (blank line = new paragraph)">
-              <TextArea
+              <RichTextField
                 name="videos_body"
-                rows={8}
                 defaultValue={body || DEFAULT_INSTALLATION_PAGE.body}
                 placeholder="Koda Siding installs its own fiberglass siding…"
+                minHeightClassName="min-h-28"
+              />
+            </Field>
+            <Field label="DIY link label">
+              <RichTextField
+                name="diy_link_label"
+                defaultValue={
+                  diyLinkLabel || DEFAULT_HOME_INSTALL_SERVICES.diy_cta_label
+                }
+                placeholder="Install it yourself"
+                minHeightClassName="min-h-12"
               />
             </Field>
           </FieldGroup>
         </div>
-        <FieldGroup title="Media" className="min-w-0 self-stretch">
+        <FieldGroup title="Media" className="min-w-0">
+          <Field label="Hero image alt text">
+            <TextInput
+              name="hero_image_alt"
+              defaultValue={
+                heroImageAlt || DEFAULT_INSTALLATION_PAGE.hero_image_alt || ""
+              }
+              placeholder="Koda Siding crew installing fiberglass siding"
+            />
+          </Field>
           <MediaField
             name="hero_image_media_id"
             label="Hero / crew photo"
@@ -115,10 +164,16 @@ export function InstallCoverageEditor({
   installRadiusMiles,
   citiesIntro,
   cities,
+  coverageHeading,
+  townSearchPlaceholder,
+  servicesCtaLabel,
 }: {
   installRadiusMiles: number;
   citiesIntro: string;
   cities: string;
+  coverageHeading?: string;
+  townSearchPlaceholder?: string;
+  servicesCtaLabel?: string;
 }) {
   const { pending, onSave } = useInstallSave();
 
@@ -127,6 +182,40 @@ export function InstallCoverageEditor({
       <input type="hidden" name="install_section" value="coverage" />
       <FieldGroup title="Coverage map">
         <div className="grid gap-4 lg:grid-cols-2">
+          <Field label="Coverage heading">
+            <RichTextField
+              name="coverage_heading"
+              defaultValue={
+                coverageHeading || DEFAULT_INSTALLATION_PAGE.coverage_heading || ""
+              }
+              placeholder="Do we install near you?"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Town search placeholder">
+            <RichTextField
+              name="town_search_placeholder"
+              defaultValue={
+                townSearchPlaceholder ||
+                DEFAULT_INSTALLATION_PAGE.town_search_placeholder ||
+                ""
+              }
+              placeholder="Type a town, or tap a pin…"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Quote button label">
+            <RichTextField
+              name="services_cta_label"
+              defaultValue={
+                servicesCtaLabel ||
+                DEFAULT_INSTALLATION_PAGE.services_cta_label ||
+                ""
+              }
+              placeholder="Request install quote"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
           <Field label="Radius (miles)">
             <TextInput
               name="install_radius_miles"
@@ -143,13 +232,13 @@ export function InstallCoverageEditor({
           </Field>
           <div className="lg:col-span-2">
             <Field label="Helper text">
-              <TextArea
+              <RichTextField
                 name="cities_intro"
-                rows={2}
                 defaultValue={
                   citiesIntro || DEFAULT_INSTALLATION_PAGE.cities_intro || ""
                 }
                 placeholder="Green circle = where Koda crews install…"
+                minHeightClassName="min-h-24"
               />
             </Field>
           </div>
@@ -168,6 +257,115 @@ export function InstallCoverageEditor({
             </p>
           </div>
         </div>
+      </FieldGroup>
+      <SaveButton pending={pending} />
+    </form>
+  );
+}
+
+export function InstallDiyEditor({
+  section,
+}: {
+  section?: Partial<HomeVideosSection> | null;
+}) {
+  const { pending, onSave } = useInstallSave();
+  const d = DEFAULT_INSTALLATION_PAGE;
+  const s = section ?? {};
+
+  return (
+    <form action={onSave} className="flex w-full flex-col gap-5">
+      <input type="hidden" name="install_section" value="diy" />
+      <FieldGroup title="Page header">
+        <Field label="Eyebrow">
+          <RichTextField
+            name="diy_eyebrow"
+            defaultValue={s.diy_eyebrow || d.diy_eyebrow || ""}
+            placeholder="DIY guide"
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Headline">
+          <RichTextField
+            name="diy_headline"
+            defaultValue={s.diy_headline || d.diy_headline || ""}
+            placeholder="Install it yourself"
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Body">
+          <RichTextField
+            name="diy_body"
+            defaultValue={s.diy_body || d.diy_body || ""}
+            minHeightClassName="min-h-24"
+          />
+        </Field>
+      </FieldGroup>
+      <FieldGroup title="Videos section">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Field label="Eyebrow">
+            <RichTextField
+              name="videos_eyebrow"
+              defaultValue={s.videos_eyebrow || d.videos_eyebrow || ""}
+              placeholder="Videos"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Heading">
+            <RichTextField
+              name="videos_heading"
+              defaultValue={s.videos_heading || d.videos_heading || ""}
+              placeholder="Watch the install"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+        </div>
+      </FieldGroup>
+      <FieldGroup title="Local crews footer">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Field label="Eyebrow">
+            <RichTextField
+              name="local_crews_eyebrow"
+              defaultValue={
+                s.local_crews_eyebrow || d.local_crews_eyebrow || ""
+              }
+              placeholder="Local crews"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Heading">
+            <RichTextField
+              name="local_crews_heading"
+              defaultValue={
+                s.local_crews_heading || d.local_crews_heading || ""
+              }
+              placeholder="Prefer we install it?"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Link label">
+            <RichTextField
+              name="local_crews_link_label"
+              defaultValue={
+                s.local_crews_link_label || d.local_crews_link_label || ""
+              }
+              placeholder="See local install"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+          <Field label="Quote button label">
+            <RichTextField
+              name="local_crews_cta_label"
+              defaultValue={
+                s.local_crews_cta_label || d.local_crews_cta_label || ""
+              }
+              placeholder="Request install quote"
+              minHeightClassName="min-h-12"
+            />
+          </Field>
+        </div>
+        <p className="mt-2 truncate font-mono text-xs text-text-primary/40">
+          Link target is fixed to /#installation.
+        </p>
       </FieldGroup>
       <SaveButton pending={pending} />
     </form>
@@ -231,12 +429,13 @@ export function InstallManualEditor({
       <input type="hidden" name="install_section" value="manual" />
       <FieldGroup title="PDF manual">
         <Field label="Button label">
-          <TextInput
+          <RichTextField
             name="manual_label"
             defaultValue={
               manualLabel || DEFAULT_INSTALLATION_PAGE.manual_label
             }
             placeholder="Download PDF manual"
+            minHeightClassName="min-h-12"
           />
         </Field>
         <div className="flex flex-col gap-2">
@@ -263,7 +462,7 @@ export function InstallManualEditor({
                     );
                   void onPdfChange(
                     e.target.files?.[0] ?? null,
-                    labelInput?.value ?? manualLabel,
+                    plainTextFromRich(labelInput?.value ?? manualLabel),
                   );
                 }}
               />
@@ -305,52 +504,56 @@ export function InstallHomeTeaserEditor({
       <FieldGroup title="Copy">
         <div className="grid gap-4 lg:grid-cols-2">
           <Field label="Service area chip">
-            <TextInput
+            <RichTextField
               name="service_area"
               defaultValue={
                 serviceArea || DEFAULT_HOME_INSTALL_SERVICES.service_area
               }
               placeholder="Nebraska"
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Headline">
-            <TextInput
+            <RichTextField
               name="services_headline"
               defaultValue={
                 servicesHeadline || DEFAULT_HOME_INSTALL_SERVICES.headline
               }
               placeholder="Installation in Nebraska"
+              minHeightClassName="min-h-12"
             />
           </Field>
           <div className="lg:col-span-2">
             <Field label="Body">
-              <TextArea
+              <RichTextField
                 name="services_body"
-                rows={3}
                 defaultValue={
                   servicesBody || DEFAULT_HOME_INSTALL_SERVICES.body
                 }
                 placeholder="Koda Siding ships nationwide…"
+                minHeightClassName="min-h-24"
               />
             </Field>
           </div>
           <Field label="Quote CTA label">
-            <TextInput
+            <RichTextField
               name="services_cta_label"
               defaultValue={
                 servicesCtaLabel ||
                 DEFAULT_HOME_INSTALL_SERVICES.primary_cta_label
               }
               placeholder="Request install quote"
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Installation link label">
-            <TextInput
+            <RichTextField
               name="diy_link_label"
               defaultValue={
                 diyLinkLabel || DEFAULT_HOME_INSTALL_SERVICES.diy_cta_label
               }
-              placeholder="Installation"
+              placeholder="Install it yourself"
+              minHeightClassName="min-h-12"
             />
           </Field>
         </div>

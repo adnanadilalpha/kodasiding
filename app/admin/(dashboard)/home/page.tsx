@@ -12,15 +12,19 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { HomeWhyKoda, PageHome } from "@/lib/cms/types";
 import { HomeProfilesEditor } from "@/components/admin/home-profiles-editor";
-import { InstallHomeTeaserEditor } from "@/components/admin/installation-editor";
+import {
+  InstallCoverageEditor,
+  InstallHeroEditor,
+} from "@/components/admin/installation-editor";
 import { MediaField } from "@/components/admin/media-field";
 import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { PartnersEditor } from "@/components/admin/partners-editor";
 import { SectionShell } from "@/components/admin/section-shell";
 import { WhyKodaEditor } from "@/components/admin/why-koda-editor";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import { FIND_DEALER_HREF, PROFILES_HREF } from "@/lib/cms/nav-slots";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 function LockedHint({ children }: { children: React.ReactNode }) {
   return (
@@ -60,6 +64,7 @@ export default async function HomeEditorPage({
   const jewelRows = jewels ?? [];
 
   const pageSeo = mergePageSeo(DEFAULT_HOME_PAGE_SEO, page.seo);
+  const installSection = page.videos_section;
   const media = await getMediaMap([
     page.hero.image_media_id,
     why.image_media_id,
@@ -68,6 +73,7 @@ export default async function HomeEditorPage({
     page.ctas.dealer.image_media_id,
     ...partnerRows.map((p) => p.logo_media_id),
     ...jewelRows.map((j) => j.image_media_id),
+    installSection?.hero_image_media_id ?? null,
     pageSeo.og_image_media_id,
   ]);
 
@@ -81,31 +87,33 @@ export default async function HomeEditorPage({
           label: "Hero",
           content: (
             <form action={saveHomeHero} className="flex w-full flex-col gap-5">
-              <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-stretch">
+              <div className="flex w-full flex-col gap-5">
                 <div className="flex min-w-0 flex-col gap-5">
                   <FieldGroup title="Copy">
                     <Field label="Headline">
-                      <TextInput
+                      <RichTextField
                         name="hero_headline"
                         defaultValue={page.hero.headline}
                         placeholder="Siding built to last a lifetime."
+                        minHeightClassName="min-h-12"
                       />
                     </Field>
                     <Field label="Subheadline">
-                      <TextArea
+                      <RichTextField
                         name="hero_subheadline"
-                        rows={3}
                         defaultValue={page.hero.subheadline}
                         placeholder="Enter supporting copy"
+                        minHeightClassName="min-h-24"
                       />
                     </Field>
                   </FieldGroup>
                   <FieldGroup title="Call to action">
                     <Field label="Label">
-                      <TextInput
+                      <RichTextField
                         name="hero_cta_label"
                         defaultValue={page.hero.cta_label}
                         placeholder="Explore Profiles"
+                        minHeightClassName="min-h-12"
                       />
                     </Field>
                     <div className="min-w-0">
@@ -183,13 +191,40 @@ export default async function HomeEditorPage({
           id: "installation",
           label: "Installation",
           content: (
-            <InstallHomeTeaserEditor
-              servicesHeadline={page.videos_section?.services_headline ?? ""}
-              servicesBody={page.videos_section?.services_body ?? ""}
-              serviceArea={page.videos_section?.service_area ?? ""}
-              servicesCtaLabel={page.videos_section?.services_cta_label ?? ""}
-              diyLinkLabel={page.videos_section?.diy_link_label ?? ""}
-            />
+            <div className="flex w-full flex-col gap-8">
+              <p className="text-sm text-text-primary/50">
+                Homeowners who want Koda crews to install. DIY guide is under
+                Installation in the sidebar.
+              </p>
+              <InstallHeroEditor
+                headline={installSection?.headline ?? ""}
+                body={installSection?.body ?? ""}
+                heroServiceLabel={installSection?.hero_service_label ?? ""}
+                heroImageId={installSection?.hero_image_media_id ?? null}
+                heroImagePath={
+                  installSection?.hero_image_media_id
+                    ? (media[installSection.hero_image_media_id]?.path ?? null)
+                    : null
+                }
+                diyLinkLabel={installSection?.diy_link_label ?? ""}
+                eyebrowPrefix={installSection?.eyebrow_prefix ?? ""}
+                heroImageAlt={installSection?.hero_image_alt ?? ""}
+              />
+              <InstallCoverageEditor
+                installRadiusMiles={
+                  typeof installSection?.install_radius_miles === "number"
+                    ? installSection.install_radius_miles
+                    : 60
+                }
+                citiesIntro={installSection?.cities_intro ?? ""}
+                cities={installSection?.cities ?? ""}
+                coverageHeading={installSection?.coverage_heading ?? ""}
+                townSearchPlaceholder={
+                  installSection?.town_search_placeholder ?? ""
+                }
+                servicesCtaLabel={installSection?.services_cta_label ?? ""}
+              />
+            </div>
           ),
         },
         {
@@ -197,27 +232,61 @@ export default async function HomeEditorPage({
           label: "Start project",
           content: (
             <form action={saveHomeCtas} className="flex w-full flex-col gap-5">
+              <FieldGroup title="Section copy">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field label="Section heading">
+                    <RichTextField
+                      name="section_heading"
+                      defaultValue={
+                        page.ctas.section_heading || "Ready to Get Started?"
+                      }
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                  <Field label="Quote-only eyebrow">
+                    <RichTextField
+                      name="quote_only_eyebrow"
+                      defaultValue={
+                        page.ctas.quote_only_eyebrow || "Start your project"
+                      }
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                </div>
+                <Field label="Section description">
+                  <RichTextField
+                    name="section_description"
+                    defaultValue={
+                      page.ctas.section_description ||
+                      "Choose the path that best matches your project."
+                    }
+                    minHeightClassName="min-h-24"
+                  />
+                </Field>
+              </FieldGroup>
               <div className="grid w-full gap-5 lg:grid-cols-2">
                 <FieldGroup title="Quote card">
-                  <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
+                  <div className="flex flex-col gap-3.5">
                     <div className="flex min-w-0 flex-col gap-3.5">
                       <Field label="Headline">
-                        <TextInput
+                        <RichTextField
                           name="quote_headline"
                           defaultValue={page.ctas.quote.headline}
+                          minHeightClassName="min-h-12"
                         />
                       </Field>
                       <Field label="Body">
-                        <TextArea
+                        <RichTextField
                           name="quote_body"
-                          rows={2}
                           defaultValue={page.ctas.quote.body}
+                          minHeightClassName="min-h-24"
                         />
                       </Field>
                       <Field label="CTA label">
-                        <TextInput
+                        <RichTextField
                           name="quote_cta_label"
                           defaultValue={page.ctas.quote.cta_label}
+                          minHeightClassName="min-h-12"
                         />
                       </Field>
                     </div>
@@ -251,25 +320,27 @@ export default async function HomeEditorPage({
                       </span>
                     </span>
                   </label>
-                  <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
+                  <div className="flex flex-col gap-3.5">
                     <div className="flex min-w-0 flex-col gap-3.5">
                       <Field label="Headline">
-                        <TextInput
+                        <RichTextField
                           name="dealer_headline"
                           defaultValue={page.ctas.dealer.headline}
+                          minHeightClassName="min-h-12"
                         />
                       </Field>
                       <Field label="Body">
-                        <TextArea
+                        <RichTextField
                           name="dealer_body"
-                          rows={2}
                           defaultValue={page.ctas.dealer.body}
+                          minHeightClassName="min-h-24"
                         />
                       </Field>
                       <Field label="CTA label">
-                        <TextInput
+                        <RichTextField
                           name="dealer_cta_label"
                           defaultValue={page.ctas.dealer.cta_label}
+                          minHeightClassName="min-h-12"
                         />
                       </Field>
                       <div className="min-w-0">

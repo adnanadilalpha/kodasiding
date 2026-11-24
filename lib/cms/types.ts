@@ -99,9 +99,19 @@ export type PageSeo = {
 };
 
 /** Extra page SEO stored on site_settings (no dedicated page row). */
+export type FindDealerPageCopy = {
+  search_placeholder: string;
+  search_button_label: string;
+  quick_search_label: string;
+  call_label: string;
+  directions_label: string;
+  empty_results: string;
+};
+
 export type PagesSeoBag = {
   installation?: PageSeo;
   find_dealer?: PageSeo;
+  find_dealer_copy?: FindDealerPageCopy;
 };
 
 export type GeoAccess = {
@@ -220,6 +230,22 @@ export type HomeVideosSection = {
   service_area?: string;
   services_cta_label?: string;
   diy_link_label?: string;
+  /** Prefix before service area on home install hero (e.g. Local install) */
+  eyebrow_prefix?: string;
+  /** Coverage card heading */
+  coverage_heading?: string;
+  town_search_placeholder?: string;
+  hero_image_alt?: string;
+  /** /installation DIY page chrome */
+  diy_eyebrow?: string;
+  diy_headline?: string;
+  diy_body?: string;
+  videos_eyebrow?: string;
+  videos_heading?: string;
+  local_crews_eyebrow?: string;
+  local_crews_heading?: string;
+  local_crews_link_label?: string;
+  local_crews_cta_label?: string;
 };
 
 export type HomeCtaCard = {
@@ -231,6 +257,11 @@ export type HomeCtaCard = {
 };
 
 export type HomeCtas = {
+  /** Dual-card section heading when dealer card is shown */
+  section_heading?: string;
+  section_description?: string;
+  /** Eyebrow used in quote-only cinematic layout */
+  quote_only_eyebrow?: string;
   quote: HomeCtaCard;
   dealer: HomeCtaCard;
   /** When false, the home "Find a dealer" card is hidden on the public site. */
@@ -275,6 +306,9 @@ export type ProfileSheetCopy = {
 
 export type PageProfiles = {
   id: number;
+  page_title?: string;
+  page_intro?: string;
+  learn_more_label?: string;
   horizontal: ProfileSheetCopy;
   vertical: ProfileSheetCopy;
   universal: ProfileSheetCopy;
@@ -377,10 +411,12 @@ export type KodaVentHero = {
 };
 
 export type KodaVentProductDesign = {
+  eyebrow: string;
   heading: string;
   description: string;
   image_media_id: string | null;
   image_alt: string;
+  image_caption: string;
   /** Optional exploded / how-it-works image (falls back to public asset). */
   exploded_image_media_id?: string | null;
   exploded_image_alt?: string;
@@ -389,11 +425,18 @@ export type KodaVentProductDesign = {
 };
 
 export type KodaVentInstalled = {
+  eyebrow: string;
   heading: string;
   description: string;
   image_media_id: string | null;
   image_alt: string;
+  /** Small label overlaid on the photo (e.g. On the wall). */
+  badge_label: string;
   caption: string;
+  /** Title under the caption on the photo card. */
+  figure_title: string;
+  /** Short trait labels under the heading (e.g. Quiet / Square). */
+  traits?: string[];
   visible: boolean;
 };
 
@@ -413,11 +456,13 @@ export type KodaVentInstallMethod = {
   heading: string;
   intro: string;
   pdf_document_key: string;
+  pdf_link_label: string;
   steps: KodaVentInstallStep[];
   visible: boolean;
 };
 
 export type KodaVentInstallation = {
+  eyebrow: string;
   heading: string;
   description: string;
   methods: KodaVentInstallMethod[];
@@ -432,8 +477,11 @@ export type KodaVentRetailerLink = {
 };
 
 export type KodaVentCta = {
+  eyebrow: string;
   heading: string;
   description: string;
+  guides_link_label: string;
+  coming_soon_label: string;
   cta_label: string;
   /** Empty or "#quote" opens the quote modal. Prefer retailer links for Order Now. */
   cta_href: string;

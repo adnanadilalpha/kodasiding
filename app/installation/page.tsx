@@ -8,7 +8,6 @@ import {
   FALLBACK_INSTALLATION_MANUAL,
   mergeInstallationPage,
 } from "@/lib/cms/installation-defaults";
-import { LANDING_FALLBACKS } from "@/lib/cms/landing-fallbacks";
 import {
   FOOTER_LINK_SLOTS,
   NAV_LINK_SLOTS,
@@ -33,11 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
     DEFAULT_INSTALLATION_PAGE_SEO,
     snapshot?.settings?.pages_seo?.installation,
   );
-  const heroOg = mediaUrlFromMap(
-    snapshot?.media ?? {},
-    snapshot?.home?.videos_section?.hero_image_media_id ?? null,
-  );
-  const pageOg = resolvePageOgImage(snapshot?.media, pageSeo, heroOg, ogImage);
+  const pageOg = resolvePageOgImage(snapshot?.media, pageSeo, ogImage);
   return applyPageSeoMetadata(seo, pageOg, pageSeo, {
     fallbackTitle: DEFAULT_INSTALLATION_PAGE_SEO.title,
     fallbackDescription: DEFAULT_INSTALLATION_PAGE_SEO.description,
@@ -94,13 +89,6 @@ export default async function InstallationPage() {
     }
   }
 
-  const heroImageUrl =
-    mediaUrlFromMap(
-      media,
-      section.hero_image_media_id ?? null,
-      LANDING_FALLBACKS.installCrew,
-    ) ?? LANDING_FALLBACKS.installCrew;
-
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
       <BreadcrumbJsonLd
@@ -118,10 +106,6 @@ export default async function InstallationPage() {
             videos={videos}
             thumbs={videoThumbs}
             manualUrl={manualUrl}
-            heroImageUrl={heroImageUrl}
-            serviceArea={
-              section.hero_service_label || "Omaha & surrounding areas"
-            }
           />
         </main>
         <SiteFooter footer={footer} logoAlt={nav.logo_alt} />

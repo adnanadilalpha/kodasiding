@@ -13,8 +13,10 @@ import { publicMediaUrl } from "@/lib/cms/urls";
 import { MediaField } from "@/components/admin/media-field";
 import { SectionHeaderAction } from "@/components/admin/section-header-action";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, TextArea, TextInput } from "@/components/ui/field";
+import { Field, FieldGroup, TextInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 function Thumb({
   src,
@@ -119,11 +121,11 @@ function ProfileTileForm({
       <div className={tab === "tile" ? "flex w-full flex-col gap-5" : "hidden"}>
         <FieldGroup title="Tile" columns={2}>
           <Field label="Label">
-            <TextInput
+            <RichTextField
               name="name"
-              required
               defaultValue={profile?.name}
               placeholder={namePlaceholder}
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Slug">
@@ -185,11 +187,11 @@ function ProfileTileForm({
 
         <FieldGroup title="Description">
           <Field label="Description (optional)">
-            <TextArea
+            <RichTextField
               name="description"
-              rows={4}
               defaultValue={profile?.description}
               placeholder="Optional — leave blank to hide in the Learn more modal"
+              minHeightClassName="min-h-24"
             />
           </Field>
         </FieldGroup>
@@ -228,12 +230,18 @@ export function ProfileSheetEditor({
   profiles,
   showCtas = false,
   quoteCtaLabel = "Request a quote",
+  pageTitle = "Profiles",
+  pageIntro = "Explore Koda horizontal, vertical, universal, and soffit and fascia fiberglass siding profiles.",
+  learnMoreLabel = "Learn more",
 }: {
   orientation: SheetOrientation;
   sheet: SheetCopy;
   profiles: ProfileItem[];
   showCtas?: boolean;
   quoteCtaLabel?: string;
+  pageTitle?: string;
+  pageIntro?: string;
+  learnMoreLabel?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -285,7 +293,7 @@ export function ProfileSheetEditor({
       <form action={onSaveSection} className="flex w-full flex-col gap-5">
         <FieldGroup title="Section header" columns={2}>
           <Field label="Headline">
-            <TextInput
+            <RichTextField
               name="headline"
               defaultValue={sheet.headline}
               placeholder={
@@ -297,24 +305,50 @@ export function ProfileSheetEditor({
                       ? "Soffit and fascia"
                       : "Universal profiles"
               }
+              minHeightClassName="min-h-12"
             />
           </Field>
           <Field label="Helper">
-            <TextInput
+            <RichTextField
               name="helper"
               defaultValue={sheet.helper}
               placeholder="Hover on profile to learn more"
+              minHeightClassName="min-h-12"
             />
           </Field>
         </FieldGroup>
 
         {showCtas ? (
-          <FieldGroup title="Page CTAs">
+          <FieldGroup title="Page copy & CTAs">
+            <Field label="Page title">
+              <RichTextField
+                name="page_title"
+                defaultValue={pageTitle}
+                placeholder="Profiles"
+                minHeightClassName="min-h-12"
+              />
+            </Field>
+            <Field label="Page intro">
+              <RichTextField
+                name="page_intro"
+                defaultValue={pageIntro}
+                minHeightClassName="min-h-24"
+              />
+            </Field>
+            <Field label="Learn more label">
+              <RichTextField
+                name="learn_more_label"
+                defaultValue={learnMoreLabel}
+                placeholder="Learn more"
+                minHeightClassName="min-h-12"
+              />
+            </Field>
             <Field label="Quote button">
-              <TextInput
+              <RichTextField
                 name="quote_cta_label"
                 defaultValue={quoteCtaLabel}
                 placeholder="Request a quote"
+                minHeightClassName="min-h-12"
               />
             </Field>
           </FieldGroup>
@@ -362,7 +396,7 @@ export function ProfileSheetEditor({
                     </button>
                     <div className="flex min-w-0 flex-1 flex-col gap-2 border-t border-brand-primary/8 px-3 py-3">
                       <p className="font-display truncate text-sm font-semibold text-brand-primary">
-                        {profile.name}
+                        {plainTextFromRich(profile.name)}
                       </p>
                       <p className="text-xs text-text-primary/45">
                         {profile.is_published ? "Published" : "Draft"}

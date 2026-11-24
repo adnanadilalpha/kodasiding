@@ -4,8 +4,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { sanitizeRichText } from "@/lib/cms/sanitize-rich-text";
 
 type Props = {
-  name: string;
+  name?: string;
   defaultValue?: string;
+  /** Controlled HTML. Use with onValueChange for JSON-backed fields. */
+  value?: string;
+  onValueChange?: (html: string) => void;
   placeholder?: string;
   minHeightClassName?: string;
 };
@@ -139,13 +142,16 @@ function transformSelectionCase(mode: "upper" | "lower" | "title") {
 export function RichTextField({
   name,
   defaultValue = "",
+  value: valueProp,
+  onValueChange,
   placeholder = "",
   minHeightClassName = "min-h-24",
 }: Props) {
+  const source = valueProp ?? defaultValue;
   const editorId = useId();
   const editorRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
-  const [value, setValue] = useState(() => sanitizeRichText(defaultValue));
+  const [value, setValue] = useState(() => sanitizeRichText(source));
   const [active, setActive] = useState<FormatState>({
     bold: false,
     italic: false,
@@ -155,12 +161,12 @@ export function RichTextField({
 
   useEffect(() => {
     if (!editorRef.current || seeded.current) return;
-    editorRef.current.innerHTML = sanitizeRichText(defaultValue);
+    editorRef.current.innerHTML = sanitizeRichText(source);
     seeded.current = true;
-  }, [defaultValue]);
+  }, [source]);
 
   useEffect(() => {
-    const next = sanitizeRichText(defaultValue);
+    const next = sanitizeRichText(source);
     setValue(next);
     if (
       editorRef.current &&
@@ -169,12 +175,14 @@ export function RichTextField({
     ) {
       editorRef.current.innerHTML = next;
     }
-  }, [defaultValue]);
+  }, [source]);
 
   function syncFromEditor() {
     const el = editorRef.current;
     if (!el) return;
-    setValue(sanitizeRichText(el.innerHTML));
+    const next = sanitizeRichText(el.innerHTML);
+    setValue(next);
+    onValueChange?.(next);
     updateActiveStates();
   }
 
@@ -297,7 +305,7 @@ export function RichTextField({
         />
       </div>
 
-      <input type="hidden" name={name} value={value} readOnly />
+      {name ? <input type="hidden" name={name} value={value} readOnly /> : null}
     </div>
   );
 }

@@ -4,11 +4,11 @@ export const FALLBACK_INSTALLATION_MANUAL =
   "/installation/koda-siding-manual.pdf";
 
 export const DEFAULT_HOME_INSTALL_SERVICES: HomeInstallServices = {
-  headline: "Installation in Nebraska",
-  body: "Koda Siding ships nationwide. If you are in Nebraska, our team can install it for you — or follow the full DIY guide to install it yourself.",
-  service_area: "Nebraska",
+  headline: "Siding Installation in Omaha and Surrounding Areas",
+  body: "Koda Siding installs its own fiberglass siding with our own trained crews.",
+  service_area: "Omaha & surrounding areas",
   primary_cta_label: "Request install quote",
-  diy_cta_label: "Installation",
+  diy_cta_label: "Install it yourself",
   diy_cta_href: "/installation",
 };
 
@@ -25,8 +25,24 @@ export const DEFAULT_INSTALLATION_PAGE: HomeVideosSection = {
   cities:
     "Omaha · Elkhorn · Millard · Bellevue · Papillion · La Vista · Gretna · Council Bluffs, IA · Fremont · Lincoln",
   hero_image_media_id: null,
+  hero_image_alt: "Koda Siding crew installing fiberglass siding",
+  eyebrow_prefix: "Local install",
+  coverage_heading: "Do we install near you?",
+  town_search_placeholder: "Type a town, or tap a pin…",
+  services_cta_label: "Request install quote",
+  diy_link_label: "Install it yourself",
   manual_label: "Download PDF manual",
   manual_document_key: "installation_manual",
+  diy_eyebrow: "DIY guide",
+  diy_headline: "Install it yourself",
+  diy_body:
+    "Follow the full Koda installation manual — components, horizontal and vertical profiles, and the details that keep water out.",
+  videos_eyebrow: "Videos",
+  videos_heading: "Watch the install",
+  local_crews_eyebrow: "Local crews",
+  local_crews_heading: "Prefer we install it?",
+  local_crews_link_label: "See local install",
+  local_crews_cta_label: "Request install quote",
 };
 
 export type ManualChapterId = "overview" | "components" | "horizontal" | "vertical";

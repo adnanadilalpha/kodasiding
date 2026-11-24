@@ -17,6 +17,7 @@ import {
 } from "@/lib/quote/recaptcha";
 import { sniffedMatchesAllowed, sniffFileBytes } from "@/lib/quote/sniff-file";
 import { validateQuoteEmail } from "@/lib/quote/validate-email";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 export const runtime = "nodejs";
 
@@ -253,7 +254,7 @@ export async function POST(request: Request) {
       if (field.kind === "custom" && field.required) {
         if (!customRaw[field.id]?.trim()) {
           return Response.json(
-            { ok: false, error: `Please fill in ${field.label}.` },
+            { ok: false, error: `Please fill in ${plainTextFromRich(field.label)}.` },
             { status: 400 },
           );
         }
@@ -275,7 +276,7 @@ export async function POST(request: Request) {
                 : message;
         if (!value) {
           return Response.json(
-            { ok: false, error: `Please fill in ${field.label}.` },
+            { ok: false, error: `Please fill in ${plainTextFromRich(field.label)}.` },
             { status: 400 },
           );
         }
@@ -286,7 +287,7 @@ export async function POST(request: Request) {
       .filter((f) => f.kind === "custom")
       .map((f) => ({
         id: f.id,
-        label: f.label,
+        label: plainTextFromRich(f.label),
         value: customRaw[f.id] ?? "",
       }));
 

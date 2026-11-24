@@ -1,4 +1,5 @@
 import {
+  saveFindDealerPageCopy,
   saveFindDealerPageSeo,
   saveFindDealerVisibility,
 } from "@/lib/cms/actions";
@@ -6,6 +7,7 @@ import { getMediaMap } from "@/lib/cms/media";
 import { FIND_DEALER_HREF } from "@/lib/cms/nav-slots";
 import {
   DEFAULT_FIND_DEALER_PAGE_SEO,
+  mergeFindDealerPageCopy,
   mergePageSeo,
   mergePagesSeoBag,
 } from "@/lib/cms/page-seo-defaults";
@@ -15,7 +17,8 @@ import { DealersEditor } from "@/components/admin/dealers-editor";
 import { PageSeoEditor } from "@/components/admin/page-seo-editor";
 import { SectionShell } from "@/components/admin/section-shell";
 import { Button } from "@/components/ui/button";
-import { FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { RichTextField } from "@/components/admin/rich-text-field";
 
 export default async function DealerPage({
   searchParams,
@@ -46,6 +49,9 @@ export default async function DealerPage({
   const pageSeo = mergePageSeo(
     DEFAULT_FIND_DEALER_PAGE_SEO,
     mergePagesSeoBag(site?.pages_seo).find_dealer,
+  );
+  const pageCopy = mergeFindDealerPageCopy(
+    site?.pages_seo?.find_dealer_copy,
   );
   const media = await getMediaMap([pageSeo.og_image_media_id]);
 
@@ -94,6 +100,70 @@ export default async function DealerPage({
                     </span>
                   </span>
                 </label>
+              </FieldGroup>
+              <div className="pt-1">
+                <Button type="submit">Save</Button>
+              </div>
+            </form>
+          ),
+        },
+        {
+          id: "copy",
+          label: "Page copy",
+          content: (
+            <form
+              action={saveFindDealerPageCopy}
+              className="flex w-full flex-col gap-5"
+            >
+              <FieldGroup title="Search">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Field label="Search placeholder">
+                    <RichTextField
+                      name="search_placeholder"
+                      defaultValue={pageCopy.search_placeholder}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                  <Field label="Search button label">
+                    <RichTextField
+                      name="search_button_label"
+                      defaultValue={pageCopy.search_button_label}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                  <Field label="Quick search label">
+                    <RichTextField
+                      name="quick_search_label"
+                      defaultValue={pageCopy.quick_search_label}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                  <Field label="Empty results message">
+                    <RichTextField
+                      name="empty_results"
+                      defaultValue={pageCopy.empty_results}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                </div>
+              </FieldGroup>
+              <FieldGroup title="Dealer card buttons">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Field label="Call label">
+                    <RichTextField
+                      name="call_label"
+                      defaultValue={pageCopy.call_label}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                  <Field label="Directions label">
+                    <RichTextField
+                      name="directions_label"
+                      defaultValue={pageCopy.directions_label}
+                      minHeightClassName="min-h-12"
+                    />
+                  </Field>
+                </div>
               </FieldGroup>
               <div className="pt-1">
                 <Button type="submit">Save</Button>

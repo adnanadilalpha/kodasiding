@@ -14,6 +14,7 @@ import { getSiteContent } from "@/lib/cms/queries";
 import { normalizeQuoteFormSettings } from "@/lib/cms/quote-form";
 import {
   DEFAULT_FIND_DEALER_PAGE_SEO,
+  mergeFindDealerPageCopy,
   mergePageSeo,
 } from "@/lib/cms/page-seo-defaults";
 import {
@@ -78,7 +79,10 @@ export default async function FindDealerPage() {
       <div className="flex min-h-full flex-col bg-bg-secondary">
         <SiteHeader nav={nav} forceSolid />
         <main id="main" className="flex-1 pt-16 lg:pt-24">
-          <FindDealer dealers={published} />
+          <FindDealer
+            dealers={published}
+            copy={mergeFindDealerPageCopy(settings.pages_seo?.find_dealer_copy)}
+          />
         </main>
         <SiteFooter footer={footer} logoAlt={nav.logo_alt} />
       </div>

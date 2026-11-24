@@ -24,7 +24,16 @@ function mergePage(row: PageKodaVent | null): PageKodaVent {
       annotations:
         row.product_design?.annotations ?? base.product_design.annotations,
     },
-    installed: { ...base.installed, ...row.installed },
+    installed: {
+      ...base.installed,
+      ...row.installed,
+      eyebrow: row.installed?.eyebrow || base.installed.eyebrow,
+      badge_label: row.installed?.badge_label || base.installed.badge_label,
+      figure_title: row.installed?.figure_title || base.installed.figure_title,
+      traits: row.installed?.traits?.length
+        ? row.installed.traits
+        : base.installed.traits,
+    },
     installation: {
       ...base.installation,
       ...row.installation,
@@ -67,7 +76,7 @@ export default async function KodaVentAdminPage({
         },
         {
           id: "product-design",
-          label: "Product Design",
+          label: "Why KodaVent",
           content: (
             <KodaVentProductDesignEditor
               section={page.product_design}
@@ -77,14 +86,14 @@ export default async function KodaVentAdminPage({
         },
         {
           id: "installed",
-          label: "Installed Appearance",
+          label: "See it installed",
           content: (
             <KodaVentInstalledEditor section={page.installed} media={media} />
           ),
         },
         {
           id: "installation",
-          label: "Installation Guides",
+          label: "Installation",
           content: (
             <KodaVentInstallationEditor
               section={page.installation}
@@ -95,7 +104,7 @@ export default async function KodaVentAdminPage({
         },
         {
           id: "cta",
-          label: "Final CTA",
+          label: "Order now",
           content: <KodaVentCtaEditor cta={page.cta} />,
         },
         {

@@ -5,7 +5,7 @@ import { HomeProfilesSection } from "@/components/site/home-profiles";
 import { HomeStartProject } from "@/components/site/home-start-project";
 import { HomeInstallServicesSection } from "@/components/site/home-install-services";
 import { HomeWhyKodaSection } from "@/components/site/home-why-koda";
-import { mergeHomeInstallServices } from "@/lib/cms/installation-defaults";
+import { mergeInstallationPage } from "@/lib/cms/installation-defaults";
 import {
   OrganizationJsonLd,
   WebSiteJsonLd,
@@ -128,7 +128,13 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
     jewelImages[jewel.id] = fallback;
   });
 
-  const installServices = mergeHomeInstallServices(home.videos_section);
+  const installSection = mergeInstallationPage(home.videos_section);
+  const installHeroImage =
+    mediaUrlFromMap(
+      media,
+      installSection.hero_image_media_id ?? null,
+      LANDING_FALLBACKS.installCrew,
+    ) ?? LANDING_FALLBACKS.installCrew;
 
   return (
     <QuoteProvider form={normalizeQuoteFormSettings(settings.quote_form)}>
@@ -154,7 +160,10 @@ function LandingPage({ snapshot }: { snapshot: SiteSnapshotPayload }) {
             jewels={home_profile_jewels}
             images={jewelImages}
           />
-          <HomeInstallServicesSection services={installServices} />
+          <HomeInstallServicesSection
+            section={installSection}
+            heroImageUrl={installHeroImage}
+          />
           <HomeStartProject
             ctas={ctas}
             quoteImage={quoteImage}

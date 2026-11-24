@@ -217,7 +217,7 @@ export default async function SettingsPage({
       label: "SEO",
       content: (
         <form action={saveSeoSettings} className="flex w-full flex-col gap-5">
-          <div className="grid w-full gap-5 lg:grid-cols-2 lg:items-start">
+          <div className="flex w-full flex-col gap-5">
             <FieldGroup title="Search" className="min-w-0 w-full">
               <Field label="Default title">
                 <TextInput

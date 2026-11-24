@@ -24,6 +24,8 @@ import {
 } from "@/lib/quote/constants";
 import { validateQuoteEmail } from "@/lib/quote/validate-email";
 import { lockBodyScroll } from "@/lib/dom/lock-body-scroll";
+import { RichText } from "@/components/site/rich-text";
+import { plainTextFromRich } from "@/lib/cms/sanitize-rich-text";
 
 type QuoteContextValue = {
   open: boolean;
@@ -224,7 +226,7 @@ function QuoteModal() {
       if (field.kind === "custom") {
         custom[field.id] = String(fd.get(`custom_${field.id}`) ?? "").trim();
         if (field.required && !custom[field.id]) {
-          setError(`Please fill in ${field.label}.`);
+          setError(`Please fill in ${plainTextFromRich(field.label)}.`);
           return;
         }
         continue;
@@ -236,7 +238,7 @@ function QuoteModal() {
       ) {
         const value = String(fd.get(field.kind) ?? "").trim();
         if (!value) {
-          setError(`Please fill in ${field.label}.`);
+          setError(`Please fill in ${plainTextFromRich(field.label)}.`);
           return;
         }
       }
@@ -300,7 +302,9 @@ function QuoteModal() {
     if (field.kind === "attachment") {
       return (
         <div key={field.id} className="flex flex-col gap-3 sm:gap-4">
-          <span className={labelClass}>{field.label}</span>
+          <span className={labelClass}>
+            <RichText html={field.label} as="span" />
+          </span>
           <input
             ref={fileInputRef}
             type="file"
@@ -316,7 +320,14 @@ function QuoteModal() {
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex w-fit items-center justify-center rounded-md border border-border-strong bg-bg-primary px-8 py-3 text-base text-brand-primary disabled:opacity-50"
             >
-              {file ? "Change file" : form.upload_label || "Upload file here"}
+              {file ? (
+                "Change file"
+              ) : (
+                <RichText
+                  html={form.upload_label || "Upload file here"}
+                  as="span"
+                />
+              )}
             </button>
             {file ? (
               <p className="max-w-full truncate text-sm text-text-secondary">
@@ -345,7 +356,9 @@ function QuoteModal() {
         field.kind === "custom" ? `custom_${field.id}` : field.kind;
       return (
         <label key={field.id} className="flex flex-col gap-1">
-          <span className={labelClass}>{field.label}</span>
+          <span className={labelClass}>
+            <RichText html={field.label} as="span" />
+          </span>
           <textarea
             name={name}
             rows={2}
@@ -376,7 +389,9 @@ function QuoteModal() {
 
     return (
       <label key={field.id} className="flex min-w-0 flex-col gap-1">
-        <span className={labelClass}>{field.label}</span>
+        <span className={labelClass}>
+            <RichText html={field.label} as="span" />
+          </span>
         <input
           name={name}
           type={type}
@@ -452,9 +467,9 @@ function QuoteModal() {
             <div className="flex flex-col gap-6 sm:gap-8">
               <h2
                 id={view === "form" ? titleId : undefined}
-                className="pr-8 font-sans text-lg leading-none font-extrabold text-[#1a1c18] uppercase sm:text-2xl lg:text-[30px]"
+                className="pr-8 font-sans text-lg leading-none font-extrabold text-[#1a1c18] sm:text-2xl lg:text-[30px]"
               >
-                {form.title}
+                <RichText html={form.title} as="span" />
               </h2>
 
               <div className="flex flex-col gap-4 sm:gap-6">
@@ -505,7 +520,7 @@ function QuoteModal() {
                 disabled={busy}
                 className="rounded-md bg-brand-primary px-8 py-3 text-base whitespace-nowrap text-text-inverse transition hover:bg-brand-primary-active disabled:opacity-60"
               >
-                {form.submit_label}
+                <RichText html={form.submit_label} as="span" />
               </button>
             </div>
           </form>
