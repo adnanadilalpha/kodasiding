@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import type { HomeVideosSection } from "@/lib/cms/types";
 import { resolveInstallTownPoints } from "@/lib/cms/install-service-geo";
 import { DEFAULT_INSTALLATION_PAGE } from "@/lib/cms/installation-defaults";
@@ -62,33 +61,14 @@ export function HomeInstallServicesSection({
     section.install_radius_miles > 0
       ? section.install_radius_miles
       : 60;
-  const coverageIntro =
-    section.cities_intro?.trim() ||
-    "Green circle = where Koda crews install. Tap a pin or type your town.";
   const diyLabel = section.diy_link_label?.trim() || "Install it yourself";
-  const eyebrowPrefix =
-    section.eyebrow_prefix?.trim() || DEFAULT_INSTALLATION_PAGE.eyebrow_prefix;
-  const coverageHeading =
-    section.coverage_heading?.trim() ||
-    DEFAULT_INSTALLATION_PAGE.coverage_heading;
-  const townSearchPlaceholder =
-    section.town_search_placeholder?.trim() ||
-    DEFAULT_INSTALLATION_PAGE.town_search_placeholder;
-  const servicesCtaLabel =
+  const quoteLabel =
     section.services_cta_label?.trim() ||
     DEFAULT_INSTALLATION_PAGE.services_cta_label;
+  const eyebrowPrefix =
+    section.eyebrow_prefix?.trim() || DEFAULT_INSTALLATION_PAGE.eyebrow_prefix;
   const heroImageAlt =
     section.hero_image_alt?.trim() || DEFAULT_INSTALLATION_PAGE.hero_image_alt;
-  const [townQuery, setTownQuery] = useState("");
-  const townMatches = (() => {
-    const q = townQuery.trim().toLowerCase();
-    if (!q) return [];
-    return cities.filter((city) => city.toLowerCase().includes(q));
-  })();
-  const exactTownMatch =
-    townMatches.find(
-      (city) => city.toLowerCase() === townQuery.trim().toLowerCase(),
-    ) ?? (townMatches.length === 1 ? townMatches[0] : null);
 
   return (
     <section
@@ -132,7 +112,7 @@ export function HomeInstallServicesSection({
             </p>
           ) : null}
 
-          <div className="mt-6 sm:mt-7">
+          <div className="mt-6 flex flex-wrap gap-3 sm:mt-7">
             <Link
               href={diyHref}
               onClick={() =>
@@ -145,6 +125,19 @@ export function HomeInstallServicesSection({
             >
               <RichText html={diyLabel} as="span" />
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                void trackAnalyticsEvent("cta_click", {
+                  label: plainTextFromRich(quoteLabel),
+                  metadata: { placement: "home-install-quote" },
+                });
+                openQuote();
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-text-inverse/40 px-6 py-3 text-sm text-text-inverse transition hover:border-text-inverse hover:bg-text-inverse/10 sm:px-7 sm:py-3.5 sm:text-base"
+            >
+              <RichText html={quoteLabel} as="span" />
+            </button>
           </div>
         </div>
 
@@ -153,123 +146,23 @@ export function HomeInstallServicesSection({
             {townPoints.length > 0 ? (
               <InstallServiceAreaMap
                 points={townPoints}
-                selectedName={exactTownMatch}
-                onSelectTown={setTownQuery}
+                selectedName={null}
+                onSelectTown={() => {}}
                 radiusMiles={radiusMiles}
               />
             ) : null}
 
             <div className="border-l-4 border-accent-warm p-3.5 text-brand-primary sm:p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[0.65rem] font-bold tracking-[0.14em] text-brand-primary/50">
-                    {radiusMiles} mi · <RichText html={serviceArea} as="span" />
-                  </p>
-                  <p className="mt-0.5 font-display text-base leading-tight font-bold tracking-tight sm:text-lg">
-                    <RichText html={coverageHeading} as="span" />
-                  </p>
-                </div>
-              </div>
-
-              <label className="mt-2.5 block">
-                <span className="sr-only">Your town</span>
-                <input
-                  type="search"
-                  value={townQuery}
-                  onChange={(e) => setTownQuery(e.target.value)}
-                  placeholder={plainTextFromRich(townSearchPlaceholder)}
-                  autoComplete="address-level2"
-                  className="w-full rounded-md border border-brand-primary/15 bg-bg-secondary px-3 py-2 text-sm text-brand-primary outline-none placeholder:text-brand-primary/35 focus:border-brand-primary/45"
-                />
-              </label>
-
-              {townQuery.trim() ? (
-                <div
-                  className={`mt-2 rounded-md px-2.5 py-1.5 text-xs leading-snug sm:text-sm ${
-                    exactTownMatch
-                      ? "bg-accent-warm/35 text-brand-primary"
-                      : "bg-bg-secondary text-brand-primary/75"
-                  }`}
-                  role="status"
-                >
-                  {exactTownMatch ? (
-                    <p>
-                      <span className="font-bold">Yes.</span> We install in{" "}
-                      {exactTownMatch}.
-                    </p>
-                  ) : townMatches.length > 0 ? (
-                    <p>
-                      Did you mean{" "}
-                      {townMatches.slice(0, 3).map((city, i) => (
-                        <span key={city}>
-                          {i > 0 ? ", " : ""}
-                          <button
-                            type="button"
-                            onClick={() => setTownQuery(city)}
-                            className="font-medium underline underline-offset-2"
-                          >
-                            {city}
-                          </button>
-                        </span>
-                      ))}
-                      ?
-                    </p>
-                  ) : (
-                    <p>
-                      Not listed — still ask. We cover towns inside the{" "}
-                      {radiusMiles}-mile radius.
-                    </p>
-                  )}
-                </div>
-              ) : coverageIntro ? (
-                <p className="mt-2 text-xs leading-relaxed text-brand-primary/55">
-                  <RichText html={coverageIntro} as="span" />
-                </p>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => {
-                  void trackAnalyticsEvent("cta_click", {
-                    label: exactTownMatch
-                      ? `Request quote for ${exactTownMatch}`
-                      : plainTextFromRich(servicesCtaLabel),
-                    metadata: {
-                      placement: "home-install-coverage",
-                      town: exactTownMatch || townQuery.trim() || "",
-                    },
-                  });
-                  openQuote();
-                }}
-                className="mt-2.5 inline-flex w-full items-center justify-center rounded-md bg-brand-primary px-4 py-2.5 text-sm text-text-inverse transition hover:bg-brand-primary-active"
-              >
-                {exactTownMatch ? (
-                  `Request quote · ${exactTownMatch}`
-                ) : (
-                  <RichText html={servicesCtaLabel} as="span" />
-                )}
-              </button>
+              <p className="text-[0.65rem] font-bold tracking-[0.14em] text-brand-primary/50">
+                {radiusMiles} mi · <RichText html={serviceArea} as="span" />
+              </p>
+              <p className="mt-2.5 text-sm leading-relaxed text-brand-primary/80">
+                {cities.join(" · ")}
+              </p>
             </div>
           </aside>
         ) : null}
       </div>
-
-      {paragraphs.length > 1 ? (
-        <div className="relative z-1 border-t border-brand-primary/10 bg-bg-primary">
-          <div className="mx-auto max-w-7xl px-page py-10 sm:py-12 lg:py-14 xl:max-w-8xl">
-            <div className="flex max-w-3xl flex-col gap-3.5">
-              {paragraphs.slice(1).map((paragraph) => (
-                <p
-                  key={paragraph.slice(0, 48)}
-                  className="text-base leading-relaxed text-text-primary/75"
-                >
-                  <RichText html={paragraph} as="span" />
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
