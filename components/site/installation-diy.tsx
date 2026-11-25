@@ -133,16 +133,7 @@ export function InstallationDiyPage({
                   />
                 </a>
               ) : null}
-              <a
-                href="#chapter-overview"
-                className="text-sm text-text-inverse/80 underline decoration-text-inverse/30 underline-offset-4 transition hover:text-text-inverse hover:decoration-text-inverse"
-              >
-                Read it on this page
-              </a>
             </div>
-            <p className="text-xs tracking-[0.14em] text-text-inverse/45">
-              {MANUAL_PAGES.length} pages · {MANUAL_CHAPTERS.length} chapters
-            </p>
           </div>
         </div>
       </section>

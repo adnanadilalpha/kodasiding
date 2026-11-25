@@ -145,12 +145,12 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
     />
   );
 
+  const centeredClass =
+    "mx-auto flex w-full scroll-mt-28 flex-col gap-8 lg:max-w-7xl lg:scroll-mt-32 lg:gap-12 xl:max-w-8xl";
+
   if (layout === "image-top") {
     return (
-      <li
-        id={feature.anchorId}
-        className="flex w-full scroll-mt-28 flex-col gap-8 lg:scroll-mt-32 lg:gap-12"
-      >
+      <li id={feature.anchorId} className={centeredClass}>
         {fullMedia}
         <FeatureText feature={feature} centered />
       </li>
@@ -159,10 +159,7 @@ function WhyFeatureRow({ feature }: { feature: FeatureCard }) {
 
   if (layout === "image-bottom") {
     return (
-      <li
-        id={feature.anchorId}
-        className="flex w-full scroll-mt-28 flex-col gap-8 lg:scroll-mt-32 lg:gap-12"
-      >
+      <li id={feature.anchorId} className={centeredClass}>
         <FeatureText feature={feature} centered />
         {fullMedia}
       </li>

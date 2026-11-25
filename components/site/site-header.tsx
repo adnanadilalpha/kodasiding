@@ -282,7 +282,7 @@ export function SiteHeader({
           <button
             type="button"
             onClick={openQuote}
-            className="rounded-md border border-transparent bg-white px-8 py-3 font-display text-base whitespace-nowrap text-text-primary uppercase"
+            className="rounded-md border border-transparent bg-accent-warm px-8 py-3 font-display text-base whitespace-nowrap text-text-primary uppercase transition hover:opacity-90"
           >
             {nav.quote_label}
           </button>
@@ -382,7 +382,7 @@ export function SiteHeader({
                     closeMenu();
                     openQuote();
                   }}
-                  className="rounded-md border border-transparent bg-white px-6 py-3 font-display text-base leading-none whitespace-nowrap text-text-primary uppercase sm:px-8"
+                  className="rounded-md border border-transparent bg-accent-warm px-6 py-3 font-display text-base leading-none whitespace-nowrap text-text-primary uppercase transition hover:opacity-90 sm:px-8"
                 >
                   {nav.quote_label}
                 </button>

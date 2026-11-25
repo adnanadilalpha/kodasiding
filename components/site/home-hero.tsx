@@ -59,7 +59,7 @@ export function HomeHeroSection({
                 metadata: { placement: "hero" },
               })
             }
-            className="inline-flex w-fit items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
+            className="inline-flex w-fit items-center justify-center rounded-md bg-black px-8 py-3 text-base text-white"
           >
             <RichText html={hero.cta_label} as="span" />
           </Link>

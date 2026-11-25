@@ -87,7 +87,7 @@ export function HomeProfilesSection({
 
         <Link
           href={ctaHref}
-          className="inline-flex items-center justify-center rounded-md bg-accent-warm px-8 py-3 text-base text-text-primary"
+          className="inline-flex items-center justify-center rounded-md bg-black px-8 py-3 text-base text-white"
         >
           <RichText html={teaser.cta_label} as="span" />
         </Link>
