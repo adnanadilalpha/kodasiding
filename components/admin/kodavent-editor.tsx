@@ -11,11 +11,12 @@ import {
   saveKodaVentProductDesign,
   saveKodaVentSeo,
 } from "@/lib/cms/actions";
+import { KODAVENT_SPEC_DOCUMENT_KEY } from "@/lib/cms/kodavent-defaults";
 import type {
   DocumentRow,
-  KodaVentAnnotation,
   KodaVentInstallMethod,
   KodaVentInstallStep,
+  KodaVentPart,
   KodaVentRetailerLink,
   MediaAsset,
   PageKodaVent,
@@ -165,22 +166,25 @@ export function KodaVentProductDesignEditor({
   section,
   installed,
   media,
+  documents,
 }: {
   section: PageKodaVent["product_design"];
   installed: PageKodaVent["installed"];
   media: Record<string, MediaAsset>;
+  documents: DocumentRow[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [annotations, setAnnotations] = useState<KodaVentAnnotation[]>(
-    section.annotations ?? [],
-  );
+  const [parts, setParts] = useState<KodaVentPart[]>(section.parts ?? []);
   const wallImage = installed.image_media_id
     ? media[installed.image_media_id]
     : null;
+  const specPath =
+    documents.find((doc) => doc.key === KODAVENT_SPEC_DOCUMENT_KEY)
+      ?.storage_path ?? "";
 
-  function move(index: number, dir: -1 | 1) {
-    setAnnotations((prev) => {
+  function movePart(index: number, dir: -1 | 1) {
+    setParts((prev) => {
       const next = [...prev];
       const target = index + dir;
       if (target < 0 || target >= next.length) return prev;
@@ -192,7 +196,7 @@ export function KodaVentProductDesignEditor({
   return (
     <form
       action={(fd) => {
-        fd.set("annotations_json", JSON.stringify(annotations));
+        fd.set("parts_json", JSON.stringify(parts));
         startTransition(async () => {
           await saveKodaVentProductDesign(fd);
           router.refresh();
@@ -256,28 +260,28 @@ export function KodaVentProductDesignEditor({
           aspect="square"
         />
         <LockedHint>
-          This photo sits beside the benefit reasons. The product box is edited
+          This photo sits beside the product details. The product box is edited
           under Order now.
         </LockedHint>
       </FieldGroup>
 
-      <FieldGroup title="Benefit reasons">
+      <FieldGroup title="Parts">
         <div className="flex flex-col gap-4">
-          {annotations.map((annotation, index) => (
+          {parts.map((part, index) => (
             <div
-              key={annotation.id}
+              key={part.id}
               className="rounded-md border border-brand-primary/10 bg-bg-secondary/40 p-4"
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium text-brand-primary">
-                  Reason {String(index + 1).padStart(2, "0")}
+                  Part {part.mark || index + 1}
                 </p>
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => move(index, -1)}
+                    onClick={() => movePart(index, -1)}
                   >
                     Up
                   </Button>
@@ -285,7 +289,7 @@ export function KodaVentProductDesignEditor({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => move(index, 1)}
+                    onClick={() => movePart(index, 1)}
                   >
                     Down
                   </Button>
@@ -294,97 +298,50 @@ export function KodaVentProductDesignEditor({
                     variant="danger"
                     size="sm"
                     onClick={() =>
-                      setAnnotations((prev) =>
-                        prev.filter((_, i) => i !== index),
-                      )
+                      setParts((prev) => prev.filter((_, i) => i !== index))
                     }
                   >
                     Remove
                   </Button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Title">
-                  <RichTextField
-                    value={annotation.title}
-                    onValueChange={(html) =>
-                      setAnnotations((prev) =>
-                        prev.map((a, i) =>
-                          i === index ? { ...a, title: html } : a,
-                        ),
-                      )
-                    }
-                    minHeightClassName="min-h-12"
-                  />
-                </Field>
-                <label className="flex items-end gap-2 pb-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={annotation.visible}
+              <div className="grid gap-3 sm:grid-cols-[5rem_1fr_6rem]">
+                <Field label="Mark">
+                  <TextInput
+                    value={part.mark}
                     onChange={(e) =>
-                      setAnnotations((prev) =>
-                        prev.map((a, i) =>
-                          i === index
-                            ? { ...a, visible: e.target.checked }
-                            : a,
+                      setParts((prev) =>
+                        prev.map((row, i) =>
+                          i === index ? { ...row, mark: e.target.value } : row,
                         ),
                       )
                     }
-                    className="size-4 rounded border-brand-primary/30"
-                  />
-                  Visible
-                </label>
-                <Field label="Description">
-                  <RichTextField
-                    value={annotation.description}
-                    onValueChange={(html) =>
-                      setAnnotations((prev) =>
-                        prev.map((a, i) =>
-                          i === index
-                            ? { ...a, description: html }
-                            : a,
-                        ),
-                      )
-                    }
-                    minHeightClassName="min-h-24"
                   />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="X %">
-                    <TextInput
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={annotation.x}
-                      onChange={(e) =>
-                        setAnnotations((prev) =>
-                          prev.map((a, i) =>
-                            i === index
-                              ? { ...a, x: Number(e.target.value) }
-                              : a,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
-                  <Field label="Y %">
-                    <TextInput
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={annotation.y}
-                      onChange={(e) =>
-                        setAnnotations((prev) =>
-                          prev.map((a, i) =>
-                            i === index
-                              ? { ...a, y: Number(e.target.value) }
-                              : a,
-                          ),
-                        )
-                      }
-                    />
-                  </Field>
-                </div>
+                <Field label="Name">
+                  <TextInput
+                    value={part.name}
+                    onChange={(e) =>
+                      setParts((prev) =>
+                        prev.map((row, i) =>
+                          i === index ? { ...row, name: e.target.value } : row,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="Qty">
+                  <TextInput
+                    value={part.qty}
+                    onChange={(e) =>
+                      setParts((prev) =>
+                        prev.map((row, i) =>
+                          i === index ? { ...row, qty: e.target.value } : row,
+                        ),
+                      )
+                    }
+                  />
+                </Field>
               </div>
             </div>
           ))}
@@ -394,23 +351,57 @@ export function KodaVentProductDesignEditor({
               variant="ghost"
               size="sm"
               onClick={() =>
-                setAnnotations((prev) => [
+                setParts((prev) => [
                   ...prev,
                   {
-                    id: `ann-${Date.now()}`,
-                    title: "",
-                    description: "",
-                    x: 50,
-                    y: 50,
-                    visible: true,
+                    id: `part-${Date.now()}`,
+                    mark: "",
+                    name: "",
+                    qty: "1",
                   },
                 ])
               }
             >
-              Add annotation
+              Add part
             </Button>
           </div>
         </div>
+      </FieldGroup>
+
+      <FieldGroup title="Specification">
+        <Field label="Panel title">
+          <RichTextField
+            name="spec_title"
+            defaultValue={section.spec_title}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="View button">
+          <RichTextField
+            name="spec_link_label"
+            defaultValue={section.spec_link_label}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Download button">
+          <RichTextField
+            name="spec_download_label"
+            defaultValue={section.spec_download_label}
+            minHeightClassName="min-h-12"
+          />
+        </Field>
+        <Field label="Specification PDF">
+          <PdfUploadField
+            docKey={KODAVENT_SPEC_DOCUMENT_KEY}
+            title="KodaVent Specification"
+            currentPath={specPath}
+          />
+        </Field>
+        <LockedHint>
+          The page shows the title and these two buttons beside the wall photo.
+          View opens the PDF. Download saves it. Until a file is uploaded here,
+          both buttons use the specification PDF already on the site.
+        </LockedHint>
       </FieldGroup>
 
       <div className="pt-1">
@@ -1092,6 +1083,33 @@ export function KodaVentCtaEditor({
                     }
                   />
                 </Field>
+              </div>
+              <div className="mt-3">
+                <MediaField
+                  name={`retailer_logo_${retailer.id}`}
+                  label="Store logo"
+                  hint="This logo is the buy button on the page."
+                  compact
+                  aspect="wide"
+                  initialId={retailer.logo_media_id}
+                  initialPath={
+                    retailer.logo_media_id
+                      ? media[retailer.logo_media_id]?.path
+                      : null
+                  }
+                  initialBucket={
+                    retailer.logo_media_id
+                      ? (media[retailer.logo_media_id]?.bucket ?? "media")
+                      : "media"
+                  }
+                  onIdChange={(id) =>
+                    setRetailers((prev) =>
+                      prev.map((r, i) =>
+                        i === index ? { ...r, logo_media_id: id } : r,
+                      ),
+                    )
+                  }
+                />
               </div>
             </div>
           ))}

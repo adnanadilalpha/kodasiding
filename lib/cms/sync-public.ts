@@ -25,6 +25,9 @@ function mergeKodaVentPage(row: PageKodaVent | null | undefined): PageKodaVent {
       ...row.product_design,
       annotations:
         row.product_design?.annotations ?? base.product_design.annotations,
+      parts: row.product_design?.parts?.length
+        ? row.product_design.parts
+        : base.product_design.parts,
     },
     installed: {
       ...base.installed,

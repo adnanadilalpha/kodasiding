@@ -21,15 +21,18 @@ import {
   sanitizeRichText,
 } from "@/lib/cms/sanitize-rich-text";
 import type {
-  KodaVentAnnotation,
   KodaVentInstallMethod,
   KodaVentInstallStep,
+  KodaVentPart,
   PageKodaVent,
   QuoteEmailSettings,
   QuoteFormSettings,
   SocialLink,
 } from "@/lib/cms/types";
-import { collectKodaVentMediaIds } from "@/lib/cms/kodavent-defaults";
+import {
+  collectKodaVentMediaIds,
+  KODAVENT_SPEC_DOCUMENT_KEY,
+} from "@/lib/cms/kodavent-defaults";
 import { parsePageSeoFromForm } from "@/lib/cms/page-seo-defaults";
 import { revalidatePath } from "next/cache";
 
@@ -45,6 +48,7 @@ async function afterPublicChange(
   revalidatePath("/installation");
   revalidatePath("/find-dealer");
   revalidatePath("/kodavent");
+  revalidatePath("/about");
 }
 
 export async function saveHomeHero(formData: FormData) {
@@ -1284,20 +1288,26 @@ function formFlag(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
-function parseAnnotationsJson(raw: string): KodaVentAnnotation[] {
+function parsePartsJson(raw: string): KodaVentPart[] {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
-      .map((item, index) => ({
-        id: String(item.id ?? `ann-${index + 1}`),
-        title: sanitizeRichText(String(item.title ?? "")),
-        description: sanitizeRichText(String(item.description ?? "")),
-        x: Number.isFinite(Number(item.x)) ? Number(item.x) : 50,
-        y: Number.isFinite(Number(item.y)) ? Number(item.y) : 50,
-        visible: item.visible !== false,
-      }));
+    return parsed.flatMap((item, index) => {
+      if (!item || typeof item !== "object") return [];
+      const row = item as Record<string, unknown>;
+      const name = String(row.name ?? "").trim();
+      const mark = String(row.mark ?? "").trim();
+      const qty = String(row.qty ?? "").trim();
+      if (!name && !mark) return [];
+      return [
+        {
+          id: String(row.id ?? `part-${index + 1}`),
+          mark,
+          name,
+          qty,
+        },
+      ];
+    });
   } catch {
     return [];
   }
@@ -1396,7 +1406,11 @@ export async function saveKodaVentProductDesign(formData: FormData) {
     image_caption: prevDesign?.image_caption ?? "",
     exploded_image_media_id: prevDesign?.exploded_image_media_id ?? null,
     exploded_image_alt: prevDesign?.exploded_image_alt ?? "",
-    annotations: parseAnnotationsJson(String(formData.get("annotations_json") ?? "[]")),
+    spec_title: richField(formData, "spec_title"),
+    spec_link_label: richField(formData, "spec_link_label"),
+    spec_download_label: richField(formData, "spec_download_label"),
+    parts: parsePartsJson(String(formData.get("parts_json") ?? "[]")),
+    annotations: prevDesign?.annotations ?? [],
     visible: formFlag(formData, "visible"),
   };
   const wallImageId = emptyToNull(formData.get("wall_image_media_id"));
@@ -1493,6 +1507,7 @@ export async function saveKodaVentCta(formData: FormData) {
     label: string;
     href: string;
     visible: boolean;
+    logo_media_id: string | null;
   }> = [];
   try {
     const parsed = JSON.parse(String(formData.get("retailers_json") ?? "[]"));
@@ -1504,6 +1519,7 @@ export async function saveKodaVentCta(formData: FormData) {
           label: sanitizeRichText(String(r.label ?? "")),
           href: String(r.href ?? ""),
           visible: r.visible !== false,
+          logo_media_id: String(r.logo_media_id ?? "").trim() || null,
         }));
     }
   } catch {
@@ -1533,10 +1549,16 @@ export async function saveKodaVentCta(formData: FormData) {
     .update({ cta, product_design, updated_at: new Date().toISOString() })
     .eq("id", 1);
   if (error) throw new Error(error.message);
+  const previousLogos = (previous?.cta?.retailers ?? [])
+    .map((r) => r.logo_media_id)
+    .filter((id): id is string => Boolean(id));
   await deleteOrphanedMediaAssets(
     releasedMediaIds(
-      [prevDesign?.image_media_id],
-      [product_design.image_media_id],
+      [prevDesign?.image_media_id, ...previousLogos],
+      [
+        product_design.image_media_id,
+        ...retailers.map((r) => r.logo_media_id),
+      ],
     ),
   );
   await afterPublicChange(admin.user_id, "/admin/kodavent");
@@ -1679,6 +1701,63 @@ export async function saveFindDealerPageCopy(formData: FormData) {
   await afterPublicChange(admin.user_id, "/admin/dealer");
 }
 
+export async function saveAboutPage(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("pages_seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevBag = (previous?.pages_seo ?? {}) as Record<string, unknown>;
+  const about = {
+    eyebrow: richField(formData, "eyebrow"),
+    heading: richField(formData, "heading"),
+    body: richField(formData, "body"),
+    address: String(formData.get("address") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
+    form_heading: richField(formData, "form_heading"),
+    name_label: richField(formData, "name_label"),
+    email_label: richField(formData, "email_label"),
+    message_label: richField(formData, "message_label"),
+    submit_label: richField(formData, "submit_label"),
+    success_message: richField(formData, "success_message"),
+  };
+  const pages_seo = { ...prevBag, about };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ pages_seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  await afterPublicChange(admin.user_id, "/admin/contact");
+}
+
+export async function saveAboutPageSeo(formData: FormData) {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+  const { data: previous } = await supabase
+    .from("site_settings")
+    .select("pages_seo")
+    .eq("id", 1)
+    .maybeSingle();
+  const prevBag = (previous?.pages_seo ?? {}) as Record<string, unknown>;
+  const about_seo = parsePageSeoFromForm(formData, "/about");
+  const pages_seo = { ...prevBag, about_seo };
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ pages_seo, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) throw new Error(error.message);
+  const prevSeo = prevBag.about_seo as
+    | { og_image_media_id?: string | null }
+    | undefined;
+  await deleteOrphanedMediaAssets(
+    releasedMediaIds([prevSeo?.og_image_media_id], [about_seo.og_image_media_id]),
+  );
+  await afterPublicChange(admin.user_id, "/admin/contact");
+}
+
 /** PDF upload for KodaVent guides — same documents table pattern as install manual. */
 export async function saveKodaVentDocument(formData: FormData) {
   const admin = await requireAdmin();
@@ -1687,6 +1766,7 @@ export async function saveKodaVentDocument(formData: FormData) {
   const allowed = new Set([
     "kodavent_new_construction",
     "kodavent_retrofit",
+    KODAVENT_SPEC_DOCUMENT_KEY,
   ]);
   if (!allowed.has(key)) {
     throw new Error("Invalid KodaVent document key.");

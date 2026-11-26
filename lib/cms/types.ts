@@ -108,10 +108,28 @@ export type FindDealerPageCopy = {
   empty_results: string;
 };
 
+export type AboutPageCopy = {
+  eyebrow: string;
+  heading: string;
+  body: string;
+  address: string;
+  phone: string;
+  email: string;
+  form_heading: string;
+  name_label: string;
+  email_label: string;
+  message_label: string;
+  submit_label: string;
+  success_message: string;
+};
+
 export type PagesSeoBag = {
   installation?: PageSeo;
   find_dealer?: PageSeo;
   find_dealer_copy?: FindDealerPageCopy;
+  about?: AboutPageCopy;
+  /** SEO for the public Contact page (`/about`). */
+  about_seo?: PageSeo;
 };
 
 export type GeoAccess = {
@@ -410,6 +428,13 @@ export type KodaVentHero = {
   visible: boolean;
 };
 
+export type KodaVentPart = {
+  id: string;
+  mark: string;
+  name: string;
+  qty: string;
+};
+
 export type KodaVentProductDesign = {
   eyebrow: string;
   heading: string;
@@ -420,6 +445,13 @@ export type KodaVentProductDesign = {
   /** Optional exploded / how-it-works image (falls back to public asset). */
   exploded_image_media_id?: string | null;
   exploded_image_alt?: string;
+  /** Title on the specification panel beside the photo. */
+  spec_title: string;
+  /** Opens the specification PDF in a new tab. */
+  spec_link_label: string;
+  /** Saves the specification PDF. */
+  spec_download_label: string;
+  parts: KodaVentPart[];
   annotations: KodaVentAnnotation[];
   visible: boolean;
 };
@@ -474,6 +506,8 @@ export type KodaVentRetailerLink = {
   label: string;
   href: string;
   visible: boolean;
+  /** Store mark shown as the buy button. */
+  logo_media_id?: string | null;
 };
 
 export type KodaVentCta = {

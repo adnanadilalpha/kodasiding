@@ -3,6 +3,7 @@ const PAGE_LABELS: Record<string, string> = {
   "/profiles": "Profiles",
   "/installation": "Installation",
   "/kodavent": "KodaVent",
+  "/about": "Contact",
   "/find-dealer": "Find a dealer",
   "/unavailable": "Unavailable",
 };

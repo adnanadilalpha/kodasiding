@@ -42,6 +42,9 @@ function mergePage(raw: PageKodaVent | null | undefined): PageKodaVent {
       ...raw.product_design,
       annotations:
         raw.product_design?.annotations ?? base.product_design.annotations,
+      parts: raw.product_design?.parts?.length
+        ? raw.product_design.parts
+        : base.product_design.parts,
     },
     installed: {
       ...base.installed,
@@ -150,6 +153,9 @@ export default async function KodaVentPage() {
     annotations: page.product_design.annotations?.length
       ? page.product_design.annotations
       : DEFAULT_PAGE_KODAVENT.product_design.annotations,
+    parts: page.product_design.parts?.length
+      ? page.product_design.parts
+      : DEFAULT_PAGE_KODAVENT.product_design.parts,
     visible: page.product_design.visible !== false,
   };
 
@@ -169,7 +175,12 @@ export default async function KodaVentPage() {
       const href = (r.href || "").trim().toLowerCase().replace(/\/+$/, "");
       const placeholder =
         href === "https://www.amazon.com" || href === "https://amazon.com";
-      return placeholder ? { ...r, href: "" } : r;
+      return {
+        ...(placeholder ? { ...r, href: "" } : r),
+        logoUrl: r.logo_media_id
+          ? mediaUrlFromMap(media, r.logo_media_id)
+          : null,
+      };
     });
 
   const ctaSection = {
@@ -222,6 +233,7 @@ export default async function KodaVentPage() {
             badgeLabel={installedSection.badge_label}
             caption={installedSection.caption}
             figureTitle={installedSection.figure_title}
+            documents={documents}
           />
           <KodaVentInstallationSection
             section={page.installation}

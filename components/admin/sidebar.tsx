@@ -12,6 +12,7 @@ const pages = [
   { href: "/admin/profiles", label: "Profiles" },
   { href: "/admin/installation", label: "Installation" },
   { href: "/admin/kodavent", label: "KodaVent" },
+  { href: "/admin/contact", label: "Contact" },
   { href: "/admin/dealer", label: "Find dealer" },
   { href: "/admin/quotes", label: "Quotes" },
 ] as const;

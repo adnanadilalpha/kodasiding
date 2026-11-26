@@ -6,6 +6,7 @@ import type {
   KodaVentInstallation,
   KodaVentInstallMethod,
   KodaVentInstallStep,
+  KodaVentPart,
   KodaVentProductDesign,
   KodaVentSeo,
   PageKodaVent,
@@ -52,11 +53,29 @@ export const DEFAULT_KODAVENT_HERO: KodaVentHero = {
   visible: true,
 };
 
+export const KODAVENT_SPEC_DOCUMENT_KEY = "kodavent_specification";
+export const KODAVENT_SPEC_PDF_PATH = "/KodaVent_Manual_rev_2.pdf";
+
+function part(id: string, mark: string, name: string, qty: string): KodaVentPart {
+  return { id, mark, name, qty };
+}
+
+export const DEFAULT_KODAVENT_PARTS: KodaVentPart[] = [
+  part("part-a", "A", "Vent cover base plate", "1"),
+  part("part-b", "B", "Vent cover flap", "1"),
+  part("part-c", "C", "15 mm × 5 mm × 2 mm neodymium magnet", "2"),
+  part("part-d", "D", "2.5 mm × 26 mm stainless steel pin", "2"),
+];
+
 export const DEFAULT_KODAVENT_PRODUCT_DESIGN: KodaVentProductDesign = {
   eyebrow: "Why KodaVent",
   heading: "It's more than a vent cover.",
   description:
     "Three reasons builders and homeowners choose a cover designed for water detailing, a cleaner wall, and either new construction or retrofit.",
+  spec_title: "Specification",
+  spec_link_label: "View specification",
+  spec_download_label: "Download specification",
+  parts: DEFAULT_KODAVENT_PARTS,
   image_media_id: null,
   image_alt: "KodaVent product components",
   image_caption: "The packaging",
@@ -318,6 +337,7 @@ export function collectKodaVentMediaIds(page: PageKodaVent): string[] {
     page.product_design?.exploded_image_media_id,
     page.installed?.image_media_id,
     page.seo?.og_image_media_id,
+    ...(page.cta?.retailers ?? []).map((r) => r.logo_media_id),
   ];
 
   for (const method of page.installation?.methods ?? []) {

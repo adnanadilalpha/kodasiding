@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import type { Attachment } from "nodemailer/lib/mailer";
 import type { QuoteEmailSettings } from "@/lib/cms/types";
 import {
+  buildContactNotificationEmail,
   buildLeadConfirmationEmail,
   buildQuoteNotificationEmail,
   buildTestEmail,
@@ -328,6 +329,22 @@ export async function sendQuoteNotification(
     lead_confirmation: leadConfirmation,
     lead_confirmation_error: leadConfirmationError,
   };
+}
+
+export async function sendContactMessage(
+  settings: QuoteEmailSettings,
+  payload: { name: string; email: string; message: string },
+): Promise<{ error?: string; success?: boolean }> {
+  if (!settings.enabled) {
+    return { error: "Contact email is not turned on yet." };
+  }
+  const email = buildContactNotificationEmail(payload);
+  return sendViaSmtp(settings, {
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+    replyTo: payload.email,
+  });
 }
 
 export async function sendTestQuoteEmail(

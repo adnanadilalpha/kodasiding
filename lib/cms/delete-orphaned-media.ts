@@ -229,8 +229,13 @@ async function findReferencedMediaIds(
   const pagesSeo = settings.data?.pages_seo as {
     installation?: Record<string, unknown>;
     find_dealer?: Record<string, unknown>;
+    about_seo?: Record<string, unknown>;
   } | null;
-  for (const page of [pagesSeo?.installation, pagesSeo?.find_dealer]) {
+  for (const page of [
+    pagesSeo?.installation,
+    pagesSeo?.find_dealer,
+    pagesSeo?.about_seo,
+  ]) {
     const pageOg = asMediaId(page?.og_image_media_id);
     if (pageOg && ids.includes(pageOg)) used.add(pageOg);
   }

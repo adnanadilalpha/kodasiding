@@ -344,3 +344,59 @@ export function buildLeadConfirmationEmail(
     html,
   };
 }
+
+export type ContactMessagePayload = {
+  name: string;
+  email: string;
+  message: string;
+};
+
+export function buildContactNotificationEmail(
+  payload: ContactMessagePayload,
+  options?: EmailTemplateOptions,
+) {
+  const message = payload.message.trim() || "(No message included)";
+  const emailLink = `<a href="mailto:${escapeHtml(payload.email)}" style="color:#264835;text-decoration:none;font-weight:600;">${escapeHtml(payload.email)}</a>`;
+  const text = [
+    "New contact message — Koda Siding",
+    "",
+    `Name: ${payload.name}`,
+    `Email: ${payload.email}`,
+    "",
+    "Message:",
+    message,
+    "",
+    "—",
+    "Sent from the About page on your Koda Siding website.",
+  ].join("\n");
+
+  const bodyHtml = `
+    <p style="margin:0 0 6px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5f625d;font-weight:600;">
+      About page
+    </p>
+    <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;font-weight:500;color:#14271d;">
+      New contact message
+    </h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      ${detailRow("Name", escapeHtml(payload.name))}
+      ${detailRow("Email", emailLink, true)}
+    </table>
+    <p style="margin:22px 0 8px;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5f625d;font-weight:600;">
+      Message
+    </p>
+    <p style="margin:0;font-family:Avenir,'Avenir Next',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#14271d;white-space:pre-wrap;">
+      ${escapeHtml(message)}
+    </p>
+  `;
+
+  return {
+    subject: sanitizeHeaderValue(`Contact: ${payload.name}`),
+    text,
+    html: emailShell({
+      preheader: `${payload.name} wrote from the About page.`,
+      bodyHtml,
+      footerNote: "Sent from the About page on your Koda Siding website.",
+      logoSrc: options?.logoSrc,
+    }),
+  };
+}

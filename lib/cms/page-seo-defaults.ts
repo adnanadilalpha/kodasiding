@@ -1,4 +1,5 @@
 import type {
+  AboutPageCopy,
   FindDealerPageCopy,
   PageSeo,
   PagesSeoBag,
@@ -57,6 +58,17 @@ export const DEFAULT_FIND_DEALER_PAGE_SEO: PageSeo = {
   canonical_path: "/find-dealer",
 };
 
+export const DEFAULT_ABOUT_PAGE_SEO: PageSeo = {
+  title: "Contact | Koda Siding",
+  description:
+    "Contact Koda Siding about fiberglass siding projects, product questions, or how to specify Koda.",
+  og_title: "Contact Koda Siding",
+  og_description:
+    "Write to Koda Siding about a project, a product question, or how to specify Koda.",
+  og_image_media_id: null,
+  canonical_path: "/about",
+};
+
 export function mergePageSeo(
   defaults: PageSeo,
   raw?: Partial<PageSeo> | null,
@@ -67,6 +79,41 @@ export function mergePageSeo(
     og_image_media_id: raw?.og_image_media_id ?? defaults.og_image_media_id,
     canonical_path:
       raw?.canonical_path?.trim() || defaults.canonical_path,
+  };
+}
+
+export const DEFAULT_ABOUT_PAGE: AboutPageCopy = {
+  eyebrow: "About us",
+  heading: "Koda Siding",
+  body: "Koda designs and manufactures engineered fiberglass siding, and our own crews install it. Write to us about a project, a product question, or how to specify Koda.",
+  address: "123 Example Street\nOmaha, NE 68102",
+  phone: "(402) 555-0100",
+  email: "info@kodasiding.com",
+  form_heading: "Contact us",
+  name_label: "Name",
+  email_label: "Email",
+  message_label: "Message",
+  submit_label: "Send message",
+  success_message: "Message sent. We will write back.",
+};
+
+export function mergeAboutPage(
+  raw?: Partial<AboutPageCopy> | null,
+): AboutPageCopy {
+  const merged = { ...DEFAULT_ABOUT_PAGE, ...raw };
+  return {
+    ...merged,
+    eyebrow: merged.eyebrow?.trim() || DEFAULT_ABOUT_PAGE.eyebrow,
+    heading: merged.heading?.trim() || DEFAULT_ABOUT_PAGE.heading,
+    body: merged.body?.trim() || DEFAULT_ABOUT_PAGE.body,
+    form_heading: merged.form_heading?.trim() || DEFAULT_ABOUT_PAGE.form_heading,
+    name_label: merged.name_label?.trim() || DEFAULT_ABOUT_PAGE.name_label,
+    email_label: merged.email_label?.trim() || DEFAULT_ABOUT_PAGE.email_label,
+    message_label:
+      merged.message_label?.trim() || DEFAULT_ABOUT_PAGE.message_label,
+    submit_label: merged.submit_label?.trim() || DEFAULT_ABOUT_PAGE.submit_label,
+    success_message:
+      merged.success_message?.trim() || DEFAULT_ABOUT_PAGE.success_message,
   };
 }
 
@@ -89,6 +136,8 @@ export function mergePagesSeoBag(
     ),
     find_dealer: mergePageSeo(DEFAULT_FIND_DEALER_PAGE_SEO, raw?.find_dealer),
     find_dealer_copy: mergeFindDealerPageCopy(raw?.find_dealer_copy),
+    about: mergeAboutPage(raw?.about),
+    about_seo: mergePageSeo(DEFAULT_ABOUT_PAGE_SEO, raw?.about_seo),
   };
 }
 

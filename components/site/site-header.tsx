@@ -49,7 +49,8 @@ export function SiteHeader({
     menuOpen ||
     pathname === "/profiles" ||
     pathname === "/find-dealer" ||
-    pathname === "/kodavent";
+    pathname === "/kodavent" ||
+    pathname === "/about";
 
   useEffect(() => {
     if (!menuOpen) return;

@@ -9,7 +9,7 @@ export const NAV_LINK_SLOTS = [
   { href: "/profiles", defaultLabel: "Profiles" },
   { href: "/installation", defaultLabel: "Installation" },
   { href: "/kodavent", defaultLabel: "KodaVent" },
-  { href: "/#contact", defaultLabel: "Contact" },
+  { href: "/about", defaultLabel: "Contact" },
 ] as const;
 
 export const FOOTER_LINK_SLOTS = [
@@ -17,7 +17,7 @@ export const FOOTER_LINK_SLOTS = [
   { href: "/profiles", defaultLabel: "Profiles" },
   { href: "/installation", defaultLabel: "Installations" },
   { href: "/kodavent", defaultLabel: "KodaVent" },
-  { href: "/#contact", defaultLabel: "Contact" },
+  { href: "/about", defaultLabel: "Contact" },
 ] as const;
 
 export const FIND_DEALER_HREF = "/find-dealer";
@@ -29,6 +29,8 @@ const HREF_ALIASES: Record<string, string> = {
   "#profiles": "/profiles",
   "/#installation": "/installation",
   "#installation": "/installation",
+  "/#contact": "/about",
+  "#contact": "/about",
 };
 
 export function normalizeLinkHref(href: string) {

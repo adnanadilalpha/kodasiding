@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMediaMap } from "@/lib/cms/media";
-import { DEFAULT_PAGE_KODAVENT, collectKodaVentMediaIds } from "@/lib/cms/kodavent-defaults";
+import {
+  DEFAULT_PAGE_KODAVENT,
+  KODAVENT_SPEC_DOCUMENT_KEY,
+  collectKodaVentMediaIds,
+} from "@/lib/cms/kodavent-defaults";
 import type { DocumentRow, PageKodaVent } from "@/lib/cms/types";
 import { SectionShell } from "@/components/admin/section-shell";
 import {
@@ -22,6 +26,9 @@ function mergePage(row: PageKodaVent | null): PageKodaVent {
       ...row.product_design,
       annotations:
         row.product_design?.annotations ?? base.product_design.annotations,
+      parts: row.product_design?.parts?.length
+        ? row.product_design.parts
+        : base.product_design.parts,
     },
     installed: {
       ...base.installed,
@@ -56,7 +63,11 @@ export default async function KodaVentAdminPage({
     supabase
       .from("documents")
       .select("id, key, title, storage_path, bucket")
-      .in("key", ["kodavent_new_construction", "kodavent_retrofit"]),
+      .in("key", [
+        "kodavent_new_construction",
+        "kodavent_retrofit",
+        KODAVENT_SPEC_DOCUMENT_KEY,
+      ]),
   ]);
 
   const page = mergePage(pageRow as PageKodaVent | null);
@@ -75,12 +86,13 @@ export default async function KodaVentAdminPage({
         },
         {
           id: "product-design",
-          label: "Why KodaVent",
+          label: "Product details",
           content: (
             <KodaVentProductDesignEditor
               section={page.product_design}
               installed={page.installed}
               media={media}
+              documents={documents}
             />
           ),
         },
